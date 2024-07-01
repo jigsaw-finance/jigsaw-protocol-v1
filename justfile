@@ -32,14 +32,6 @@ remove-modules: && _timer
 	git add .
 	git commit -m "modules"
 
-# Install the Vyper venv
-install-vyper: && _timer
-    pip install virtualenv
-    virtualenv -p python3 venv
-    source venv/bin/activate
-    pip install vyper==0.2.16
-    vyper --version
-
 # Install the Modules
 install: && _timer
 	forge install foundry-rs/forge-std
@@ -54,7 +46,7 @@ remap: && _timer
 # Builds
 build: && _timer
 	forge clean
-	forge build --names --sizes
+	forge build --sizes
 
 format: && _timer
 	forge fmt
