@@ -44,10 +44,15 @@ contract DeployRegistries is Script, Base {
     address internal STABLES_MANAGER = registryConfig.readAddress(".STABLES_MANAGER");
 
     // Store configuration for each SharesRegistry
-    address internal USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address internal USDC_Oracle = 0xfD07C974e33dd1626640bA3a5acF0418FaacCA7a;
+    address internal USDC = 0x616b359d40Cc645D76F084d048Bf2709f8B3A290;
+    address internal USDC_Oracle = 0xafc699010d19f4820A1BC87C226B638A4EBbfb18;
     bytes internal USDC_OracleData = bytes("");
     uint256 internal USDC_CR = 50_000;
+
+    address internal WETH = 0x2c643C612E2f24613058dD2c2dba452cb547AEbF;
+    address internal WETH_Oracle = 0xaD9F1d83aA1cec62be05C825291Fa393B1178b59;
+    bytes internal WETH_OracleData = bytes("");
+    uint256 internal WETH_CR = 50_000;
 
     constructor() {
         // Add configs for USDC registry
@@ -57,6 +62,16 @@ contract DeployRegistries is Script, Base {
                 oracle: USDC_Oracle,
                 oracleData: USDC_OracleData,
                 collateralizationRate: USDC_CR
+            })
+        );
+
+        // Add configs for WETH registry
+        registryConfigs.push(
+            RegistryConfig({
+                token: WETH,
+                oracle: WETH_Oracle,
+                oracleData: WETH_OracleData,
+                collateralizationRate: WETH_CR
             })
         );
     }

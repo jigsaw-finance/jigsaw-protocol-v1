@@ -3,14 +3,17 @@ pragma solidity ^0.8.20;
 
 import { Script, console2 as console } from "forge-std/Script.sol";
 
+import { Base } from "../Base.s.sol";
+
 import { SampleOracle } from "../../test/utils/mocks/SampleOracle.sol";
 import { SampleTokenERC20 } from "../../test/utils/mocks/SampleTokenERC20.sol";
 import { StrategyWithoutRewardsMock } from "../../test/utils/mocks/StrategyWithoutRewardsMock.sol";
 import { wETHMock } from "../../test/utils/mocks/wETHMock.sol";
 
-contract DeployMocks is Script {
+contract DeployMocks is Script, Base {
     function run()
         external
+        broadcast
         returns (
             SampleTokenERC20 USDC,
             wETHMock WETH,
