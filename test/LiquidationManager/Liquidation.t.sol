@@ -513,9 +513,10 @@ contract LiquidationTest is Test {
             "Liquidator didn't receive user's collateral after liquidation"
         );
 
-        assertEq(
+        assertApproxEqAbs(
             testData.feeAddressBalanceAfterLiquidation,
             testData.expectedFeeAddressBalance,
+            2,
             "feeAddress didn't receive fee after liquidation"
         );
     }

@@ -586,7 +586,7 @@ contract SelfLiquidationTest is Test {
         assertApproxEqRel(
             IERC20(testData.collateral).balanceOf(manager.feeAddress()),
             testData.expectedFeeBalanceAfterSL,
-            0.08e18, //8% approximation
+            0.08e18, // 8% approximation
             "FEE balance incorrect"
         );
         assertEq(
@@ -599,9 +599,10 @@ contract SelfLiquidationTest is Test {
             jUsd.totalSupply(),
             "Total supply incorrect"
         );
-        assertEq(
+        assertApproxEqRel(
             testData.userCollateralAmount - testData.requiredCollateral,
             IERC20(testData.collateral).balanceOf(testData.userHolding),
+            0.01e18, // 1% approximation
             "Holding collateral incorrect"
         );
     }

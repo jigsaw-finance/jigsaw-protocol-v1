@@ -78,7 +78,6 @@ contract StrategyManager is IStrategyManager, Ownable2Step, ReentrancyGuard, Pau
      * @notice Emits:
      * - Invested event indicating successful investment operation.
      *
-     * @dev Some Strategies will not give back any receipt tokens; in this case 'tokenOutAmount' will be 0.
      * @dev 'tokenInAmount' will be equal to '_amount' in case the '_asset' is the same as strategy 'tokenIn()'.
      *
      * @param _token address.

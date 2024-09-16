@@ -176,7 +176,8 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         require(tempData.totalRequiredCollateral > 0, "3080");
 
         // Calculate the self-liquidation fee amount.
-        tempData.totalFeeCollateral = tempData.totalRequiredCollateral.mulDiv(selfLiquidationFee, precision);
+        tempData.totalFeeCollateral =
+            tempData.totalRequiredCollateral.mulDiv(selfLiquidationFee, precision, Math.Rounding.Ceil);
 
         // Calculate the total self-liquidatable collateral required to perform self-liquidation.
         tempData.totalSelfLiquidatableCollateral = tempData.totalRequiredCollateral + tempData.totalFeeCollateral;
@@ -369,8 +370,9 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
             : tempData.totalRequiredCollateral;
 
         // Calculate and adjust liquidator's collateral if the liquidator is not the user.
-        tempData.totalLiquidatorCollateral =
-            _user == msg.sender ? 0 : (tempData.totalRequiredCollateral * liquidatorBonus) / LIQUIDATION_PRECISION;
+        tempData.totalLiquidatorCollateral = _user == msg.sender
+            ? 0
+            : tempData.totalRequiredCollateral.mulDiv(liquidatorBonus, LIQUIDATION_PRECISION, Math.Rounding.Ceil);
 
         // Update total required collateral
         tempData.totalRequiredCollateral += tempData.totalLiquidatorCollateral;
@@ -520,7 +522,7 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
     ) private view returns (uint256 totalCollateral) {
         uint256 EXCHANGE_RATE_PRECISION = _getManager().EXCHANGE_RATE_PRECISION();
         // Calculate collateral amount based on its USD value.
-        totalCollateral = (_jUsdAmount * EXCHANGE_RATE_PRECISION) / _exchangeRate;
+        totalCollateral = _jUsdAmount.mulDiv(EXCHANGE_RATE_PRECISION, _exchangeRate, Math.Rounding.Ceil);
         // Adjust collateral amount in accordance with current jUSD price.
         totalCollateral = totalCollateral.mulDiv(_getManager().getJUsdExchangeRate(), EXCHANGE_RATE_PRECISION);
         // Perform sanity check to avoid miscalculations.
