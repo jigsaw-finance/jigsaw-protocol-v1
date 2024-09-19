@@ -524,7 +524,8 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         // Calculate collateral amount based on its USD value.
         totalCollateral = _jUsdAmount.mulDiv(EXCHANGE_RATE_PRECISION, _exchangeRate, Math.Rounding.Ceil);
         // Adjust collateral amount in accordance with current jUSD price.
-        totalCollateral = totalCollateral.mulDiv(_getManager().getJUsdExchangeRate(), EXCHANGE_RATE_PRECISION);
+        totalCollateral =
+            totalCollateral.mulDiv(_getManager().getJUsdExchangeRate(), EXCHANGE_RATE_PRECISION, Math.Rounding.Ceil);
         // Perform sanity check to avoid miscalculations.
         require(totalCollateral > 0, "3079");
         // Transform from 18 decimals to collateral's decimals
