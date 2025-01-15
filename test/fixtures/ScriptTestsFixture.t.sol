@@ -40,7 +40,6 @@ contract ScriptTestsFixture is Test {
     string internal managersConfigPath = "./deployment-config/03_ManagersConfig.json";
 
     address internal INITIAL_OWNER = vm.addr(vm.envUint("DEPLOYER_PRIVATE_KEY"));
-    address internal FEE_ADDRESS = address(uint160(uint256(keccak256("FEE ADDRESS"))));
     address internal USDC;
     address internal WETH;
     address internal JUSD_Oracle;
@@ -77,7 +76,6 @@ contract ScriptTestsFixture is Test {
         Strings.toHexString(uint160(WETH), 20).write(managerConfigPath, ".WETH");
         Strings.toHexString(uint160(JUSD_Oracle), 20).write(managerConfigPath, ".JUSD_Oracle");
         Strings.toHexString(uint256(bytes32("")), 32).write(managerConfigPath, ".JUSD_OracleData");
-        Strings.toHexString(uint160(FEE_ADDRESS), 20).write(managerConfigPath, ".FEE_ADDRESS");
         Strings.toHexString(uint160(UNISWAP_FACTORY), 20).write(managersConfigPath, ".UNISWAP_FACTORY");
         Strings.toHexString(uint160(UNISWAP_SWAP_ROUTER), 20).write(managersConfigPath, ".UNISWAP_SWAP_ROUTER");
 

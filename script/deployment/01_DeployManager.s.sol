@@ -30,7 +30,6 @@ contract DeployManager is Script, Base {
     address internal WETH = managerConfig.readAddress(".WETH");
     address internal JUSD_Oracle = managerConfig.readAddress(".JUSD_Oracle");
     bytes internal JUSD_OracleData = managerConfig.readBytes(".JUSD_OracleData");
-    address internal FEE_ADDRESS = managerConfig.readAddress(".FEE_ADDRESS");
 
     // Salt for deterministic deployment using Create2
     bytes32 internal salt = "0x";
