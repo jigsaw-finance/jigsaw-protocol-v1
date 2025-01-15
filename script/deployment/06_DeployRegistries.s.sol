@@ -44,8 +44,8 @@ contract DeployRegistries is Script, Base {
     address internal STABLES_MANAGER = deployments.readAddress(".STABLES_MANAGER");
 
     // Store configuration for each SharesRegistry
-    address internal USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address internal USDC_Oracle = 0xfD07C974e33dd1626640bA3a5acF0418FaacCA7a;
+    address internal USDC = 0x616b359d40Cc645D76F084d048Bf2709f8B3A290;
+    address internal USDC_Oracle = 0xEB8B6f572Fd08851D9ca4C46bfeE80bB2Fc5B5f0;
     bytes internal USDC_OracleData = bytes("");
     uint256 internal USDC_CR = 50_000;
 
@@ -81,13 +81,7 @@ contract DeployRegistries is Script, Base {
                 _collateralizationRate: registryConfigs[i].collateralizationRate
             });
 
-            // Save the deployed SharesRegistry contract to the StablesManager contract
-            StablesManager(STABLES_MANAGER).registerOrUpdateShareRegistry({
-                _registry: address(registry),
-                _token: registryConfigs[i].token,
-                _active: true
-            });
-
+            // @note save the deployed SharesRegistry contract to the StablesManager contract
             // @note whitelistToken on Manager Contract for all the tokens
 
             // Save the registry deployment address locally

@@ -1,6 +1,6 @@
 {
-  "USDC": "0x616b359d40Cc645D76F084d048Bf2709f8B3A290",
-  "WETH": "0x2c643C612E2f24613058dD2c2dba452cb547AEbF",
-  "JUSD_Oracle": "0xEB8B6f572Fd08851D9ca4C46bfeE80bB2Fc5B5f0",
-  "JUSD_OracleData": "0x"
+  "USDC": "",
+  "WETH": "",
+  "JUSD_Oracle": "",
+  "JUSD_OracleData": ""
 }
