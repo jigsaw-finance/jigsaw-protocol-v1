@@ -43,11 +43,83 @@ contract DeployRegistries is Script, Base {
     address internal MANAGER_CONTAINER = deployments.readAddress(".MANAGER_CONTAINER");
     address internal STABLES_MANAGER = deployments.readAddress(".STABLES_MANAGER");
 
-    // Store configuration for each SharesRegistry
-    address internal USDC = 0x616b359d40Cc645D76F084d048Bf2709f8B3A290;
-    address internal USDC_Oracle = 0xEB8B6f572Fd08851D9ca4C46bfeE80bB2Fc5B5f0;
+    // USDC
+    address internal USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address internal USDC_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
     bytes internal USDC_OracleData = bytes("");
     uint256 internal USDC_CR = 50_000;
+
+    // USDT
+    address internal USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+    address internal USDT_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
+    bytes internal USDT_OracleData = bytes("");
+    uint256 internal USDT_CR = 50_000;
+
+    // DAI
+    address internal DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    address internal DAI_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
+    bytes internal DAI_OracleData = bytes("");
+    uint256 internal DAI_CR = 50_000;
+
+    // USD0++
+    address internal USD0 = 0x437cc33344a0B27A429f795ff6B469C72698B291;
+    address internal USD0_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
+    bytes internal USD0_OracleData = bytes("");
+    uint256 internal USD0_CR = 50_000;
+
+    // WBTC
+    address internal WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+    address internal WBTC_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
+    bytes internal WBTC_OracleData = bytes("");
+    uint256 internal WBTC_CR = 40_000;
+
+    // WETH
+    address internal WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address internal WETH_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
+    bytes internal WETH_OracleData = bytes("");
+    uint256 internal WETH_CR = 60_000;
+
+    // wstETH
+    address internal wstETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
+    address internal wstETH_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
+    bytes internal wstETH_OracleData = bytes("");
+    uint256 internal wstETH_CR = 50_000;
+
+    // rswETH
+    address internal rswETH = 0xFAe103DC9cf190eD75350761e95403b7b8aFa6c0;
+    address internal rswETH_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
+    bytes internal rswETH_OracleData = bytes("");
+    uint256 internal rswETH_CR = 30_000;
+
+    // pxETH
+    address internal pxETH = 0x04C154b66CB340F3Ae24111CC767e0184Ed00Cc6;
+    address internal pxETH_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
+    bytes internal pxETH_OracleData = bytes("");
+    uint256 internal pxETH_CR = 30_000;
+
+    // weETH
+    address internal weETH = 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee;
+    address internal weETH_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
+    bytes internal weETH_OracleData = bytes("");
+    uint256 internal weETH_CR = 50_000;
+
+    // ezETH
+    address internal ezETH = 0xbf5495Efe5DB9ce00f80364C8B423567e58d2110;
+    address internal ezETH_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
+    bytes internal ezETH_OracleData = bytes("");
+    uint256 internal ezETH_CR = 50_000;
+
+    // LBTC
+    address internal LBTC = 0x8236a87084f8B84306f72007F36F2618A5634494;
+    address internal LBTC_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
+    bytes internal LBTC_OracleData = bytes("");
+    uint256 internal LBTC_CR = 50_000;
+
+    // eBTC
+    address internal eBTC = 0x657e8C867D8B37dCC18fA4Caead9C45EB088C642;
+    address internal eBTC_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
+    bytes internal eBTC_OracleData = bytes("");
+    uint256 internal eBTC_CR = 50_000;
 
     constructor() {
         // Add configs for USDC registry
@@ -57,6 +129,126 @@ contract DeployRegistries is Script, Base {
                 oracle: USDC_Oracle,
                 oracleData: USDC_OracleData,
                 collateralizationRate: USDC_CR
+            })
+        );
+
+        // Add configs for USDT registry
+        registryConfigs.push(
+            RegistryConfig({
+                token: USDT,
+                oracle: USDT_Oracle,
+                oracleData: USDT_OracleData,
+                collateralizationRate: USDT_CR
+            })
+        );
+
+        // Add configs for DAI registry
+        registryConfigs.push(
+            RegistryConfig({
+                token: DAI,
+                oracle: DAI_Oracle,
+                oracleData: DAI_OracleData,
+                collateralizationRate: DAI_CR
+            })
+        );
+
+        // Add configs for USD0 registry
+        registryConfigs.push(
+            RegistryConfig({
+                token: USD0,
+                oracle: USD0_Oracle,
+                oracleData: USD0_OracleData,
+                collateralizationRate: USD0_CR
+            })
+        );
+
+        // Add configs for WBTC registry
+        registryConfigs.push(
+            RegistryConfig({
+                token: WBTC,
+                oracle: WBTC_Oracle,
+                oracleData: WBTC_OracleData,
+                collateralizationRate: WBTC_CR
+            })
+        );
+
+        // Add configs for WETH registry
+        registryConfigs.push(
+            RegistryConfig({
+                token: WETH,
+                oracle: WETH_Oracle,
+                oracleData: WETH_OracleData,
+                collateralizationRate: WETH_CR
+            })
+        );
+
+        // Add configs for wstETH registry
+        registryConfigs.push(
+            RegistryConfig({
+                token: wstETH,
+                oracle: wstETH_Oracle,
+                oracleData: wstETH_OracleData,
+                collateralizationRate: wstETH_CR
+            })
+        );
+
+        // Add configs for rswETH registry
+        registryConfigs.push(
+            RegistryConfig({
+                token: rswETH,
+                oracle: rswETH_Oracle,
+                oracleData: rswETH_OracleData,
+                collateralizationRate: rswETH_CR
+            })
+        );
+
+        // Add configs for pxETH registry
+        registryConfigs.push(
+            RegistryConfig({
+                token: pxETH,
+                oracle: pxETH_Oracle,
+                oracleData: pxETH_OracleData,
+                collateralizationRate: pxETH_CR
+            })
+        );
+
+        // Add configs for weETH registry
+        registryConfigs.push(
+            RegistryConfig({
+                token: weETH,
+                oracle: weETH_Oracle,
+                oracleData: weETH_OracleData,
+                collateralizationRate: weETH_CR
+            })
+        );
+
+        // Add configs for ezETH registry
+        registryConfigs.push(
+            RegistryConfig({
+                token: ezETH,
+                oracle: ezETH_Oracle,
+                oracleData: ezETH_OracleData,
+                collateralizationRate: ezETH_CR
+            })
+        );
+
+        // Add configs for LBTC registry
+        registryConfigs.push(
+            RegistryConfig({
+                token: LBTC,
+                oracle: LBTC_Oracle,
+                oracleData: LBTC_OracleData,
+                collateralizationRate: LBTC_CR
+            })
+        );
+
+        // Add configs for eBTC registry
+        registryConfigs.push(
+            RegistryConfig({
+                token: eBTC,
+                oracle: eBTC_Oracle,
+                oracleData: eBTC_OracleData,
+                collateralizationRate: eBTC_CR
             })
         );
     }

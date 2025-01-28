@@ -4,6 +4,10 @@ out = "out"
 libs = ["lib"]
 ffi = true
 fs_permissions = [{ access = "read-write", path = "./" }]
+cbor_metadata = true
+
+[etherscan]
+unknown_chain = { key = "${TENDERLY_ACCESS_KEY}", chain = 1, url = "${TENDERLY_VIRTUAL_TESTNET_RPC_URL}/verify/etherscan" }
 
 
 [fuzz]
