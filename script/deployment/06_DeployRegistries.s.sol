@@ -127,6 +127,12 @@ contract DeployRegistries is Script, Base {
     bytes internal eBTC_OracleData = bytes("");
     uint256 internal eBTC_CR = 50_000;
 
+    //stETH
+    address internal stETH = 0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84;
+    address internal stETH_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
+    bytes internal stETH_OracleData = bytes("");
+    uint256 internal stETH_CR = 50_000;
+
     constructor() {
         // Add configs for USDC registry
         registryConfigs.push(
@@ -255,6 +261,24 @@ contract DeployRegistries is Script, Base {
                 oracle: eBTC_Oracle,
                 oracleData: eBTC_OracleData,
                 collateralizationRate: eBTC_CR
+            })
+        );
+
+        registryConfigs.push(
+            RegistryConfig({
+                token: pufETH,
+                oracle: pufETH_Oracle,
+                oracleData: pufETH_OracleData,
+                collateralizationRate: pufETH_CR
+            })
+        );
+
+        registryConfigs.push(
+            RegistryConfig({
+                token: stETH,
+                oracle: stETH_Oracle,
+                oracleData: stETH_OracleData,
+                collateralizationRate: stETH_CR
             })
         );
     }
