@@ -27,7 +27,7 @@ contract DeployManagerContainer is Script, Base {
     address internal MANAGER = deployments.readAddress(".MANAGER");
 
     // Salt for deterministic deployment using Create2
-    bytes32 internal salt = "0x";
+    bytes32 internal salt = 0xf39fd6e51aad88f6f4ce6ab8827279cfffb922666978a73df67a30de23180000;
 
     function run() external broadcast returns (ManagerContainer managerContainer) {
         // Deploy ManagerContainer Contract

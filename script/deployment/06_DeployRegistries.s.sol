@@ -49,6 +49,12 @@ contract DeployRegistries is Script, Base {
     bytes internal USDC_OracleData = bytes("");
     uint256 internal USDC_CR = 50_000;
 
+    // pufETH
+    address internal pufETH = 0xD9A442856C234a39a81a089C06451EBAa4306a72;
+    address internal pufETH_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
+    bytes internal pufETH_OracleData = bytes("");
+    uint256 internal pufETH_CR = 50_000;
+
     // USDT
     address internal USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
     address internal USDT_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;

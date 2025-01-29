@@ -28,7 +28,7 @@ contract DeployReceiptToken is Script, Base {
     address internal MANAGER_CONTAINER = deployments.readAddress(".MANAGER_CONTAINER");
 
     // Salt for deterministic deployment using Create2
-    bytes32 internal salt = "0x";
+    bytes32 internal salt = 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266cb1f22cd85632872361d0020;
 
     function run() external broadcast returns (ReceiptTokenFactory receiptTokenFactory, ReceiptToken receiptToken) {
         // Validate interface

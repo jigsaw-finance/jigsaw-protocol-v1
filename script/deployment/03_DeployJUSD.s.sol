@@ -25,7 +25,7 @@ contract DeployJUSD is Script, Base {
     address internal MANAGER_CONTAINER = deployments.readAddress(".MANAGER_CONTAINER");
 
     // Salt for deterministic deployment using Create2
-    bytes32 internal salt = "0x";
+    bytes32 internal salt = 0xf39fd6e51aad88f6f4ce6ab8827279cfffb9226616199199005ff9a04a010020;
 
     function run() external broadcast returns (JigsawUSD jUSD) {
         // Validate interface
