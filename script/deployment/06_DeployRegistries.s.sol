@@ -122,12 +122,44 @@ contract DeployRegistries is Script, Base {
     uint256 internal LBTC_CR = 50_000;
 
     // eBTC
-    address internal eBTC = 0x657e8C867D8B37dCC18fA4Caead9C45EB088C642;
-    address internal eBTC_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
-    bytes internal eBTC_OracleData = bytes("");
-    uint256 internal eBTC_CR = 50_000;
+    //    address internal eBTC = 0x657e8C867D8B37dCC18fA4Caead9C45EB088C642;
+    //    address internal eBTC_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
+    //    bytes internal eBTC_OracleData = bytes("");
+    //    uint256 internal eBTC_CR = 50_000;
+
+    // sUSDe
+    address internal sUSDe = 0x9D39A5DE30e57443BfF2A8307A4256c8797A3497;
+    address internal sUSDe_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
+    bytes internal sUSDe_OracleData = bytes("");
+    uint256 internal sUSDe_CR = 80_000;
+
+    // rUSDe
+    address internal rUSD = 0x09D4214C03D01F49544C0448DBE3A27f768F2b34;
+    address internal rUSD_Oracle = 0xfD3e0cEe740271f070607aEddd0Bf4Cf99C92204;
+    bytes internal rUSD_OracleData = bytes("");
+    uint256 internal rUSD_CR = 90_000;
 
     constructor() {
+        // Add configs for sUSDe registry
+        registryConfigs.push(
+            RegistryConfig({
+                token: sUSDe,
+                oracle: sUSDe_Oracle,
+                oracleData: sUSDe_OracleData,
+                collateralizationRate: sUSDe_CR
+            })
+        );
+
+        // Add configs for rUSDe registry
+        registryConfigs.push(
+            RegistryConfig({
+                token: rUSD,
+                oracle: rUSD_Oracle,
+                oracleData: rUSD_OracleData,
+                collateralizationRate: rUSD_CR
+            })
+        );
+
         // Add configs for USDC registry
         registryConfigs.push(
             RegistryConfig({
@@ -249,14 +281,14 @@ contract DeployRegistries is Script, Base {
         );
 
         // Add configs for eBTC registry
-        registryConfigs.push(
-            RegistryConfig({
-                token: eBTC,
-                oracle: eBTC_Oracle,
-                oracleData: eBTC_OracleData,
-                collateralizationRate: eBTC_CR
-            })
-        );
+//        registryConfigs.push(
+//            RegistryConfig({
+//                token: eBTC,
+//                oracle: eBTC_Oracle,
+//                oracleData: eBTC_OracleData,
+//                collateralizationRate: eBTC_CR
+//            })
+//        );
 
         registryConfigs.push(
             RegistryConfig({
