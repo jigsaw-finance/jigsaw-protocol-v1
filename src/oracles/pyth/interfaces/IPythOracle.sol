@@ -28,13 +28,23 @@ interface IPythOracle is IOracle {
      */
     event AgeUpdated(uint256 oldValue, uint256 newValue);
 
+    /**
+     * @notice Emitted when the confidence percentage for the price is updated.
+     *
+     * @dev Provides details about the previous and updated confidence percentage values.
+     *
+     * @param oldValue The previous confidence percentage value of the oracle.
+     * @param newValue The updated confidence percentage value of the oracle.
+     */
+    event ConfidencePercentageUpdated(uint256 oldValue, uint256 newValue);
+
     // -- Errors --
 
     /**
-     * @notice Thrown when Pyth oracle returns a negative price.
-     * @dev Negative prices are not valid for the standard token price feeds.
+     * @notice Thrown when Pyth oracle returns an invalid price.
+     * @dev Invalid prices are not valid for the standard token price feeds.
      */
-    error NegativeOraclePrice();
+    error InvalidOraclePrice();
 
     /**
      * @notice Thrown when Pyth price exponent is positive
@@ -55,6 +65,13 @@ interface IPythOracle is IOracle {
      */
     error InvalidAge();
 
+    /**
+     * @notice Thrown when an invalid confidence percentage value is provided.
+     * @dev This error is used to signal that the confidence percentage value does not meet the required constraints
+     * @dev Must be > 0 and <= `CONFIDENCE_PRECISION`.
+     */
+    error InvalidConfidencePercentage();
+
     // -- State variables --
 
     /**
@@ -74,6 +91,22 @@ interface IPythOracle is IOracle {
      * @return The allowed age in seconds as a uint256 value.
      */
     function age() external view returns (uint256);
+
+    /**
+     * @notice The standard decimal precision (18) used for price normalization across the protocol.
+     */
+    function ALLOWED_DECIMALS() external view returns (uint256);
+
+    /**
+     * @notice The minimum confidence percentage.
+     * @dev Uses 2 decimal precision, where 1% is represented as 100.
+     */
+    function MIN_CONFIDENCE_PERCENTAGE() external view returns (uint256);
+
+    /**
+     * @notice The precision to be used for the confidence percentage to avoid precision loss.
+     */
+    function CONFIDENCE_PRECISION() external view returns (uint256);
 
     // -- Initialization --
 
@@ -103,5 +136,14 @@ interface IPythOracle is IOracle {
      */
     function updateAge(
         uint256 _newAge
+    ) external;
+
+    /**
+     * @notice Updates the confidence percentage to a new value.
+     * @dev Only the contract owner can call this function.
+     * @param _newConfidence The new confidence percentage to be set.
+     */
+    function updateConfidencePercentage(
+        uint256 _newConfidence
     ) external;
 }

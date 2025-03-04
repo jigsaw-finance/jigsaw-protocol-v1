@@ -4,6 +4,7 @@ out = "out"
 libs = ["lib"]
 ffi = true
 fs_permissions = [{ access = "read-write", path = "./" }]
+optimizer-runs = 100_000
 
 
 [fuzz]
