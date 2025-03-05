@@ -64,7 +64,9 @@ contract Holding is IHolding, Initializable, ReentrancyGuard {
      *
      * @param _managerContainer Contract that contains the address of the manager container contract.
      */
-    function init(address _managerContainer) public {
+    function init(
+        address _managerContainer
+    ) public {
         require(!_initialized, "3072");
         require(_managerContainer != address(0), "3065");
         _initialized = true;

@@ -111,9 +111,9 @@ contract Manager is IManager, Ownable2Step {
     /**
      * @notice The % amount a liquidator gets.
      * @dev Uses 3 decimal precision, where 1% is represented as 1000.
-     * @dev 10% is the default liquidator's bonus.
+     * @dev 8% is the default liquidator's bonus.
      */
-    uint256 public override liquidatorBonus = 1e4;
+    uint256 public override liquidatorBonus = 8e3;
 
     /**
      * @notice The max % amount the protocol gets when a self-liquidation operation happens.
@@ -154,9 +154,8 @@ contract Manager is IManager, Ownable2Step {
 
     /**
      * @notice Timelock amount in seconds for changing the oracle data.
-     * @dev The default timelock amount is 2 days.
      */
-    uint256 public override timelockAmount = 2 days;
+    uint256 public override timelockAmount = 1 hours;
 
     /**
      * @notice Variables required for delayed timelock update.
@@ -209,7 +208,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _contract The address of the contract to be whitelisted.
      */
-    function whitelistContract(address _contract) external override onlyOwner validAddress(_contract) {
+    function whitelistContract(
+        address _contract
+    ) external override onlyOwner validAddress(_contract) {
         require(!isContractWhitelisted[_contract], "3019");
         isContractWhitelisted[_contract] = true;
         emit ContractWhitelisted(_contract);
@@ -229,7 +230,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _contract The address of the contract to be blacklisted.
      */
-    function blacklistContract(address _contract) external override onlyOwner validAddress(_contract) {
+    function blacklistContract(
+        address _contract
+    ) external override onlyOwner validAddress(_contract) {
         require(isContractWhitelisted[_contract], "1000");
         isContractWhitelisted[_contract] = false;
         emit ContractBlacklisted(_contract);
@@ -249,7 +252,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _token The address of the token to be whitelisted.
      */
-    function whitelistToken(address _token) external override onlyOwner validAddress(_token) {
+    function whitelistToken(
+        address _token
+    ) external override onlyOwner validAddress(_token) {
         require(!isTokenWhitelisted[_token], "3019");
         isTokenWhitelisted[_token] = true;
         emit TokenWhitelisted(_token);
@@ -269,7 +274,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _token The address of the token to be whitelisted.
      */
-    function removeToken(address _token) external override onlyOwner validAddress(_token) {
+    function removeToken(
+        address _token
+    ) external override onlyOwner validAddress(_token) {
         require(isTokenWhitelisted[_token], "1000");
         isTokenWhitelisted[_token] = false;
         emit TokenRemoved(_token);
@@ -290,7 +297,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _token The address of the token to be added as non-withdrawable.
      */
-    function addNonWithdrawableToken(address _token) external override validAddress(_token) {
+    function addNonWithdrawableToken(
+        address _token
+    ) external override validAddress(_token) {
         require(owner() == msg.sender || strategyManager == msg.sender, "1000");
         require(!isTokenNonWithdrawable[_token], "3069");
         isTokenNonWithdrawable[_token] = true;
@@ -311,7 +320,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _token The address of the token to be removed as non-withdrawable.
      */
-    function removeNonWithdrawableToken(address _token) external override onlyOwner validAddress(_token) {
+    function removeNonWithdrawableToken(
+        address _token
+    ) external override onlyOwner validAddress(_token) {
         require(isTokenNonWithdrawable[_token], "3070");
         isTokenNonWithdrawable[_token] = false;
         emit NonWithdrawableTokenRemoved(_token);
@@ -348,7 +359,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _val The holding manager's address.
      */
-    function setHoldingManager(address _val) external override onlyOwner validAddress(_val) {
+    function setHoldingManager(
+        address _val
+    ) external override onlyOwner validAddress(_val) {
         require(holdingManager != _val, "3017");
         emit HoldingManagerUpdated(holdingManager, _val);
         holdingManager = _val;
@@ -368,7 +381,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _val The liquidation manager's address.
      */
-    function setLiquidationManager(address _val) external override onlyOwner validAddress(_val) {
+    function setLiquidationManager(
+        address _val
+    ) external override onlyOwner validAddress(_val) {
         require(liquidationManager != _val, "3017");
         emit LiquidationManagerUpdated(liquidationManager, _val);
         liquidationManager = _val;
@@ -388,7 +403,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _val The Stablecoin manager's address.
      */
-    function setStablecoinManager(address _val) external override onlyOwner validAddress(_val) {
+    function setStablecoinManager(
+        address _val
+    ) external override onlyOwner validAddress(_val) {
         require(stablesManager != _val, "3017");
         emit StablecoinManagerUpdated(stablesManager, _val);
         stablesManager = _val;
@@ -408,7 +425,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _val The Strategy manager's address.
      */
-    function setStrategyManager(address _val) external override onlyOwner validAddress(_val) {
+    function setStrategyManager(
+        address _val
+    ) external override onlyOwner validAddress(_val) {
         require(strategyManager != _val, "3017");
         emit StrategyManagerUpdated(strategyManager, _val);
         strategyManager = _val;
@@ -428,7 +447,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _val The Swap manager's address.
      */
-    function setSwapManager(address _val) external override onlyOwner validAddress(_val) {
+    function setSwapManager(
+        address _val
+    ) external override onlyOwner validAddress(_val) {
         require(swapManager != _val, "3017");
         emit SwapManagerUpdated(swapManager, _val);
         swapManager = _val;
@@ -450,7 +471,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _val The new performance fee value.
      */
-    function setPerformanceFee(uint256 _val) external override onlyOwner validAmount(_val) {
+    function setPerformanceFee(
+        uint256 _val
+    ) external override onlyOwner validAmount(_val) {
         require(_val < OperationsLib.FEE_FACTOR, "3018");
         emit PerformanceFeeUpdated(performanceFee, _val);
         performanceFee = _val;
@@ -472,7 +495,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _val The new withdrawal fee value.
      */
-    function setWithdrawalFee(uint256 _val) external override onlyOwner {
+    function setWithdrawalFee(
+        uint256 _val
+    ) external override onlyOwner {
         require(withdrawalFee != _val, "3017");
         require(_val <= OperationsLib.FEE_FACTOR, "2066");
         emit WithdrawalFeeUpdated(withdrawalFee, _val);
@@ -496,7 +521,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _val The new value.
      */
-    function setLiquidatorBonus(uint256 _val) external override onlyOwner {
+    function setLiquidatorBonus(
+        uint256 _val
+    ) external override onlyOwner {
         require(_val <= PRECISION, "3066");
         emit LiquidatorBonusUpdated(liquidatorBonus, _val);
         liquidatorBonus = _val;
@@ -520,7 +547,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _val The new value.
      */
-    function setSelfLiquidationFee(uint256 _val) external override onlyOwner {
+    function setSelfLiquidationFee(
+        uint256 _val
+    ) external override onlyOwner {
         require(_val <= PRECISION, "3066");
         emit SelfLiquidationFeeUpdated(selfLiquidationFee, _val);
         selfLiquidationFee = _val;
@@ -541,7 +570,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _val The new fee address.
      */
-    function setFeeAddress(address _val) external override onlyOwner validAddress(_val) {
+    function setFeeAddress(
+        address _val
+    ) external override onlyOwner validAddress(_val) {
         require(feeAddress != _val, "3017");
         emit FeeAddressUpdated(feeAddress, _val);
         feeAddress = _val;
@@ -561,7 +592,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _factory Receipt token factory's address.
      */
-    function setReceiptTokenFactory(address _factory) external override onlyOwner validAddress(_factory) {
+    function setReceiptTokenFactory(
+        address _factory
+    ) external override onlyOwner validAddress(_factory) {
         require(receiptTokenFactory != _factory, "3017");
         emit ReceiptTokenFactoryUpdated(receiptTokenFactory, _factory);
         receiptTokenFactory = _factory;
@@ -583,7 +616,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _oracle Liquidity gauge factory's address.
      */
-    function requestNewJUsdOracle(address _oracle) external override onlyOwner {
+    function requestNewJUsdOracle(
+        address _oracle
+    ) external override onlyOwner {
         require(!_isActiveChange, "1000");
         _isActiveChange = true;
         _newOracle = _oracle;
@@ -631,7 +666,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _newOracleData New data used for jUSD's oracle data.
      */
-    function setJUsdOracleData(bytes calldata _newOracleData) external override onlyOwner {
+    function setJUsdOracleData(
+        bytes calldata _newOracleData
+    ) external override onlyOwner {
         require(keccak256(oracleData) != keccak256(_newOracleData), "3017");
         emit OracleDataUpdated(oracleData, _newOracleData);
         oracleData = _newOracleData;
@@ -656,7 +693,9 @@ contract Manager is IManager, Ownable2Step {
      *
      * @param _newVal The new timelock value in seconds.
      */
-    function requestTimelockAmountChange(uint256 _newVal) external override onlyOwner {
+    function requestTimelockAmountChange(
+        uint256 _newVal
+    ) external override onlyOwner {
         require(!_isActiveChange, "1000");
         require(_oldTimelock == 0, "2100");
         require(_newVal != 0, "2001");
@@ -726,7 +765,9 @@ contract Manager is IManager, Ownable2Step {
      * @dev Modifier to check if the address is valid (not zero address).
      * @param _address being checked.
      */
-    modifier validAddress(address _address) {
+    modifier validAddress(
+        address _address
+    ) {
         require(_address != address(0), "3000");
         _;
     }
@@ -735,7 +776,9 @@ contract Manager is IManager, Ownable2Step {
      * @dev Modifier to check if the amount is valid (greater than zero).
      * @param _amount being checked.
      */
-    modifier validAmount(uint256 _amount) {
+    modifier validAmount(
+        uint256 _amount
+    ) {
         require(_amount > 0, "2001");
         _;
     }

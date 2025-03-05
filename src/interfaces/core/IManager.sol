@@ -177,25 +177,33 @@ interface IManager {
      * @notice Returns true/false for contracts' whitelist status.
      * @param _contract The address of the contract.
      */
-    function isContractWhitelisted(address _contract) external view returns (bool);
+    function isContractWhitelisted(
+        address _contract
+    ) external view returns (bool);
 
     /**
      * @notice Returns true if token is whitelisted.
      * @param _token The address of the token.
      */
-    function isTokenWhitelisted(address _token) external view returns (bool);
+    function isTokenWhitelisted(
+        address _token
+    ) external view returns (bool);
 
     /**
      * @notice Returns true if the token cannot be withdrawn from a holding.
      * @param _token The address of the token.
      */
-    function isTokenNonWithdrawable(address _token) external view returns (bool);
+    function isTokenNonWithdrawable(
+        address _token
+    ) external view returns (bool);
 
     /**
      * @notice Returns true if caller is allowed invoker.
      * @param _invoker The address of the invoker.
      */
-    function allowedInvokers(address _invoker) external view returns (bool);
+    function allowedInvokers(
+        address _invoker
+    ) external view returns (bool);
 
     // -- Essential tokens --
 
@@ -303,7 +311,6 @@ interface IManager {
 
     /**
      * @notice Timelock amount in seconds for changing the oracle data.
-     * @dev The default timelock amount is 2 days.
      */
     function timelockAmount() external view returns (uint256);
 
@@ -323,7 +330,9 @@ interface IManager {
      *
      * @param _contract The address of the contract to be whitelisted.
      */
-    function whitelistContract(address _contract) external;
+    function whitelistContract(
+        address _contract
+    ) external;
 
     /**
      * @notice Blacklists a contract.
@@ -339,7 +348,9 @@ interface IManager {
      *
      * @param _contract The address of the contract to be blacklisted.
      */
-    function blacklistContract(address _contract) external;
+    function blacklistContract(
+        address _contract
+    ) external;
 
     /**
      * @notice Whitelists a token.
@@ -355,7 +366,9 @@ interface IManager {
      *
      * @param _token The address of the token to be whitelisted.
      */
-    function whitelistToken(address _token) external;
+    function whitelistToken(
+        address _token
+    ) external;
 
     /**
      * @notice Removes a token from whitelist.
@@ -371,7 +384,9 @@ interface IManager {
      *
      * @param _token The address of the token to be whitelisted.
      */
-    function removeToken(address _token) external;
+    function removeToken(
+        address _token
+    ) external;
 
     /**
      * @notice Registers the `_token` as non-withdrawable.
@@ -388,7 +403,9 @@ interface IManager {
      *
      * @param _token The address of the token to be added as non-withdrawable.
      */
-    function addNonWithdrawableToken(address _token) external;
+    function addNonWithdrawableToken(
+        address _token
+    ) external;
 
     /**
      * @notice Unregisters the `_token` as non-withdrawable.
@@ -404,7 +421,9 @@ interface IManager {
      *
      * @param _token The address of the token to be removed as non-withdrawable.
      */
-    function removeNonWithdrawableToken(address _token) external;
+    function removeNonWithdrawableToken(
+        address _token
+    ) external;
 
     /**
      * @notice Sets invoker as allowed or forbidden.
@@ -434,7 +453,9 @@ interface IManager {
      *
      * @param _val The holding manager's address.
      */
-    function setHoldingManager(address _val) external;
+    function setHoldingManager(
+        address _val
+    ) external;
 
     /**
      * @notice Sets the Liquidation Manager Contract's address.
@@ -450,7 +471,9 @@ interface IManager {
      *
      * @param _val The liquidation manager's address.
      */
-    function setLiquidationManager(address _val) external;
+    function setLiquidationManager(
+        address _val
+    ) external;
 
     /**
      * @notice Sets the Stablecoin Manager Contract's address.
@@ -466,7 +489,9 @@ interface IManager {
      *
      * @param _val The Stablecoin manager's address.
      */
-    function setStablecoinManager(address _val) external;
+    function setStablecoinManager(
+        address _val
+    ) external;
 
     /**
      * @notice Sets the Strategy Manager Contract's address.
@@ -482,7 +507,9 @@ interface IManager {
      *
      * @param _val The Strategy manager's address.
      */
-    function setStrategyManager(address _val) external;
+    function setStrategyManager(
+        address _val
+    ) external;
 
     /**
      * @notice Sets the Swap Manager Contract's address.
@@ -498,7 +525,9 @@ interface IManager {
      *
      * @param _val The Swap manager's address.
      */
-    function setSwapManager(address _val) external;
+    function setSwapManager(
+        address _val
+    ) external;
 
     /**
      * @notice Sets the performance fee.
@@ -516,7 +545,9 @@ interface IManager {
      *
      * @param _val The new performance fee value.
      */
-    function setPerformanceFee(uint256 _val) external;
+    function setPerformanceFee(
+        uint256 _val
+    ) external;
 
     /**
      * @notice Sets the withdrawal fee.
@@ -534,7 +565,9 @@ interface IManager {
      *
      * @param _val The new withdrawal fee value.
      */
-    function setWithdrawalFee(uint256 _val) external;
+    function setWithdrawalFee(
+        uint256 _val
+    ) external;
 
     /**
      * @notice Sets the liquidator bonus.
@@ -553,7 +586,9 @@ interface IManager {
      *
      * @param _val The new value.
      */
-    function setLiquidatorBonus(uint256 _val) external;
+    function setLiquidatorBonus(
+        uint256 _val
+    ) external;
 
     /**
      * @notice Sets the self-liquidation fee.
@@ -572,7 +607,9 @@ interface IManager {
      *
      * @param _val The new value.
      */
-    function setSelfLiquidationFee(uint256 _val) external;
+    function setSelfLiquidationFee(
+        uint256 _val
+    ) external;
 
     /**
      * @notice Sets the global fee address.
@@ -588,7 +625,9 @@ interface IManager {
      *
      * @param _val The new fee address.
      */
-    function setFeeAddress(address _val) external;
+    function setFeeAddress(
+        address _val
+    ) external;
 
     /**
      * @notice Sets the receipt token factory's address.
@@ -604,7 +643,9 @@ interface IManager {
      *
      * @param _factory Receipt token factory's address.
      */
-    function setReceiptTokenFactory(address _factory) external;
+    function setReceiptTokenFactory(
+        address _factory
+    ) external;
 
     /**
      * @notice Registers jUSD's oracle change request.
@@ -622,7 +663,9 @@ interface IManager {
      *
      * @param _oracle Liquidity gauge factory's address.
      */
-    function requestNewJUsdOracle(address _oracle) external;
+    function requestNewJUsdOracle(
+        address _oracle
+    ) external;
 
     /**
      * @notice Updates jUSD's oracle.
@@ -656,7 +699,9 @@ interface IManager {
      *
      * @param _newOracleData New data used for jUSD's oracle data.
      */
-    function setJUsdOracleData(bytes calldata _newOracleData) external;
+    function setJUsdOracleData(
+        bytes calldata _newOracleData
+    ) external;
 
     /**
      * @notice Registers timelock change request.
@@ -677,7 +722,9 @@ interface IManager {
      *
      * @param _newVal The new timelock value in seconds.
      */
-    function requestTimelockAmountChange(uint256 _newVal) external;
+    function requestTimelockAmountChange(
+        uint256 _newVal
+    ) external;
 
     /**
      * @notice Updates the timelock amount.

@@ -1,4 +1,4 @@
-# Jigsaw lite
+# Jigsaw Protocol v1
 
 <p align="center">
   <img src="https://github.com/jigsaw-finance/jigsaw-lite/assets/102415071/894b1ec7-dcbd-4b2d-ac5d-0a9d0df26313" alt="jigsaw 2"><br>
@@ -11,18 +11,24 @@
   <img alt="GitHub commit activity (branch)" src="https://img.shields.io/github/commit-activity/m/jigsaw-finance/jigsaw-lite">
 </p>
 
- 
 [foundry]: https://getfoundry.sh/
 [foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
 
 ## Overview
 
-Jigsaw is a CDP-based stablecoin protocol that brings full flexibility and composability to your collateral through the concept of “dynamic collateral”. 
-Jigsaw leverages crypto’s unique permissionless composability to enable dynamic collateral in a fully non-custodial way. Dynamic collateral is the missing piece of DeFi for unlocking unparalleled flexibility and capital efficiency by boosting your yield.
+Jigsaw is a **Collateralized Debt Position (CDP)-based stablecoin protocol** designed to maximize **capital efficiency** through a novel concept called **dynamic collateral**.
 
-At Jigsaw, dynamic collateral is more than just flexible asset management; it's about redefining what it means to harness the power of your assets in DeFi.
+Unlike traditional CDP systems that lock up assets in a static manner, **Jigsaw enables collateral to remain active** within the DeFi ecosystem, allowing users to earn yield while maintaining collateralized positions. This unlocks unprecedented **flexibility** and **efficiency**, making Jigsaw a powerful tool for DeFi users and liquidity providers.
 
-For further details, please consult the [documentation](https://jigsaw.gitbook.io/jigsaw-protocol).
+For further details, consult the [Gitbook](https://jigsaw.gitbook.io/jigsaw-protocol) and [Wiki](https://github.com/jigsaw-finance/jigsaw-protocol-v1/wiki).
+
+## Key Features
+
+- **Dynamic Collateral:** Utilize assets as collateral without sacrificing yield potential.
+- **Non-Custodial & Permissionless:** No intermediaries, complete user control.
+- **Enhanced Capital Efficiency:** Keep your collateral productive while maintaining debt positions.
+- **Seamless Composability:** Integrates with major DeFi protocols.
+- **Secure & Audited:** Reviewed by top-tier security firms (see [Audit Reports](#audit-reports)).
 
 ## Setup
 
@@ -32,7 +38,7 @@ Project was built using [Foundry](https://book.getfoundry.sh/). Refer to install
 
 ```sh
 git clone git@github.com:jigsaw-finance/jigsaw-protocol-v1.git
-cd jigsaw-lite
+cd jigsaw-protocol-v1
 forge install
 ```
 
@@ -42,16 +48,16 @@ To make it easier to perform some tasks within the repo, a few commands are avai
 
 ### Build Commands
 
-| Command         | Action                                           |
-| --------------- | ------------------------------------------------ |
-| `clean-all`     | Description                                      |
-| `install`       | Install the Modules                              |
-| `update`        | Update Dependencies                              |
-| `build`         | Build                                            |
-| `format`        | Format code                                      |
-| `remap`         | Update remappings.txt                            |
-| `clean`         | Clean artifacts, caches                          |
-| `docs`           | Generate documentation for Solidity source files |
+| Command     | Action                                           |
+| ----------- | ------------------------------------------------ |
+| `clean-all` | Description                                      |
+| `install`   | Install the Modules                              |
+| `update`    | Update Dependencies                              |
+| `build`     | Build                                            |
+| `format`    | Format code                                      |
+| `remap`     | Update remappings.txt                            |
+| `clean`     | Clean artifacts, caches                          |
+| `docs`      | Generate documentation for Solidity source files |
 
 ### Test Commands
 
@@ -64,15 +70,25 @@ Specific tests can be run using `forge test` conventions, specified in more deta
 
 ### Deploy Commands
 
-// -- TBU --
+| Command                   | Description                                           |
+| ------------------------- | ----------------------------------------------------- |
+| `deploy-genesisOracle`    | Deploy jUSD Genesis Oracle                            |
+| `deploy-manager`          | Deploy Manager Contract                               |
+| `deploy-managerContainer` | Deploy ManagerContainer Contract                      |
+| `deploy-jUSD`             | Deploy jUSD Contract                                  |
+| `deploy-managers`         | Deploy various Manager Contracts                      |
+| `deploy-receipt`          | Deploy ReceiptTokenFactory & ReceiptToken             |
+| `deploy-pythOracle`       | Deploy PythOracle Factory & PythOracle Implementation |
+| `deploy-registries`       | Deploy SharesRegistry Contracts for each collateral   |
+| `deploy-uniswapV3Oracle`  | Deploy UniswapV3Oracle custom TWAP Oracle             |
 
 ## Audit Reports
 
 ### Upcoming Release
 
-| Auditor | Report Link                                                        |
-| ------- | ------------------------------------------------------------------ |
-| | |
+| Auditor | Report Link                                                      |
+| ------- | ---------------------------------------------------------------- |
+| Halborn | https://www.halborn.com/audits/jigsaw-finance/jigsaw-protocol-v1 |
 
 ---
 

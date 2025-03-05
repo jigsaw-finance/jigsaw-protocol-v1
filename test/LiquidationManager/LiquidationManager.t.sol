@@ -52,7 +52,9 @@ contract LiquidationManagerTest is Test {
     }
 
     // Tests setting liquidator bonus from non-Manager's address
-    function test_setLiquidatorBonus_when_unauthorized(address _caller) public {
+    function test_setLiquidatorBonus_when_unauthorized(
+        address _caller
+    ) public {
         uint256 prevBonus = liquidationManager.liquidatorBonus();
         vm.assume(_caller != address(manager));
         vm.startPrank(_caller, _caller);
@@ -64,7 +66,9 @@ contract LiquidationManagerTest is Test {
     }
 
     // Tests setting liquidator bonus from Manager's address
-    function test_setLiquidatorBonus_when_authorized(uint256 _amount) public {
+    function test_setLiquidatorBonus_when_authorized(
+        uint256 _amount
+    ) public {
         uint256 liqP = liquidationManager.LIQUIDATION_PRECISION();
 
         vm.startPrank(address(manager), address(manager));
@@ -83,7 +87,9 @@ contract LiquidationManagerTest is Test {
     }
 
     // Tests the liquidator bonus setting in a real-world scenario via the Manager Contract
-    function test_setLiquidatorBonus_when_fromManager(uint256 _amount) public {
+    function test_setLiquidatorBonus_when_fromManager(
+        uint256 _amount
+    ) public {
         vm.assume(_amount < liquidationManager.LIQUIDATION_PRECISION());
 
         vm.expectEmit();
@@ -96,7 +102,9 @@ contract LiquidationManagerTest is Test {
     }
 
     // Tests setting SL fee from non-Manager's address
-    function test_setSelfLiquidationFee_when_unauthorized(address _caller) public {
+    function test_setSelfLiquidationFee_when_unauthorized(
+        address _caller
+    ) public {
         uint256 prevFee = liquidationManager.selfLiquidationFee();
         vm.assume(_caller != address(manager));
         vm.startPrank(_caller, _caller);
@@ -108,7 +116,9 @@ contract LiquidationManagerTest is Test {
     }
 
     // Tests setting liquidator bonus from Manager's address
-    function test_setSelfLiquidationFee_when_authorized(uint256 _amount) public {
+    function test_setSelfLiquidationFee_when_authorized(
+        uint256 _amount
+    ) public {
         uint256 liqP = liquidationManager.LIQUIDATION_PRECISION();
 
         vm.startPrank(address(manager), address(manager));
@@ -127,7 +137,9 @@ contract LiquidationManagerTest is Test {
     }
 
     // Tests the liquidator bonus setting in a real-world scenario via the Manager Contract
-    function test_setSelfLiquidationFee_when_fromManager(uint256 _amount) public {
+    function test_setSelfLiquidationFee_when_fromManager(
+        uint256 _amount
+    ) public {
         vm.assume(_amount < liquidationManager.LIQUIDATION_PRECISION());
 
         vm.expectEmit();
@@ -140,7 +152,9 @@ contract LiquidationManagerTest is Test {
     }
 
     // Tests setting contract paused from non-Owner's address
-    function test_setPaused_when_unauthorized(address _caller) public {
+    function test_setPaused_when_unauthorized(
+        address _caller
+    ) public {
         vm.assume(_caller != liquidationManager.owner());
         vm.startPrank(_caller, _caller);
         vm.expectRevert();

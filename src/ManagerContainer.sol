@@ -48,7 +48,9 @@ contract ManagerContainer is IManagerContainer, Ownable2Step {
      *
      * @param _newManager The new address of the Manager contract.
      */
-    function updateManager(address _newManager) external override onlyOwner {
+    function updateManager(
+        address _newManager
+    ) external override onlyOwner {
         require(_newManager != address(0), "3003");
         require(_newManager != manager, "3062");
         emit ManagerUpdated(manager, _newManager);

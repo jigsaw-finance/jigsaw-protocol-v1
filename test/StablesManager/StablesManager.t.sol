@@ -44,7 +44,9 @@ contract StablesManagerTest is BasicContractsFixture {
     }
 
     // Tests setting contract paused from non-Owner's address
-    function test_setPaused_when_unauthorized(address _caller) public {
+    function test_setPaused_when_unauthorized(
+        address _caller
+    ) public {
         vm.assume(_caller != stablesManager.owner());
         vm.prank(_caller, _caller);
         vm.expectRevert();
@@ -64,7 +66,9 @@ contract StablesManagerTest is BasicContractsFixture {
     }
 
     // Tests if registerOrUpdateShareRegistry reverts correctly when caller is unauthorized
-    function test_registerOrUpdateShareRegistry_when_unauthorized(address _caller) public {
+    function test_registerOrUpdateShareRegistry_when_unauthorized(
+        address _caller
+    ) public {
         vm.assume(_caller != stablesManager.owner());
         vm.prank(_caller, _caller);
         vm.expectRevert();
@@ -140,7 +144,9 @@ contract StablesManagerTest is BasicContractsFixture {
     }
 
     // Tests if isSolvent works correctly when borrowed 0
-    function test_isSolvent_when_noDebt(address _user) public {
+    function test_isSolvent_when_noDebt(
+        address _user
+    ) public {
         vm.assume(_user != address(0));
         address holding = initiateUser(_user, address(usdc), 10);
         assertEq(stablesManager.isSolvent(address(usdc), holding), true, "isSolvent incorrect when no debt");
@@ -233,14 +239,18 @@ contract StablesManagerTest is BasicContractsFixture {
     }
 
     // Tests if addCollateral reverts correctly when caller is unauthorized
-    function test_addCollateral_when_unauthorized(address _caller) public onlyNotAllowed(_caller) {
+    function test_addCollateral_when_unauthorized(
+        address _caller
+    ) public onlyNotAllowed(_caller) {
         vm.prank(_caller, _caller);
         vm.expectRevert(bytes("1000"));
         stablesManager.addCollateral(address(1), address(2), 1);
     }
 
     // Tests if addCollateral reverts correctly when registry inactive
-    function test_addCollateral_when_registryInactive(uint256 _callerId) public {
+    function test_addCollateral_when_registryInactive(
+        uint256 _callerId
+    ) public {
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
 
         vm.prank(stablesManager.owner(), stablesManager.owner());
@@ -252,14 +262,18 @@ contract StablesManagerTest is BasicContractsFixture {
     }
 
     // Tests if removeCollateral reverts correctly when caller is unauthorized
-    function test_removeCollateral_when_unauthorized(address _caller) public onlyNotAllowed(_caller) {
+    function test_removeCollateral_when_unauthorized(
+        address _caller
+    ) public onlyNotAllowed(_caller) {
         vm.prank(_caller, _caller);
         vm.expectRevert(bytes("1000"));
         stablesManager.removeCollateral(address(1), address(2), 1);
     }
 
     // Tests if removeCollateral reverts correctly when contract is paused
-    function test_removeCollateral_when_paused(uint256 _callerId) public {
+    function test_removeCollateral_when_paused(
+        uint256 _callerId
+    ) public {
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
 
         vm.prank(stablesManager.owner(), stablesManager.owner());
@@ -283,7 +297,9 @@ contract StablesManagerTest is BasicContractsFixture {
     }
 
     // Tests if removeCollateral reverts correctly when registry is inactive
-    function test_removeCollateral_when_registryInactive(uint256 _callerId) public {
+    function test_removeCollateral_when_registryInactive(
+        uint256 _callerId
+    ) public {
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
 
         vm.prank(stablesManager.owner(), stablesManager.owner());
@@ -351,7 +367,9 @@ contract StablesManagerTest is BasicContractsFixture {
     }
 
     // Tests if forceRemoveCollateral reverts correctly when contract is paused
-    function test_forceRemoveCollateral_when_paused(address _caller) public {
+    function test_forceRemoveCollateral_when_paused(
+        address _caller
+    ) public {
         vm.prank(stablesManager.owner(), stablesManager.owner());
         stablesManager.pause();
 
@@ -361,7 +379,9 @@ contract StablesManagerTest is BasicContractsFixture {
     }
 
     // Tests if forceRemoveCollateral reverts correctly when registry is inexistent
-    function test_forceRemoveCollateral_when_registryInexistent(address _token) public {
+    function test_forceRemoveCollateral_when_registryInexistent(
+        address _token
+    ) public {
         (, address d) = stablesManager.shareRegistryInfo(_token);
         vm.assume(d == address(0));
 
@@ -371,7 +391,9 @@ contract StablesManagerTest is BasicContractsFixture {
     }
 
     // Tests if forceRemoveCollateral reverts correctly when caller is unauthorized
-    function test_forceRemoveCollateral_when_unauthorized(address _caller) public {
+    function test_forceRemoveCollateral_when_unauthorized(
+        address _caller
+    ) public {
         vm.assume(_caller != manager.liquidationManager());
 
         vm.expectRevert(bytes("1000"));
@@ -414,14 +436,18 @@ contract StablesManagerTest is BasicContractsFixture {
     }
 
     // Tests if borrow reverts correctly when caller is unauthorized
-    function test_borrow_when_unauthorized(address _caller) public onlyNotAllowed(_caller) {
+    function test_borrow_when_unauthorized(
+        address _caller
+    ) public onlyNotAllowed(_caller) {
         vm.prank(_caller, _caller);
         vm.expectRevert(bytes("1000"));
         stablesManager.borrow(address(1), address(2), 1, true);
     }
 
     // Tests if borrow reverts correctly when contract is paused
-    function test_borrow_when_paused(uint256 _callerId) public {
+    function test_borrow_when_paused(
+        uint256 _callerId
+    ) public {
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
 
         vm.prank(stablesManager.owner(), stablesManager.owner());
@@ -433,7 +459,9 @@ contract StablesManagerTest is BasicContractsFixture {
     }
 
     // Tests if borrow reverts correctly when invalid amount
-    function test_borrow_when_invalidAmount(uint256 _callerId) public {
+    function test_borrow_when_invalidAmount(
+        uint256 _callerId
+    ) public {
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
 
         vm.prank(caller, caller);
@@ -442,7 +470,9 @@ contract StablesManagerTest is BasicContractsFixture {
     }
 
     // Tests if borrow reverts correctly when  registry is inactive
-    function test_borrow_when_registryInactive(uint256 _callerId) public {
+    function test_borrow_when_registryInactive(
+        uint256 _callerId
+    ) public {
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
 
         vm.prank(stablesManager.owner(), stablesManager.owner());
@@ -491,14 +521,18 @@ contract StablesManagerTest is BasicContractsFixture {
     }
 
     // Tests if repay reverts correctly when caller is unauthorized
-    function test_repay_when_unauthorized(address _caller) public onlyNotAllowed(_caller) {
+    function test_repay_when_unauthorized(
+        address _caller
+    ) public onlyNotAllowed(_caller) {
         vm.prank(_caller, _caller);
         vm.expectRevert(bytes("1000"));
         stablesManager.repay(address(1), address(2), 1, address(3));
     }
 
     // Tests if repay reverts correctly when contract is paused
-    function test_repay_when_paused(uint256 _callerId) public {
+    function test_repay_when_paused(
+        uint256 _callerId
+    ) public {
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
 
         vm.prank(stablesManager.owner(), stablesManager.owner());
@@ -510,7 +544,9 @@ contract StablesManagerTest is BasicContractsFixture {
     }
 
     // Tests if repay reverts correctly when  registry is inactive
-    function test_repay_when_registryInactive(uint256 _callerId) public {
+    function test_repay_when_registryInactive(
+        uint256 _callerId
+    ) public {
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
 
         vm.prank(stablesManager.owner(), stablesManager.owner());
@@ -522,7 +558,9 @@ contract StablesManagerTest is BasicContractsFixture {
     }
 
     // Tests if repay reverts correctly when no debt
-    function test_repay_when_noDebt(uint256 _callerId) public {
+    function test_repay_when_noDebt(
+        uint256 _callerId
+    ) public {
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
 
         vm.prank(caller, caller);
@@ -635,7 +673,9 @@ contract StablesManagerTest is BasicContractsFixture {
     }
     // Modifiers
 
-    modifier onlyNotAllowed(address _caller) {
+    modifier onlyNotAllowed(
+        address _caller
+    ) {
         vm.assume(_caller != address(0));
         for (uint256 i = 0; i < allowedCallers.length; i++) {
             vm.assume(_caller != allowedCallers[i]);

@@ -33,7 +33,9 @@ abstract contract StrategyBase is Ownable, ReentrancyGuard {
     /// @notice contract that contains the address of the manager contract
     IManagerContainer public managerContainer;
 
-    constructor(address _owner) Ownable(_owner) { }
+    constructor(
+        address _owner
+    ) Ownable(_owner) { }
 
     /// @notice save funds
     /// @param _token token address
@@ -100,12 +102,16 @@ abstract contract StrategyBase is Ownable, ReentrancyGuard {
         _;
     }
 
-    modifier onlyValidAmount(uint256 _amount) {
+    modifier onlyValidAmount(
+        uint256 _amount
+    ) {
         require(_amount > 0, "2001");
         _;
     }
 
-    modifier onlyValidAddress(address _addr) {
+    modifier onlyValidAddress(
+        address _addr
+    ) {
         require(_addr != address(0), "3000");
         _;
     }

@@ -80,14 +80,18 @@ interface ISharesRegistry {
      * @param _holding The address of the holding.
      * @return The borrowed amount.
      */
-    function borrowed(address _holding) external view returns (uint256);
+    function borrowed(
+        address _holding
+    ) external view returns (uint256);
 
     /**
      * @notice Returns holding's available collateral amount.
      * @param _holding The address of the holding.
      * @return The collateral amount.
      */
-    function collateral(address _holding) external view returns (uint256);
+    function collateral(
+        address _holding
+    ) external view returns (uint256);
 
     /**
      * @notice Returns the token address for which this registry was created.
@@ -195,7 +199,9 @@ interface ISharesRegistry {
      *
      * @param _newVal The new value.
      */
-    function setCollateralizationRate(uint256 _newVal) external;
+    function setCollateralizationRate(
+        uint256 _newVal
+    ) external;
 
     /**
      * @notice Requests a change for the oracle address.
@@ -215,7 +221,9 @@ interface ISharesRegistry {
      *
      * @param _oracle The new oracle address.
      */
-    function requestNewOracle(address _oracle) external;
+    function requestNewOracle(
+        address _oracle
+    ) external;
 
     /**
      * @notice Updates the oracle.
@@ -251,7 +259,9 @@ interface ISharesRegistry {
      *
      * @param _data The new oracle data.
      */
-    function requestNewOracleData(bytes calldata _data) external;
+    function requestNewOracleData(
+        bytes calldata _data
+    ) external;
 
     /**
      * @notice Updates the oracle data.
@@ -289,7 +299,9 @@ interface ISharesRegistry {
      *
      * @param _newVal The new value in seconds.
      */
-    function requestTimelockAmountChange(uint256 _newVal) external;
+    function requestTimelockAmountChange(
+        uint256 _newVal
+    ) external;
 
     /**
      * @notice Updates the timelock amount.

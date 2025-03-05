@@ -22,7 +22,9 @@ interface INonfungiblePositionManager {
     /// position
     /// @return tokensOwed0 The uncollected amount of token0 owed to the position as of the last computation
     /// @return tokensOwed1 The uncollected amount of token1 owed to the position as of the last computation
-    function positions(uint256 tokenId)
+    function positions(
+        uint256 tokenId
+    )
         external
         view
         returns (
@@ -62,10 +64,9 @@ interface INonfungiblePositionManager {
     /// @return liquidity The amount of liquidity for this position
     /// @return amount0 The amount of token0
     /// @return amount1 The amount of token1
-    function mint(MintParams calldata params)
-        external
-        payable
-        returns (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1);
+    function mint(
+        MintParams calldata params
+    ) external payable returns (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1);
 
     /// @notice Creates a new pool if it does not exist, then initializes if not initialized
     /// @dev This method can be bundled with others via IMulticall for the first action (e.g. mint) performed
@@ -100,8 +101,7 @@ interface INonfungiblePositionManager {
     /// deadline The time by which the transaction must be included to effect the change
     /// @return amount0 The amount of token0 accounted to the position's tokens owed
     /// @return amount1 The amount of token1 accounted to the position's tokens owed
-    function decreaseLiquidity(DecreaseLiquidityParams calldata params)
-        external
-        payable
-        returns (uint256 amount0, uint256 amount1);
+    function decreaseLiquidity(
+        DecreaseLiquidityParams calldata params
+    ) external payable returns (uint256 amount0, uint256 amount1);
 }

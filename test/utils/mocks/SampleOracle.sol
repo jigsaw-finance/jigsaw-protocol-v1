@@ -7,12 +7,15 @@ contract SampleOracle is IOracle {
     uint256 public someNo;
     uint256 public price;
     bool public updated = true;
+    address public underlying;
 
     constructor() {
         price = 1e18;
     }
 
-    function setPrice(uint256 _price) external {
+    function setPrice(
+        uint256 _price
+    ) external {
         price = _price;
     }
 
@@ -36,24 +39,17 @@ contract SampleOracle is IOracle {
         updated = false;
     }
 
-    function get(bytes calldata) external override returns (bool success, uint256 rate) {
-        someNo = 1; //to avoid "can be restricted to pure" compiler warning
-        return (true, price);
-    }
-
-    function peek(bytes calldata) external view override returns (bool success, uint256 rate) {
+    function peek(
+        bytes calldata
+    ) external view override returns (bool success, uint256 rate) {
         return (updated, price);
     }
 
-    function peekSpot(bytes calldata data) external view override returns (uint256 rate) 
+    function symbol() external view override returns (string memory) 
     // solhint-disable-next-line no-empty-blocks
     { }
 
-    function symbol(bytes calldata data) external view override returns (string memory) 
-    // solhint-disable-next-line no-empty-blocks
-    { }
-
-    function name(bytes calldata data) external view override returns (string memory) 
+    function name() external view override returns (string memory) 
     // solhint-disable-next-line no-empty-blocks
     { }
 }

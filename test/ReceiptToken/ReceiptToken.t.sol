@@ -16,11 +16,8 @@ contract ReceiptTokenTest is Test {
     address internal OWNER = vm.addr(uint256(keccak256(bytes("OWNER"))));
 
     function setUp() public {
-        receiptTokenFactory = new ReceiptTokenFactory(OWNER);
         receiptToken = new ReceiptToken();
-
-        vm.prank(OWNER);
-        receiptTokenFactory.setReceiptTokenReferenceImplementation(address(receiptToken));
+        receiptTokenFactory = new ReceiptTokenFactory(OWNER, address(receiptToken));
     }
 
     // Test if initialize function reverts correctly when __minter is set to address(0)
@@ -39,7 +36,9 @@ contract ReceiptTokenTest is Test {
     }
 
     // Test if setMinter function works correctly when authorized
-    function test_setMinter_when_authorized(address _minter) public {
+    function test_setMinter_when_authorized(
+        address _minter
+    ) public {
         vm.assume(_minter != address(0));
         address oldMinter = receiptToken.minter();
         vm.assume(_minter != oldMinter);

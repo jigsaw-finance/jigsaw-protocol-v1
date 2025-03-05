@@ -62,7 +62,9 @@ contract ManagerTest is BasicContractsFixture {
         manager.setLiquidatorBonus(PRECISION + 1000);
     }
 
-    function test_should_set_self_liquidation_fee(uint256 _amount) public {
+    function test_should_set_self_liquidation_fee(
+        uint256 _amount
+    ) public {
         vm.startPrank(OWNER, OWNER);
         uint256 invalidAmount = bound(_amount, manager.PRECISION() + 1, 1e60);
 

@@ -92,7 +92,9 @@ interface ISwapManager {
      *
      * @param _swapRouter Swap Router's new address.
      */
-    function setSwapRouter(address _swapRouter) external;
+    function setSwapRouter(
+        address _swapRouter
+    ) external;
 
     /**
      * @notice This struct stores temporary data required for a token swap

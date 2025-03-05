@@ -79,5 +79,7 @@ interface IReceiptToken is IERC20, IERC20Metadata, IERC20Errors {
      *
      * @param _minter The user to burn it from.
      */
-    function setMinter(address _minter) external;
+    function setMinter(
+        address _minter
+    ) external;
 }

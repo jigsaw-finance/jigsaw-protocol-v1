@@ -1,4 +1,4 @@
-pragma solidity 0.8.20;
+pragma solidity ^0.8.20;
 
 import "forge-std/console.sol";
 
@@ -138,17 +138,23 @@ contract StablesManagerInvariantTestHandler is CommonBase, StdCheats, StdUtils, 
         collateralDeposited[_user] += collateralAmount;
     }
 
-    function initializeUser(address _user) private {
+    function initializeUser(
+        address _user
+    ) private {
         vm.prank(_user, _user);
         userHolding[_user] = holdingManager.createHolding();
     }
 
-    function pickUpUser(uint256 _user_idx) public view returns (address) {
+    function pickUpUser(
+        uint256 _user_idx
+    ) public view returns (address) {
         _user_idx = _user_idx % USER_ADDRESSES.length;
         return USER_ADDRESSES[_user_idx];
     }
 
-    function pickUpUserFromBorrowers(uint256 _user_idx) public view returns (address) {
+    function pickUpUserFromBorrowers(
+        uint256 _user_idx
+    ) public view returns (address) {
         uint256 BorrowersNumber = borrowersSet.length();
         if (BorrowersNumber == 0) return address(0);
 

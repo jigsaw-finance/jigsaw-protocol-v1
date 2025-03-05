@@ -56,7 +56,9 @@ contract StrategyManagerTest is BasicContractsFixture {
     }
 
     // Tests setting contract paused from non-Owner's address
-    function test_setPaused_when_unauthorized(address _caller) public {
+    function test_setPaused_when_unauthorized(
+        address _caller
+    ) public {
         vm.assume(_caller != strategyManager.owner());
         vm.startPrank(_caller, _caller);
         vm.expectRevert();
@@ -76,7 +78,9 @@ contract StrategyManagerTest is BasicContractsFixture {
     }
 
     // Tests adding new strategy to the protocol when unauthorized
-    function test_addStrategy_when_unauthorized(address _caller) public {
+    function test_addStrategy_when_unauthorized(
+        address _caller
+    ) public {
         address strategy = address(uint160(uint256(keccak256("random address"))));
         vm.assume(_caller != strategyManager.owner());
         vm.prank(_caller, _caller);
@@ -125,7 +129,9 @@ contract StrategyManagerTest is BasicContractsFixture {
     }
 
     // Tests adding new strategy to the protocol when unauthorized
-    function test_updateStrategy_when_unauthorized(address _caller) public {
+    function test_updateStrategy_when_unauthorized(
+        address _caller
+    ) public {
         address strategy = address(uint160(uint256(keccak256("random address"))));
         IStrategyManager.StrategyInfo memory info;
 
@@ -238,7 +244,9 @@ contract StrategyManagerTest is BasicContractsFixture {
     }
 
     // Tests if invest function reverts correctly when token != _strategyStakingToken,
-    function test_invest_when_differentTokens(uint256 amount) public {
+    function test_invest_when_differentTokens(
+        uint256 amount
+    ) public {
         vm.assume(amount > 0 && amount < 1e20);
         address user = address(uint160(uint256(keccak256("random user"))));
         address token = address(weth);
@@ -251,7 +259,9 @@ contract StrategyManagerTest is BasicContractsFixture {
     }
 
     // Tests if invest function works correctly
-    function test_invest_when_authorized(uint256 amount) public {
+    function test_invest_when_authorized(
+        uint256 amount
+    ) public {
         vm.assume(amount > 0 && amount < 1e20);
         address user = address(uint160(uint256(keccak256("random user"))));
         address token = address(usdc);
@@ -280,7 +290,9 @@ contract StrategyManagerTest is BasicContractsFixture {
     }
 
     // Tests if invest function reverts correctly when strategy returns tokenOutAmount as 0
-    function test_invest_when_tokenOutAmount0(uint256 amount) public {
+    function test_invest_when_tokenOutAmount0(
+        uint256 amount
+    ) public {
         vm.assume(amount > 0 && amount < 1e20);
         address user = address(uint160(uint256(keccak256("random user"))));
         address token = address(weth);
@@ -502,7 +514,9 @@ contract StrategyManagerTest is BasicContractsFixture {
     }
 
     // Tests if claimInvestment reverts correctly when caller is unauthorized
-    function test_claimInvestment_when_unauthorized(address caller) public {
+    function test_claimInvestment_when_unauthorized(
+        address caller
+    ) public {
         address holding = address(0);
         address strategy = address(strategyWithoutRewardsMock);
         uint256 shares = 0;
@@ -549,7 +563,9 @@ contract StrategyManagerTest is BasicContractsFixture {
     }
 
     // Tests if claimInvestment reverts correctly when invalid holding
-    function test_claimInvestment_when_notHolding(address holding) public {
+    function test_claimInvestment_when_notHolding(
+        address holding
+    ) public {
         address strategy = address(strategyWithoutRewardsMock);
         uint256 shares = 1;
         address asset = address(0);
@@ -775,7 +791,9 @@ contract StrategyManagerTest is BasicContractsFixture {
     }
 
     // Tests if invokeHolding reverts correctly when unauthorized
-    function test_invokeHolding_when_unauthorized(address _caller) public {
+    function test_invokeHolding_when_unauthorized(
+        address _caller
+    ) public {
         address holding = address(uint160(uint256(keccak256("random holding"))));
         address callableContract = address(uint160(uint256(keccak256("random contract"))));
 
@@ -785,7 +803,9 @@ contract StrategyManagerTest is BasicContractsFixture {
     }
 
     // Tests if invokeHolding works correctly when authorized
-    function test_invokeHolding_when_authorized(address _caller) public {
+    function test_invokeHolding_when_authorized(
+        address _caller
+    ) public {
         vm.assume(_caller != address(0));
         address holding = initiateUser(address(1), address(usdc), 10);
         address callableContract = address(usdc);
@@ -800,7 +820,9 @@ contract StrategyManagerTest is BasicContractsFixture {
     }
 
     // Tests if invokeApprove reverts correctly when unauthorized
-    function test_invokeApprove_when_unauthorized(address _caller) public {
+    function test_invokeApprove_when_unauthorized(
+        address _caller
+    ) public {
         address holding = address(uint160(uint256(keccak256("random holding"))));
         address token = address(uint160(uint256(keccak256("random token"))));
         address spender = address(uint160(uint256(keccak256("random spender"))));
@@ -812,7 +834,9 @@ contract StrategyManagerTest is BasicContractsFixture {
     }
 
     // Tests if invokeApprove works correctly when authorized
-    function test_invokeApprove_when_authorized(address _caller) public {
+    function test_invokeApprove_when_authorized(
+        address _caller
+    ) public {
         vm.assume(_caller != address(0));
         address holding = initiateUser(address(1), address(usdc), 10);
         address token = address(usdc);
@@ -829,7 +853,9 @@ contract StrategyManagerTest is BasicContractsFixture {
     }
 
     // Tests if invokeTransferal reverts correctly when unauthorized
-    function test_invokeTransferal_when_unauthorized(address _caller) public {
+    function test_invokeTransferal_when_unauthorized(
+        address _caller
+    ) public {
         address holding = address(uint160(uint256(keccak256("random holding"))));
         address token = address(uint160(uint256(keccak256("random token"))));
         address to = address(uint160(uint256(keccak256("random to"))));
@@ -841,7 +867,9 @@ contract StrategyManagerTest is BasicContractsFixture {
     }
 
     // Tests if invokeTransferal works correctly when authorized
-    function test_invokeTransferal_when_authorized(address _caller) public {
+    function test_invokeTransferal_when_authorized(
+        address _caller
+    ) public {
         vm.assume(_caller != address(0));
         address holding = initiateUser(address(1), address(usdc), 10);
         address token = address(usdc);

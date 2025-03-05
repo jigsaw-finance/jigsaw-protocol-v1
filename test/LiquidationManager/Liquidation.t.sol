@@ -89,10 +89,9 @@ contract LiquidationTest is Test {
         registries[address(usdc)] = address(sharesRegistry);
         stablesManager.registerOrUpdateShareRegistry(address(sharesRegistry), address(usdc), true);
 
-        receiptTokenFactory = new ReceiptTokenFactory(address(this));
-        manager.setReceiptTokenFactory(address(receiptTokenFactory));
         receiptTokenReference = IReceiptToken(new ReceiptToken());
-        receiptTokenFactory.setReceiptTokenReferenceImplementation(address(receiptTokenReference));
+        receiptTokenFactory = new ReceiptTokenFactory(address(this), (address(receiptTokenReference)));
+        manager.setReceiptTokenFactory(address(receiptTokenFactory));
 
         strategyWithoutRewardsMock = new StrategyWithoutRewardsMock(
             address(managerContainer), address(usdc), address(usdc), address(0), "RUsdc-Mock", "RUSDCM"
@@ -102,7 +101,9 @@ contract LiquidationTest is Test {
 
     // Tests liquidation when the specified user has no holdings
     // Expects a revert with error "3002" during liquidation attempt
-    function test_liquidate_when_isNotHolding(address _fakeUser) public {
+    function test_liquidate_when_isNotHolding(
+        address _fakeUser
+    ) public {
         ILiquidationManager.LiquidateCalldata memory liquidateCalldata;
 
         vm.expectRevert(bytes("3002"));
@@ -522,7 +523,9 @@ contract LiquidationTest is Test {
     }
 
     // Tests if retrieve collateral function reverts correctly when strategy list is provided incorrectly
-    function test_liquidate_when_strategyListFormatError(uint256 _collateralAmount) public {
+    function test_liquidate_when_strategyListFormatError(
+        uint256 _collateralAmount
+    ) public {
         vm.assume(_collateralAmount > 1e18 && _collateralAmount <= 1000e18);
         TestTempData memory testData;
 

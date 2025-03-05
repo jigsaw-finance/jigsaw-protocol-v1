@@ -82,7 +82,9 @@ contract SharesRegistryTest is BasicContractsFixture {
     }
 
     // Tests if init fails correctly when _collateralizationRate is invalid
-    function test_init_when_invalidColRate(uint256 _colRate) public {
+    function test_init_when_invalidColRate(
+        uint256 _colRate
+    ) public {
         address owner = address(1);
         address container = address(managerContainer);
         address token = address(1);
@@ -102,14 +104,18 @@ contract SharesRegistryTest is BasicContractsFixture {
     }
 
     // Tests if requestNewOracle reverts correctly when caller is not authorized
-    function test_requestNewOracle_when_unauthorized(address _caller) public onlyNotOwner(_caller) {
+    function test_requestNewOracle_when_unauthorized(
+        address _caller
+    ) public onlyNotOwner(_caller) {
         vm.prank(_caller, _caller);
         vm.expectRevert();
         registry.requestNewOracle(address(2));
     }
 
     // Tests if requestNewOracle reverts correctly when oracle in active change
-    function test_requestNewOracle_when_inActiveChange(address _oracle) public {
+    function test_requestNewOracle_when_inActiveChange(
+        address _oracle
+    ) public {
         vm.assume(_oracle != address(0));
         vm.prank(registry.owner(), registry.owner());
         registry.requestNewOracle(_oracle);
@@ -120,7 +126,9 @@ contract SharesRegistryTest is BasicContractsFixture {
     }
 
     // Tests if requestNewOracle reverts correctly when time lock is in active change
-    function test_requestNewOracle_when_timelockInActiveChange(uint256 _newVal) public {
+    function test_requestNewOracle_when_timelockInActiveChange(
+        uint256 _newVal
+    ) public {
         vm.assume(_newVal != 0);
         vm.prank(registry.owner(), registry.owner());
         registry.requestTimelockAmountChange(_newVal);
@@ -139,7 +147,9 @@ contract SharesRegistryTest is BasicContractsFixture {
     }
 
     // Tests if requestNewOracle works correctly when authorized
-    function test_requestNewOracle_when_authorized(address _oracle) public {
+    function test_requestNewOracle_when_authorized(
+        address _oracle
+    ) public {
         vm.assume(_oracle != address(0));
         vm.prank(registry.owner(), registry.owner());
         vm.expectEmit();
@@ -162,7 +172,9 @@ contract SharesRegistryTest is BasicContractsFixture {
     }
 
     // Tests if setOracle reverts correctly when caller is not authorized
-    function test_setOracle_when_unauthorized(address _caller) public onlyNotOwner(_caller) {
+    function test_setOracle_when_unauthorized(
+        address _caller
+    ) public onlyNotOwner(_caller) {
         vm.prank(_caller, _caller);
         vm.expectRevert();
         registry.setOracle();
@@ -176,7 +188,9 @@ contract SharesRegistryTest is BasicContractsFixture {
     }
 
     // Tests if setOracle reverts correctly when setting before time lock expired
-    function test_setOracle_when_early(address _oracle) public {
+    function test_setOracle_when_early(
+        address _oracle
+    ) public {
         vm.assume(_oracle != address(0));
         vm.prank(registry.owner(), registry.owner());
         registry.requestNewOracle(_oracle);
@@ -187,7 +201,9 @@ contract SharesRegistryTest is BasicContractsFixture {
     }
 
     // Tests if setOracle works correctly when authorized
-    function test_setOracle_when_authorized(address _oracle) public {
+    function test_setOracle_when_authorized(
+        address _oracle
+    ) public {
         vm.assume(_oracle != address(0));
         vm.prank(registry.owner(), registry.owner());
         registry.requestNewOracle(_oracle);
@@ -203,14 +219,18 @@ contract SharesRegistryTest is BasicContractsFixture {
     }
 
     // Tests if requestTimelockAmountChange reverts correctly when caller is not authorized
-    function test_requestTimelockAmountChange_when_unauthorized(address _caller) public onlyNotOwner(_caller) {
+    function test_requestTimelockAmountChange_when_unauthorized(
+        address _caller
+    ) public onlyNotOwner(_caller) {
         vm.prank(_caller, _caller);
         vm.expectRevert();
         registry.requestTimelockAmountChange(1);
     }
 
     // Tests if requestTimelockAmountChange reverts correctly when timelock in active change
-    function test_requestTimelockAmountChange_when_inActiveChange(uint256 _newVal) public {
+    function test_requestTimelockAmountChange_when_inActiveChange(
+        uint256 _newVal
+    ) public {
         vm.assume(_newVal != 0);
         vm.prank(registry.owner(), registry.owner());
         registry.requestTimelockAmountChange(_newVal);
@@ -221,7 +241,9 @@ contract SharesRegistryTest is BasicContractsFixture {
     }
 
     // Tests if requestTimelockAmountChange reverts correctly when oracle is in active change
-    function test_requestTimelockAmountChange_when_oracleInActiveChange(uint256 _newVal) public {
+    function test_requestTimelockAmountChange_when_oracleInActiveChange(
+        uint256 _newVal
+    ) public {
         vm.assume(_newVal != 0);
 
         vm.prank(registry.owner(), registry.owner());
@@ -233,7 +255,9 @@ contract SharesRegistryTest is BasicContractsFixture {
     }
 
     // Tests if requestTimelockAmountChange reverts correctly when oracle data is in active change
-    function test_requestTimelockAmountChange_when_oracleDataInActiveChange(uint256 _newVal) public {
+    function test_requestTimelockAmountChange_when_oracleDataInActiveChange(
+        uint256 _newVal
+    ) public {
         vm.assume(_newVal != 0);
 
         vm.prank(registry.owner(), registry.owner());
@@ -252,7 +276,9 @@ contract SharesRegistryTest is BasicContractsFixture {
     }
 
     // Tests if requestTimelockAmountChange works correctly when authorized
-    function test_requestTimelockAmountChange_when_authorized(uint256 _newVal) public {
+    function test_requestTimelockAmountChange_when_authorized(
+        uint256 _newVal
+    ) public {
         vm.assume(_newVal != 0);
         uint256 oldLock = registry.timelockAmount();
         vm.expectEmit();
@@ -271,7 +297,9 @@ contract SharesRegistryTest is BasicContractsFixture {
     }
 
     // Tests if acceptTimelockAmountChange reverts correctly when caller is not authorized
-    function test_acceptTimelockAmountChange_when_unauthorized(address _caller) public onlyNotOwner(_caller) {
+    function test_acceptTimelockAmountChange_when_unauthorized(
+        address _caller
+    ) public onlyNotOwner(_caller) {
         vm.prank(_caller, _caller);
         vm.expectRevert();
         registry.acceptTimelockAmountChange();
@@ -295,14 +323,18 @@ contract SharesRegistryTest is BasicContractsFixture {
     }
 
     // Tests if setCollateralizationRate reverts correctly when caller is not authorized
-    function test_setCollateralizationRate_when_unauthorized(address _caller) public onlyNotOwner(_caller) {
+    function test_setCollateralizationRate_when_unauthorized(
+        address _caller
+    ) public onlyNotOwner(_caller) {
         vm.prank(_caller, _caller);
         vm.expectRevert();
         registry.setCollateralizationRate(1);
     }
 
     // Tests if setCollateralizationRate reverts correctly when invalid amount
-    function test_setCollateralizationRate_when_invalidAmount(uint256 _newVal) public {
+    function test_setCollateralizationRate_when_invalidAmount(
+        uint256 _newVal
+    ) public {
         // _newVal = bound(_newVal, 0, 20e3 - 1);
         vm.prank(registry.owner(), registry.owner());
 
@@ -318,7 +350,9 @@ contract SharesRegistryTest is BasicContractsFixture {
     }
 
     // Tests if setCollateralizationRate works correctly when authorized
-    function test_setCollateralizationRate_when_authorized(uint256 _newVal) public {
+    function test_setCollateralizationRate_when_authorized(
+        uint256 _newVal
+    ) public {
         _newVal = bound(_newVal, 20e3, 1e5);
         vm.expectEmit();
         emit CollateralizationRateUpdated(registry.collateralizationRate(), _newVal);
@@ -384,7 +418,9 @@ contract SharesRegistryTest is BasicContractsFixture {
         assertEq(registry.oracleData(), bytes("New Data"), "Wrong new oracle data");
     }
 
-    modifier onlyNotOwner(address _caller) {
+    modifier onlyNotOwner(
+        address _caller
+    ) {
         vm.assume(_caller != registry.owner());
         _;
     }

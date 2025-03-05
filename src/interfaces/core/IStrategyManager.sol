@@ -294,7 +294,9 @@ interface IStrategyManager is IStrategyManagerMin {
      * @notice Adds a new strategy to the whitelist.
      * @param _strategy strategy's address.
      */
-    function addStrategy(address _strategy) external;
+    function addStrategy(
+        address _strategy
+    ) external;
 
     /**
      * @notice Updates an existing strategy info.
@@ -320,7 +322,9 @@ interface IStrategyManager is IStrategyManagerMin {
      * @dev Should be only called off-chain as can be high gas consuming.
      * @param _holding address for which the strategies are requested.
      */
-    function getHoldingToStrategy(address _holding) external view returns (address[] memory);
+    function getHoldingToStrategy(
+        address _holding
+    ) external view returns (address[] memory);
 
     /**
      * @notice Contains details about a specific strategy, such as its performance fee, active status, and whitelisted

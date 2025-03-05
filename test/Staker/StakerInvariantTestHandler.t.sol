@@ -1,4 +1,4 @@
-pragma solidity 0.8.20;
+pragma solidity ^0.8.20;
 
 import "forge-std/console.sol";
 
@@ -97,7 +97,9 @@ contract StakerInvariantTestHandler is CommonBase, StdCheats, StdUtils {
 
     // Owner's handlers
 
-    function addRewards(uint256 _rewards) external {
+    function addRewards(
+        uint256 _rewards
+    ) external {
         _rewards = bound(_rewards, 1e18, 1000e18);
 
         if (investorsSet.length() == 0) return;
@@ -112,12 +114,16 @@ contract StakerInvariantTestHandler is CommonBase, StdCheats, StdUtils {
 
     // Utility functions
 
-    function pickUpUser(uint256 user_idx) public view returns (address) {
+    function pickUpUser(
+        uint256 user_idx
+    ) public view returns (address) {
         user_idx = user_idx % USER_ADDRESSES.length;
         return USER_ADDRESSES[user_idx];
     }
 
-    function pickUpUserFromInvestors(uint256 user_idx) public view returns (address) {
+    function pickUpUserFromInvestors(
+        uint256 user_idx
+    ) public view returns (address) {
         uint256 investorsNumber = investorsSet.length();
         if (investorsNumber == 0) return address(0);
 

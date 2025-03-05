@@ -34,7 +34,9 @@ import { SampleTokenERC20 } from "../utils/mocks/SampleTokenERC20.sol";
 import { StrategyWithoutRewardsMock } from "../utils/mocks/StrategyWithoutRewardsMock.sol";
 
 interface IUSDC is IERC20Metadata {
-    function balanceOf(address account) external view returns (uint256);
+    function balanceOf(
+        address account
+    ) external view returns (uint256);
     function mint(address to, uint256 amount) external;
     function configureMinter(address minter, uint256 minterAllowedAmount) external;
     function masterMinter() external view returns (address);
@@ -156,10 +158,9 @@ contract SelfLiquidationTest is Test {
         );
         stablesManager.registerOrUpdateShareRegistry(address(registries[USDT]), USDT, true);
 
-        receiptTokenFactory = new ReceiptTokenFactory(address(this));
-        manager.setReceiptTokenFactory(address(receiptTokenFactory));
         receiptTokenReference = IReceiptToken(new ReceiptToken());
-        receiptTokenFactory.setReceiptTokenReferenceImplementation(address(receiptTokenReference));
+        receiptTokenFactory = new ReceiptTokenFactory(address(this), address(receiptTokenReference));
+        manager.setReceiptTokenFactory(address(receiptTokenFactory));
 
         strategyWithoutRewardsMock = new StrategyWithoutRewardsMock(
             address(managerContainer), address(usdc), address(usdc), address(0), "RUsdc-Mock", "RUSDCM"
@@ -279,7 +280,9 @@ contract SelfLiquidationTest is Test {
 
     // This test evaluates the self-liquidation mechanism when {amountIn} is set too big, i.e.
     // {slippagePercentage} doesn't allow that big deviation
-    function test_selfLiquidate_when_amountInTooBig(uint256 _amount) public {
+    function test_selfLiquidate_when_amountInTooBig(
+        uint256 _amount
+    ) public {
         SelfLiquidationTestTempData memory testData;
         vm.assume(_amount > 0 && _amount < uniswapPoolCap);
 
@@ -316,7 +319,9 @@ contract SelfLiquidationTest is Test {
 
     // This test evaluates the self-liquidation mechanism when the required collateral exceeds the collateral
     // amount available in holding
-    function test_selfLiquidate_when_notEnoughAvailableCollateral(uint256 _amount) public {
+    function test_selfLiquidate_when_notEnoughAvailableCollateral(
+        uint256 _amount
+    ) public {
         SelfLiquidationTestTempData memory testData;
         vm.assume(_amount > 0 && _amount < uniswapPoolCap);
 
@@ -400,7 +405,9 @@ contract SelfLiquidationTest is Test {
     //      * without strategies
     //      * collateral is denominated in USDC
     //      * no jUsd in the Uniswap pool
-    function test_selfLiquidate_when_fullDebt_USDC_withoutStrategies_jUSDPoolEmpty(uint256 _amount) public {
+    function test_selfLiquidate_when_fullDebt_USDC_withoutStrategies_jUSDPoolEmpty(
+        uint256 _amount
+    ) public {
         SelfLiquidationTestTempData memory testData;
         vm.assume(_amount > 0 && _amount < uniswapPoolCap);
         testData.collateral = USDC;
@@ -436,7 +443,9 @@ contract SelfLiquidationTest is Test {
     //      * without strategies
     //      * collateral is denominated in USDT
     //      * no jUsd in the Uniswap pool
-    function test_selfLiquidate_when_fullDebt_USDT_withoutStrategies_jUSDPoolEmpty(uint256 _amount) public {
+    function test_selfLiquidate_when_fullDebt_USDT_withoutStrategies_jUSDPoolEmpty(
+        uint256 _amount
+    ) public {
         SelfLiquidationTestTempData memory testData;
         vm.assume(_amount > 0 && _amount < 100_000);
 
@@ -480,7 +489,9 @@ contract SelfLiquidationTest is Test {
     //      * without strategies
     //      * collateral is denominated in USDC
     //      * there is jUsd in the Uniswap pool
-    function test_selfLiquidate_when_fullDebt_USDC_withoutStrategies_jUSDPoolNotEmpty(uint256 _amount) public {
+    function test_selfLiquidate_when_fullDebt_USDC_withoutStrategies_jUSDPoolNotEmpty(
+        uint256 _amount
+    ) public {
         SelfLiquidationTestTempData memory testData;
         vm.assume(_amount > 0 && _amount < uniswapPoolCap);
 
@@ -545,7 +556,9 @@ contract SelfLiquidationTest is Test {
     //      * without strategies
     //      * collateral is denominated in USDT
     //      * there is jUsd in the Uniswap pool
-    function test_selfLiquidate_when_fullDebt_USDT_withoutStrategies_jUSDPoolNotEmpty(uint256 _amount) public {
+    function test_selfLiquidate_when_fullDebt_USDT_withoutStrategies_jUSDPoolNotEmpty(
+        uint256 _amount
+    ) public {
         SelfLiquidationTestTempData memory testData;
         vm.assume(_amount > 0 && _amount < 100_000);
 
@@ -612,7 +625,9 @@ contract SelfLiquidationTest is Test {
     //      * with strategies
     //      * collateral is denominated in USDC
     //      * there is jUsd in the Uniswap pool
-    function test_selfLiquidate_when_fullDebt_USDC_withStrategies_jUSDPoolNotEmpty(uint256 _amount) public {
+    function test_selfLiquidate_when_fullDebt_USDC_withStrategies_jUSDPoolNotEmpty(
+        uint256 _amount
+    ) public {
         SelfLiquidationTestTempData memory testData;
         vm.assume(_amount > 0 && _amount < uniswapPoolCap);
 
@@ -690,7 +705,9 @@ contract SelfLiquidationTest is Test {
     //      affecting holding's collateral
     //      * collateral is denominated in USDC
     //      * there is jUsd in the Uniswap pool
-    function test_selfLiquidate_when_halfDebt_USDC_withStrategiesOnly_jUSDPoolNotEmpty(uint256 _amount) public {
+    function test_selfLiquidate_when_halfDebt_USDC_withStrategiesOnly_jUSDPoolNotEmpty(
+        uint256 _amount
+    ) public {
         SelfLiquidationTestTempData memory testData;
         vm.assume(_amount > 0 && _amount < uniswapPoolCap);
 
@@ -870,9 +887,9 @@ contract SelfLiquidationTest is Test {
     //      * collateral is denominated in USDT
     //      * there is jUsd in the Uniswap pool
     //      * {slippagePercentage} and {amountInMaximum} are set higher
-    function test_selfLiquidate_when_fullDebt_USDT_withoutStrategies_jUSDPoolNotEmpty_highSlippage(uint256 _amount)
-        public
-    {
+    function test_selfLiquidate_when_fullDebt_USDT_withoutStrategies_jUSDPoolNotEmpty_highSlippage(
+        uint256 _amount
+    ) public {
         SelfLiquidationTestTempData memory testData;
         vm.assume(_amount > 0 && _amount < 100_000);
 

@@ -24,7 +24,9 @@ import { INonfungiblePositionManager } from "../utils/INonfungiblePositionManage
 import { SampleOracle } from "../utils/mocks/SampleOracle.sol";
 
 interface IUSDC is IERC20Metadata {
-    function balanceOf(address account) external view returns (uint256);
+    function balanceOf(
+        address account
+    ) external view returns (uint256);
     function mint(address to, uint256 amount) external;
     function configureMinter(address minter, uint256 minterAllowedAmount) external;
     function masterMinter() external view returns (address);
@@ -133,7 +135,9 @@ contract SwapManagerTest is Test {
     }
 
     // Tests if the function refunds user when there's more funds sent than needed
-    function test_swapExactOutputMultihop_when_refund(uint256 _amountOut) public {
+    function test_swapExactOutputMultihop_when_refund(
+        uint256 _amountOut
+    ) public {
         (address pool,) = _createJUsdUsdcPool();
         address tokenOut = address(jUsd);
         vm.assume(_amountOut > 1e6 && _amountOut < IERC20Metadata(tokenOut).balanceOf(pool) / 10);
@@ -169,7 +173,9 @@ contract SwapManagerTest is Test {
     }
 
     // Tests if the function works correctly when no refund is needed
-    function test_swapExactOutputMultihop_when_NoRefund(uint256 _amountOut) public {
+    function test_swapExactOutputMultihop_when_NoRefund(
+        uint256 _amountOut
+    ) public {
         (address pool,) = _createJUsdUsdcPool();
         address tokenOut = address(jUsd);
         vm.assume(_amountOut > 1e6 && _amountOut < IERC20Metadata(tokenOut).balanceOf(pool) / 10);

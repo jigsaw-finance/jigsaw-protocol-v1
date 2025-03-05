@@ -418,7 +418,9 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
      * @param _token address for which the registry is being fetched.
      * @return The Shares Registry Contract.
      */
-    function _getRegistry(address _token) private view returns (ISharesRegistry) {
+    function _getRegistry(
+        address _token
+    ) private view returns (ISharesRegistry) {
         return ISharesRegistry(shareRegistryInfo[_token].deployedAt);
     }
 

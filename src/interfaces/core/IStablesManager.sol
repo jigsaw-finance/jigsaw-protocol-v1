@@ -63,14 +63,18 @@ interface IStablesManager {
      * @param _token The address of the token.
      * @return The total borrowed amount.
      */
-    function totalBorrowed(address _token) external view returns (uint256);
+    function totalBorrowed(
+        address _token
+    ) external view returns (uint256);
 
     /**
      * @notice Returns config info for each token.
      * @param _token The address of the token to get registry info for.
      * @return Boolean indicating if the registry is active and the address of the registry.
      */
-    function shareRegistryInfo(address _token) external view returns (bool, address);
+    function shareRegistryInfo(
+        address _token
+    ) external view returns (bool, address);
 
     /**
      * @notice Returns protocol's stablecoin address.

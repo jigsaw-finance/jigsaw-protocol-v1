@@ -105,14 +105,9 @@ contract Staker is IStaker, Ownable2Step, ReentrancyGuard, Pausable {
      *
      * @param _amount to deposit.
      */
-    function deposit(uint256 _amount)
-        external
-        override
-        nonReentrant
-        whenNotPaused
-        updateReward(msg.sender)
-        validAmount(_amount)
-    {
+    function deposit(
+        uint256 _amount
+    ) external override nonReentrant whenNotPaused updateReward(msg.sender) validAmount(_amount) {
         uint256 rewardBalance = IERC20(rewardToken).balanceOf(address(this));
         require(rewardBalance != 0, "3090");
 
@@ -131,14 +126,9 @@ contract Staker is IStaker, Ownable2Step, ReentrancyGuard, Pausable {
      *
      * @param _amount to withdraw.
      */
-    function withdraw(uint256 _amount)
-        public
-        override
-        nonReentrant
-        whenNotPaused
-        updateReward(msg.sender)
-        validAmount(_amount)
-    {
+    function withdraw(
+        uint256 _amount
+    ) public override nonReentrant whenNotPaused updateReward(msg.sender) validAmount(_amount) {
         _totalSupply -= _amount;
         _balances[msg.sender] = _balances[msg.sender] - _amount;
         emit Withdrawn({ user: msg.sender, amount: _amount });
@@ -176,7 +166,9 @@ contract Staker is IStaker, Ownable2Step, ReentrancyGuard, Pausable {
      * @notice Sets the duration of each reward period.
      * @param _rewardsDuration The new rewards duration.
      */
-    function setRewardsDuration(uint256 _rewardsDuration) external onlyOwner {
+    function setRewardsDuration(
+        uint256 _rewardsDuration
+    ) external onlyOwner {
         require(block.timestamp > periodFinish, "3087");
         rewardsDuration = _rewardsDuration;
         emit RewardsDurationUpdated(rewardsDuration);
@@ -252,7 +244,9 @@ contract Staker is IStaker, Ownable2Step, ReentrancyGuard, Pausable {
      * @notice Returns the total invested amount for an account.
      * @param _account The participant's address.
      */
-    function balanceOf(address _account) external view override returns (uint256) {
+    function balanceOf(
+        address _account
+    ) external view override returns (uint256) {
         return _balances[_account];
     }
 
@@ -279,7 +273,9 @@ contract Staker is IStaker, Ownable2Step, ReentrancyGuard, Pausable {
      * @notice Returns accrued rewards for an account.
      * @param _account The participant's address.
      */
-    function earned(address _account) public view override returns (uint256) {
+    function earned(
+        address _account
+    ) public view override returns (uint256) {
         return
             ((_balances[_account] * (rewardPerToken() - userRewardPerTokenPaid[_account])) / 1e18) + rewards[_account];
     }
@@ -297,7 +293,9 @@ contract Staker is IStaker, Ownable2Step, ReentrancyGuard, Pausable {
      * @notice Modifier to update the reward for a specified account.
      * @param account The account for which the reward needs to be updated.
      */
-    modifier updateReward(address account) {
+    modifier updateReward(
+        address account
+    ) {
         rewardPerTokenStored = rewardPerToken();
         lastUpdateTime = lastTimeRewardApplicable();
         if (account != address(0)) {
@@ -311,7 +309,9 @@ contract Staker is IStaker, Ownable2Step, ReentrancyGuard, Pausable {
      * @notice Modifier to check if the provided address is valid.
      * @param _address to be checked for validity.
      */
-    modifier validAddress(address _address) {
+    modifier validAddress(
+        address _address
+    ) {
         require(_address != address(0), "3000");
         _;
     }
@@ -320,7 +320,9 @@ contract Staker is IStaker, Ownable2Step, ReentrancyGuard, Pausable {
      * @notice Modifier to check if the provided amount is valid.
      * @param _amount to be checked for validity.
      */
-    modifier validAmount(uint256 _amount) {
+    modifier validAmount(
+        uint256 _amount
+    ) {
         require(_amount > 0, "2001");
         _;
     }

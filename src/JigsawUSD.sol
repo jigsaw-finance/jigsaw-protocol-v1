@@ -41,7 +41,7 @@ contract JigsawUSD is IJigsawUSD, ERC20, Ownable2Step, ERC20Permit {
     ) Ownable(_initialOwner) ERC20("Jigsaw USD", "jUSD") ERC20Permit("Jigsaw USD") {
         require(_managerContainer != address(0), "3065");
         managerContainer = IManagerContainer(_managerContainer);
-        mintLimit = 1e6 * (10 ** decimals()); // initial 1M limit
+        mintLimit = 15e6 * (10 ** decimals()); // initial 15M limit
     }
 
     // -- Owner specific methods --
@@ -59,7 +59,9 @@ contract JigsawUSD is IJigsawUSD, ERC20, Ownable2Step, ERC20Permit {
      * - `MintLimitUpdated` event indicating mint limit update operation.
      * @param _limit The new mint limit.
      */
-    function updateMintLimit(uint256 _limit) external override onlyOwner validAmount(_limit) {
+    function updateMintLimit(
+        uint256 _limit
+    ) external override onlyOwner validAmount(_limit) {
         emit MintLimitUpdated(mintLimit, _limit);
         mintLimit = _limit;
     }
@@ -94,7 +96,9 @@ contract JigsawUSD is IJigsawUSD, ERC20, Ownable2Step, ERC20Permit {
      *
      * @param _amount The amount of tokens to be burnt.
      */
-    function burn(uint256 _amount) external override validAmount(_amount) {
+    function burn(
+        uint256 _amount
+    ) external override validAmount(_amount) {
         _burn(msg.sender, _amount);
     }
 
@@ -119,7 +123,9 @@ contract JigsawUSD is IJigsawUSD, ERC20, Ownable2Step, ERC20Permit {
     /**
      * @notice Ensures that the value is greater than 0.
      */
-    modifier validAmount(uint256 _val) {
+    modifier validAmount(
+        uint256 _val
+    ) {
         require(_val > 0, "2001");
         _;
     }

@@ -80,13 +80,17 @@ interface IStaker {
      * @notice Mapping of user addresses to the amount of rewards already paid to them.
      * @param participant The address of the participant.
      */
-    function userRewardPerTokenPaid(address participant) external view returns (uint256);
+    function userRewardPerTokenPaid(
+        address participant
+    ) external view returns (uint256);
 
     /**
      * @notice Mapping of user addresses to their accrued rewards.
      * @param participant The address of the participant.
      */
-    function rewards(address participant) external view returns (uint256);
+    function rewards(
+        address participant
+    ) external view returns (uint256);
 
     /**
      * @notice Total supply limit of the staking token.
@@ -101,7 +105,9 @@ interface IStaker {
      *
      * @param _amount to deposit.
      */
-    function deposit(uint256 _amount) external;
+    function deposit(
+        uint256 _amount
+    ) external;
 
     /**
      * @notice Withdraws investment from staking.
@@ -109,7 +115,9 @@ interface IStaker {
      *
      * @param _amount to withdraw.
      */
-    function withdraw(uint256 _amount) external;
+    function withdraw(
+        uint256 _amount
+    ) external;
     /**
      * @notice Claims the rewards for the caller.
      * @dev This function allows the caller to claim their earned rewards.
@@ -127,7 +135,9 @@ interface IStaker {
      * @notice Sets the duration of each reward period.
      * @param _rewardsDuration The new rewards duration.
      */
-    function setRewardsDuration(uint256 _rewardsDuration) external;
+    function setRewardsDuration(
+        uint256 _rewardsDuration
+    ) external;
 
     /**
      * @notice Adds more rewards to the contract.
@@ -160,7 +170,9 @@ interface IStaker {
      * @notice Returns the total invested amount for an account.
      * @param _account The participant's address.
      */
-    function balanceOf(address _account) external view returns (uint256);
+    function balanceOf(
+        address _account
+    ) external view returns (uint256);
 
     /**
      * @notice Returns the last time rewards were applicable.
@@ -176,7 +188,9 @@ interface IStaker {
      * @notice Returns accrued rewards for an account.
      * @param _account The participant's address.
      */
-    function earned(address _account) external view returns (uint256);
+    function earned(
+        address _account
+    ) external view returns (uint256);
 
     /**
      * @notice Returns the reward amount for a specific time range.

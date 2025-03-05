@@ -45,7 +45,9 @@ contract HoldingTest is BasicContractsFixture {
     }
 
     // Tests if init works correctly when authorized
-    function test_init_when_authorized(address _randomContainer) public {
+    function test_init_when_authorized(
+        address _randomContainer
+    ) public {
         vm.assume(_randomContainer != address(0));
         Holding holding = new Holding();
         holding.init(address(_randomContainer));
@@ -53,7 +55,9 @@ contract HoldingTest is BasicContractsFixture {
     }
 
     // Tests if approve fails correctly when unauthorized
-    function test_approve_when_unauthorized(address _caller) public onlyNotAllowed(_caller) {
+    function test_approve_when_unauthorized(
+        address _caller
+    ) public onlyNotAllowed(_caller) {
         address to = address(uint160(uint256(keccak256("random to"))));
         Holding holding = createHolding();
 
@@ -77,7 +81,9 @@ contract HoldingTest is BasicContractsFixture {
     }
 
     // Tests if genericCall fails correctly when unauthorized
-    function test_genericCall_when_unauthorized(address _caller) public onlyNotAllowed(_caller) {
+    function test_genericCall_when_unauthorized(
+        address _caller
+    ) public onlyNotAllowed(_caller) {
         address to = address(uint160(uint256(keccak256("random to"))));
         Holding holding = createHolding();
 
@@ -105,7 +111,9 @@ contract HoldingTest is BasicContractsFixture {
     }
 
     // Tests if transfer fails correctly when unauthorized
-    function test_transfer_when_unauthorized(address _caller) public onlyNotAllowed(_caller) {
+    function test_transfer_when_unauthorized(
+        address _caller
+    ) public onlyNotAllowed(_caller) {
         address to = address(uint160(uint256(keccak256("random to"))));
         Holding holding = createHolding();
 
@@ -144,7 +152,9 @@ contract HoldingTest is BasicContractsFixture {
 
     // Modifiers
 
-    modifier onlyNotAllowed(address _caller) {
+    modifier onlyNotAllowed(
+        address _caller
+    ) {
         vm.assume(_caller != address(0));
         for (uint256 i = 0; i < allowedCallers.length; i++) {
             vm.assume(_caller != allowedCallers[i]);

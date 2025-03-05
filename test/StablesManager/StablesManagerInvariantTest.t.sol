@@ -1,12 +1,12 @@
-pragma solidity 0.8.20;
+pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
-import {BasicContractsFixture} from "../fixtures/BasicContractsFixture.t.sol";
-import {IHandler} from "./Handlers/IHandler.sol";
-import {StablesManagerInvariantTestHandler} from "./Handlers/StablesManagerInvariantTestHandler.t.sol";
-import {StablesManagerInvariantTestHandlerWithReverts} from
+import { BasicContractsFixture } from "../fixtures/BasicContractsFixture.t.sol";
+import { IHandler } from "./Handlers/IHandler.sol";
+import { StablesManagerInvariantTestHandler } from "./Handlers/StablesManagerInvariantTestHandler.t.sol";
+import { StablesManagerInvariantTestHandlerWithReverts } from
     "./Handlers/StablesManagerInvariantTestHandlerWithReverts.t.sol";
 
 /// @title StablesManagerInvariantTest
@@ -29,7 +29,9 @@ contract StablesManagerInvariantTest is Test, BasicContractsFixture {
 
         handler = WITH_REVERTS
             ? IHandler(
-                new StablesManagerInvariantTestHandlerWithReverts(stablesManager, holdingManager, registries[collateral], collateral)
+                new StablesManagerInvariantTestHandlerWithReverts(
+                    stablesManager, holdingManager, registries[collateral], collateral
+                )
             )
             : IHandler(
                 new StablesManagerInvariantTestHandler(stablesManager, holdingManager, registries[collateral], collateral)
@@ -67,10 +69,6 @@ contract StablesManagerInvariantTest is Test, BasicContractsFixture {
 
     // Test that jUSD's total supply is correct at all times
     function invariant_stablesManager_jUsdTotalSupply() public {
-        assertEq(
-            jUsd.totalSupply(),
-            handler.getTotalBorrowed(),
-            "Total supply in jUSD ERC20 contract is incorrect "
-        );
+        assertEq(jUsd.totalSupply(), handler.getTotalBorrowed(), "Total supply in jUSD ERC20 contract is incorrect ");
     }
 }

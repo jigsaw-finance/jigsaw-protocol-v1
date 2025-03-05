@@ -11,7 +11,9 @@ abstract contract Base is Script, ValidateInterface {
         vm.stopBroadcast();
     }
 
-    modifier broadcastFrom(uint256 from) {
+    modifier broadcastFrom(
+        uint256 from
+    ) {
         vm.startBroadcast(from);
         _;
         vm.stopBroadcast();

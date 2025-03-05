@@ -24,7 +24,9 @@ contract JigsawUsdTest is BasicContractsFixture {
         new JigsawUSD(address(this), address(0));
     }
 
-    function test_should_exceed_mint_limit_values(address user) public {
+    function test_should_exceed_mint_limit_values(
+        address user
+    ) public {
         vm.prank(OWNER);
         jUsd.updateMintLimit(10);
 
@@ -34,7 +36,9 @@ contract JigsawUsdTest is BasicContractsFixture {
         jUsd.mint(user, 100);
     }
 
-    function test_should_mint_and_burn(address user) public {
+    function test_should_mint_and_burn(
+        address user
+    ) public {
         vm.assume(user != address(0));
 
         address stablesManagerAddress = address(stablesManager);
@@ -45,7 +49,9 @@ contract JigsawUsdTest is BasicContractsFixture {
         jUsd.burn(100);
     }
 
-    function test_should_update_the_mint_limit(address user) public {
+    function test_should_update_the_mint_limit(
+        address user
+    ) public {
         vm.assume(user != OWNER);
 
         vm.expectRevert();

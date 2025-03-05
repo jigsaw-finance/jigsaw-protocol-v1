@@ -469,7 +469,9 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
      * @dev The value must be less than LIQUIDATION_PRECISION.
      * @param _val The new value for the liquidator bonus.
      */
-    function setLiquidatorBonus(uint256 _val) external override onlyAllowed {
+    function setLiquidatorBonus(
+        uint256 _val
+    ) external override onlyAllowed {
         require(_val < LIQUIDATION_PRECISION, "2001");
         liquidatorBonus = _val;
     }
@@ -479,7 +481,9 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
      * @dev The value must be less than LIQUIDATION_PRECISION.
      * @param _val The new value for the self-liquidation fee.
      */
-    function setSelfLiquidationFee(uint256 _val) external override onlyAllowed {
+    function setSelfLiquidationFee(
+        uint256 _val
+    ) external override onlyAllowed {
         require(_val < LIQUIDATION_PRECISION, "2001");
         selfLiquidationFee = _val;
     }
@@ -636,7 +640,9 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
      * @notice Modifier to ensure that the provided address is valid (not the zero address).
      * @param _address The address to validate
      */
-    modifier validAddress(address _address) {
+    modifier validAddress(
+        address _address
+    ) {
         require(_address != address(0), "3000");
         _;
     }
@@ -645,7 +651,9 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
      * @notice Modifier to ensure that the provided amount is valid (greater than zero).
      * @param _amount The amount to validate
      */
-    modifier validAmount(uint256 _amount) {
+    modifier validAmount(
+        uint256 _amount
+    ) {
         require(_amount > 0, "2001");
         _;
     }

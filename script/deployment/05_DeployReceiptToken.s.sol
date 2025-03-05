@@ -21,29 +21,29 @@ contract DeployReceiptToken is Script, Base {
 
     // Read config file
     string internal commonConfig = vm.readFile("./deployment-config/00_CommonConfig.json");
+    string internal deployments = vm.readFile("./deployments.json");
 
     // Get values from config
     address internal INITIAL_OWNER = commonConfig.readAddress(".INITIAL_OWNER");
-    address internal MANAGER_CONTAINER = commonConfig.readAddress(".MANAGER_CONTAINER");
+    address internal MANAGER_CONTAINER = deployments.readAddress(".MANAGER_CONTAINER");
+
+    // Salt for deterministic deployment using Create2
+    bytes32 internal salt = "0x";
 
     function run() external broadcast returns (ReceiptTokenFactory receiptTokenFactory, ReceiptToken receiptToken) {
         // Validate interface
         _validateInterface(ManagerContainer(MANAGER_CONTAINER));
 
-        // Get manager address from the MANAGER_CONTAINER
-        Manager manager = Manager(address(ManagerContainer(MANAGER_CONTAINER).manager()));
-
-        // Deploy ReceiptTokenFactory Contract
-        receiptTokenFactory = new ReceiptTokenFactory({ _initialOwner: INITIAL_OWNER });
-
         // Deploy ReceiptToken Contract
         receiptToken = new ReceiptToken();
 
-        // Set receipt token implementation
-        receiptTokenFactory.setReceiptTokenReferenceImplementation({ _referenceImplementation: address(receiptToken) });
+        // Deploy ReceiptTokenFactory Contract
+        receiptTokenFactory = new ReceiptTokenFactory{ salt: salt }({
+            _initialOwner: INITIAL_OWNER,
+            _referenceImplementation: address(receiptToken)
+        });
 
-        // Set receipt token factory in the Manager Contract
-        manager.setReceiptTokenFactory({ _factory: address(receiptTokenFactory) });
+        // @note call setReceiptTokenFactory on Manager Contract using multisig
 
         // Save addresses of all the deployed contracts to the deployments.json
         Strings.toHexString(uint160(address(receiptTokenFactory)), 20).write(

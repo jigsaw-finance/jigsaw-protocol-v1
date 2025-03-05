@@ -39,7 +39,9 @@ interface IJigsawUSD is IERC20 {
      * - `MintLimitUpdated` event indicating mint limit update operation.
      * @param _limit The new mint limit.
      */
-    function updateMintLimit(uint256 _limit) external;
+    function updateMintLimit(
+        uint256 _limit
+    ) external;
 
     /**
      * @notice Mints tokens.
@@ -66,7 +68,9 @@ interface IJigsawUSD is IERC20 {
      *
      * @param _amount The amount of tokens to be burnt.
      */
-    function burn(uint256 _amount) external;
+    function burn(
+        uint256 _amount
+    ) external;
 
     /**
      * @notice Burns tokens from an address.

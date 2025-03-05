@@ -1,4 +1,5 @@
 {
+  "JUSD_GENESIS_ORACLE": "",
   "MANAGER_CONTAINER": "",
   "MANAGER": "",
   "jUSD": "",
@@ -10,5 +11,8 @@
   "REGISTRY_USDC": "",
   "REGISTRY_WETH": "",
   "RECEIPT_TOKEN_FACTORY": "",
-  "RECEIPT_TOKEN_REFERENCE": ""
+  "RECEIPT_TOKEN_REFERENCE": "",
+  "PYTH_ORACLE_FACTORY": "",
+  "PYTH_ORACLE_REFERENCE": "",
+  "JUSD_uniswapV3Oracle": ""
 }

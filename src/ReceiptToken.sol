@@ -111,7 +111,9 @@ contract ReceiptToken is IReceiptToken, ERC20Upgradeable, OwnableUpgradeable, Re
      *
      * @param _minter The user to burn it from.
      */
-    function setMinter(address _minter) external override nonReentrant onlyMinterOrOwner {
+    function setMinter(
+        address _minter
+    ) external override nonReentrant onlyMinterOrOwner {
         require(_minter != minter, "3062");
         emit MinterUpdated({ oldMinter: minter, newMinter: _minter });
         minter = _minter;

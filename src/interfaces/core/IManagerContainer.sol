@@ -36,5 +36,7 @@ interface IManagerContainer {
      *
      * @param _newManager The new address of the Manager contract.
      */
-    function updateManager(address _newManager) external;
+    function updateManager(
+        address _newManager
+    ) external;
 }

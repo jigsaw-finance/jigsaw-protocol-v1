@@ -8,7 +8,9 @@ contract SimpleContract {
         return true;
     }
 
-    function shouldCreateHolding(address holdingManager) external returns (address) {
+    function shouldCreateHolding(
+        address holdingManager
+    ) external returns (address) {
         return IHoldingManager(holdingManager).createHolding();
     }
 }

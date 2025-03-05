@@ -3,6 +3,12 @@ pragma solidity ^0.8.20;
 
 interface IReceiptTokenFactory {
     /**
+     * @notice Emitted when ReceiptToken reference implementation is updated.
+     * @param newReceiptTokenImplementationAddress Address of the new Receipt Token implementation.
+     */
+    event ReceiptTokenImplementationUpdated(address indexed newReceiptTokenImplementationAddress);
+
+    /**
      * @notice Emitted when a new receipt token is created.
      *
      * @param newReceiptTokenAddress Address of the newly created receipt token.
@@ -18,7 +24,9 @@ interface IReceiptTokenFactory {
      * @notice Sets the reference implementation address for the receipt token.
      * @param _referenceImplementation Address of the new reference implementation contract.
      */
-    function setReceiptTokenReferenceImplementation(address _referenceImplementation) external;
+    function setReceiptTokenReferenceImplementation(
+        address _referenceImplementation
+    ) external;
 
     /**
      * @notice Creates a new receipt token by cloning the reference implementation.

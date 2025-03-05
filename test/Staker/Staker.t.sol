@@ -71,7 +71,9 @@ contract StakerTest is Test {
     }
 
     // Tests setting contract paused from non-Owner's address
-    function test_setPaused_when_unauthorized(address _caller) public {
+    function test_setPaused_when_unauthorized(
+        address _caller
+    ) public {
         vm.assume(_caller != staker.owner());
         vm.prank(_caller, _caller);
         vm.expectRevert();
@@ -91,7 +93,9 @@ contract StakerTest is Test {
     }
 
     // Tests if setRewardsDuration reverts correctly when caller is unauthorized
-    function test_setRewardsDuration_when_unauthorized(address _caller) public {
+    function test_setRewardsDuration_when_unauthorized(
+        address _caller
+    ) public {
         vm.assume(_caller != staker.owner());
         vm.prank(_caller, _caller);
         vm.expectRevert();
@@ -107,7 +111,9 @@ contract StakerTest is Test {
     }
 
     // Tests if setRewardsDuration works correctly when authorized
-    function test_setRewardsDuration_when_authorized(uint256 _amount) public {
+    function test_setRewardsDuration_when_authorized(
+        uint256 _amount
+    ) public {
         vm.warp(block.timestamp + staker.rewardsDuration() + 1);
         vm.startPrank(OWNER, OWNER);
         vm.expectEmit();
@@ -119,7 +125,9 @@ contract StakerTest is Test {
     }
 
     // Tests if addRewards reverts correctly when caller is unauthorized
-    function test_addRewards_when_unauthorized(address _caller) public {
+    function test_addRewards_when_unauthorized(
+        address _caller
+    ) public {
         vm.assume(_caller != staker.owner());
         vm.prank(_caller, _caller);
         vm.expectRevert();
@@ -149,7 +157,9 @@ contract StakerTest is Test {
     }
 
     // Tests if addRewards reverts correctly when _amount is small, which leads to rewardRate being 0
-    function test_addRewards_when_amountTooSmall(uint256 _amount) public {
+    function test_addRewards_when_amountTooSmall(
+        uint256 _amount
+    ) public {
         vm.assume(_amount != 0 && _amount / staker.rewardsDuration() == 0);
 
         mintRewardsAndApprove(OWNER, _amount);
@@ -160,7 +170,9 @@ contract StakerTest is Test {
     }
 
     // Tests if addRewards works correctly when block.timestamp >= periodFinish
-    function test_addRewards_when_periodFinished(uint256 _amount) public {
+    function test_addRewards_when_periodFinished(
+        uint256 _amount
+    ) public {
         vm.assume(_amount / staker.rewardsDuration() != 0);
         // We fast forward to the period when current reward distribution ends,
         // so we can test block.timestamp >= periodFinish branch
@@ -177,7 +189,9 @@ contract StakerTest is Test {
     }
 
     // Tests if addRewards works correctly when block.timestamp < periodFinish
-    function test_addRewards_when_periodNotFinished(uint256 _amount) public {
+    function test_addRewards_when_periodNotFinished(
+        uint256 _amount
+    ) public {
         vm.assume(_amount / staker.rewardsDuration() != 0);
 
         mintRewardsAndApprove(OWNER, _amount);
@@ -232,7 +246,9 @@ contract StakerTest is Test {
     }
 
     // Tests if rewardPerToken works correctly
-    function test_rewardPerToken_when_totalSupplyNot0(uint256 investment) public {
+    function test_rewardPerToken_when_totalSupplyNot0(
+        uint256 investment
+    ) public {
         vm.assume(investment != 0 && investment < 1e34);
         address investor = vm.addr(uint256(keccak256(bytes("Investor"))));
         deal(tokenIn, investor, investment);
@@ -259,7 +275,9 @@ contract StakerTest is Test {
     }
 
     // Tests if getRewardForDuration works correctly
-    function test_getRewardForDuration(uint256 _amount) public {
+    function test_getRewardForDuration(
+        uint256 _amount
+    ) public {
         vm.assume(_amount / staker.rewardsDuration() != 0);
         mintRewardsAndApprove(OWNER, _amount);
 
@@ -302,7 +320,9 @@ contract StakerTest is Test {
     }
 
     // Tests if deposit works correctly
-    function test_deposit_when_authorized(uint256 investment) public {
+    function test_deposit_when_authorized(
+        uint256 investment
+    ) public {
         vm.assume(investment != 0 && investment < 1e34);
         address investor = vm.addr(uint256(keccak256(bytes("Investor"))));
 
@@ -332,7 +352,9 @@ contract StakerTest is Test {
     }
 
     // Tests if withdraw works correctly when authorized
-    function test_withdraw_when_authorized(uint256 investment) public {
+    function test_withdraw_when_authorized(
+        uint256 investment
+    ) public {
         vm.assume(investment != 0 && investment < 1e34);
         address investor = vm.addr(uint256(keccak256(bytes("Investor"))));
 
@@ -373,7 +395,9 @@ contract StakerTest is Test {
     }
 
     // Tests if claimRewards fails if user has already withdrawn his investment
-    function test_claimRewards_when_investmentWithdrawn(uint256 investment) public {
+    function test_claimRewards_when_investmentWithdrawn(
+        uint256 investment
+    ) public {
         vm.assume(investment > 2 && investment < 1e25);
         address investor1 = vm.addr(uint256(keccak256(bytes("Investor1"))));
         address investor2 = vm.addr(uint256(keccak256(bytes("Investor2"))));
@@ -410,7 +434,9 @@ contract StakerTest is Test {
     }
 
     // Tests if claimRewards works correctly when authorized
-    function test_claimRewards_when_authorized(uint256 investment) public {
+    function test_claimRewards_when_authorized(
+        uint256 investment
+    ) public {
         vm.assume(investment != 0 && investment < 1e34);
         address investor = vm.addr(uint256(keccak256(bytes("Investor"))));
         uint256 stakerRewardBalance = 1e18;
@@ -447,7 +473,9 @@ contract StakerTest is Test {
     }
 
     // Tests if exit works correctly when authorized
-    function test_exit_when_authorized(uint256 investment) public {
+    function test_exit_when_authorized(
+        uint256 investment
+    ) public {
         vm.assume(investment != 0 && investment < 1e34);
         address investor = vm.addr(uint256(keccak256(bytes("Investor"))));
         uint256 stakerRewardBalance = 1e18;

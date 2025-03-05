@@ -13,7 +13,9 @@ import { IStrategy } from "../../../src/interfaces/core/IStrategy.sol";
 import { StrategyBase } from "../../../src/strategies/StrategyBase.sol";
 
 interface ITokenMock {
-    function getTokens(uint256 _val) external;
+    function getTokens(
+        uint256 _val
+    ) external;
 }
 
 contract StrategyWithRewardsMock is IStrategy, StrategyBase {

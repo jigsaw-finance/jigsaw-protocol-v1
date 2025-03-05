@@ -29,13 +29,21 @@ contract DeployManagers is Script, Base {
     // Read config files
     string internal commonConfig = vm.readFile("./deployment-config/00_CommonConfig.json");
     string internal managersConfig = vm.readFile("./deployment-config/03_ManagersConfig.json");
+    string internal deployments = vm.readFile("./deployments.json");
 
     // Get values from configs
     address internal INITIAL_OWNER = commonConfig.readAddress(".INITIAL_OWNER");
-    address internal MANAGER_CONTAINER = commonConfig.readAddress(".MANAGER_CONTAINER");
-    address internal JUSD = managersConfig.readAddress(".JUSD");
+    address internal MANAGER_CONTAINER = deployments.readAddress(".MANAGER_CONTAINER");
+    address internal JUSD = deployments.readAddress(".jUSD");
     address internal UNISWAP_FACTORY = managersConfig.readAddress(".UNISWAP_FACTORY");
     address internal UNISWAP_SWAP_ROUTER = managersConfig.readAddress(".UNISWAP_SWAP_ROUTER");
+
+    // Salts for deterministic deployments using Create2
+    bytes32 internal holdingManager_salt = "0x";
+    bytes32 internal liquidationManager_salt = "0x";
+    bytes32 internal stablesManager_salt = "0x";
+    bytes32 internal strategyManager_salt = "0x";
+    bytes32 internal swapManager_salt = "0x";
 
     function run()
         external
@@ -54,40 +62,40 @@ contract DeployManagers is Script, Base {
         _validateInterface(IUniswapV3Factory(UNISWAP_FACTORY));
         _validateInterface(ISwapRouter(UNISWAP_SWAP_ROUTER));
 
-        // Get manager address from the MANAGER_CONTAINER
-        Manager manager = Manager(address(ManagerContainer(MANAGER_CONTAINER).manager()));
-
         // Deploy HoldingManager Contract
-        holdingManager = new HoldingManager({ _initialOwner: INITIAL_OWNER, _managerContainer: MANAGER_CONTAINER });
-        // Save HoldingManager Contract to the Manager Contract
-        manager.setHoldingManager(address(holdingManager));
+        holdingManager = new HoldingManager{ salt: holdingManager_salt }({
+            _initialOwner: INITIAL_OWNER,
+            _managerContainer: MANAGER_CONTAINER
+        });
 
         // Deploy Liquidation Manager Contract
-        liquidationManager =
-            new LiquidationManager({ _initialOwner: INITIAL_OWNER, _managerContainer: MANAGER_CONTAINER });
-        // Save LiquidationManager Contract to the Manager Contract
-        manager.setLiquidationManager(address(liquidationManager));
+        liquidationManager = new LiquidationManager{ salt: liquidationManager_salt }({
+            _initialOwner: INITIAL_OWNER,
+            _managerContainer: MANAGER_CONTAINER
+        });
 
         // Deploy StablesManager Contract
-        stablesManager =
-            new StablesManager({ _initialOwner: INITIAL_OWNER, _managerContainer: MANAGER_CONTAINER, _jUSD: JUSD });
-        // Save StablesManager Contract to the Manager Contract
-        manager.setStablecoinManager(address(stablesManager));
+        stablesManager = new StablesManager{ salt: stablesManager_salt }({
+            _initialOwner: INITIAL_OWNER,
+            _managerContainer: MANAGER_CONTAINER,
+            _jUSD: JUSD
+        });
 
         // Deploy StrategyManager Contract
-        strategyManager = new StrategyManager({ _initialOwner: INITIAL_OWNER, _managerContainer: MANAGER_CONTAINER });
-        // Save StrategyManager Contract to the Manager Contract
-        manager.setStrategyManager(address(strategyManager));
+        strategyManager = new StrategyManager{ salt: strategyManager_salt }({
+            _initialOwner: INITIAL_OWNER,
+            _managerContainer: MANAGER_CONTAINER
+        });
 
         // Deploy SwapManager Contract
-        swapManager = new SwapManager({
+        swapManager = new SwapManager{ salt: swapManager_salt }({
             _initialOwner: INITIAL_OWNER,
             _uniswapFactory: UNISWAP_FACTORY,
             _swapRouter: UNISWAP_SWAP_ROUTER,
             _managerContainer: MANAGER_CONTAINER
         });
-        // Save SwapManager Contract to the Manager Contract
-        manager.setSwapManager(address(swapManager));
+
+        // @note set deployed managers' addresses in Manager Contract using multisig
 
         // Save addresses of all the deployed contracts to the deployments.json
         Strings.toHexString(uint160(address(holdingManager)), 20).write("./deployments.json", ".HOLDING_MANAGER");

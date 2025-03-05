@@ -63,7 +63,7 @@ contract SharesRegistry is ISharesRegistry, Ownable2Step {
     /**
      * @notice Timelock amount in seconds for changing the oracle data.
      */
-    uint256 public override timelockAmount = 2 days; // 2 days by default
+    uint256 public override timelockAmount = 1 hours;
     uint256 private _oldTimelock;
     uint256 private _newTimelock;
     uint256 private _newTimelockTimestamp;
@@ -191,7 +191,9 @@ contract SharesRegistry is ISharesRegistry, Ownable2Step {
      *
      * @param _newVal The new value.
      */
-    function setCollateralizationRate(uint256 _newVal) external override onlyOwner {
+    function setCollateralizationRate(
+        uint256 _newVal
+    ) external override onlyOwner {
         require(_newVal >= minCR, "2001");
         require(_newVal <= IManager(managerContainer.manager()).PRECISION(), "3066");
         emit CollateralizationRateUpdated(collateralizationRate, _newVal);
@@ -216,7 +218,9 @@ contract SharesRegistry is ISharesRegistry, Ownable2Step {
      *
      * @param _oracle The new oracle address.
      */
-    function requestNewOracle(address _oracle) external override onlyOwner {
+    function requestNewOracle(
+        address _oracle
+    ) external override onlyOwner {
         if (_newOracleTimestamp + timelockAmount > block.timestamp) require(!_isOracleActiveChange, "3093");
         require(!_isTimelockActiveChange, "3095");
         require(_oracle != address(0), "3000");
@@ -270,7 +274,9 @@ contract SharesRegistry is ISharesRegistry, Ownable2Step {
      *
      * @param _data The new oracle data.
      */
-    function requestNewOracleData(bytes calldata _data) external override onlyOwner {
+    function requestNewOracleData(
+        bytes calldata _data
+    ) external override onlyOwner {
         if (_newOracleDataTimestamp + timelockAmount > block.timestamp) require(!_isOracleDataActiveChange, "3096");
         require(!_isTimelockActiveChange, "3095");
 
@@ -325,7 +331,9 @@ contract SharesRegistry is ISharesRegistry, Ownable2Step {
      *
      * @param _newVal The new value in seconds.
      */
-    function requestTimelockAmountChange(uint256 _newVal) external override onlyOwner {
+    function requestTimelockAmountChange(
+        uint256 _newVal
+    ) external override onlyOwner {
         if (_newTimelockTimestamp + _oldTimelock > block.timestamp) require(!_isTimelockActiveChange, "3095");
         require(!_isOracleActiveChange, "3093");
         require(!_isOracleDataActiveChange, "3096");

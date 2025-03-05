@@ -5,5 +5,7 @@ interface IStrategyManagerMin {
     /**
      * @notice Returns the strategy info.
      */
-    function strategyInfo(address _strategy) external view returns (uint256, bool, bool);
+    function strategyInfo(
+        address _strategy
+    ) external view returns (uint256, bool, bool);
 }

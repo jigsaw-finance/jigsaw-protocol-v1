@@ -87,21 +87,27 @@ interface IHoldingManager {
      * @param _user The address of the user.
      * @return The address of the holding.
      */
-    function userHolding(address _user) external view returns (address);
+    function userHolding(
+        address _user
+    ) external view returns (address);
 
     /**
      * @notice Returns the user for a holding.
      * @param holding The address of the holding.
      * @return The address of the user.
      */
-    function holdingUser(address holding) external view returns (address);
+    function holdingUser(
+        address holding
+    ) external view returns (address);
 
     /**
      * @notice Returns true if the holding was created.
      * @param _holding The address of the holding.
      * @return True if the holding was created, false otherwise.
      */
-    function isHolding(address _holding) external view returns (bool);
+    function isHolding(
+        address _holding
+    ) external view returns (bool);
 
     /**
      * @notice Returns the address of the holding implementation to be cloned from.
@@ -195,7 +201,9 @@ interface IHoldingManager {
      *
      * @param _amount Withdrawal amount.
      */
-    function withdrawAndUnwrap(uint256 _amount) external;
+    function withdrawAndUnwrap(
+        uint256 _amount
+    ) external;
 
     /**
      * @notice Borrows jUSD stablecoin to the user or to the holding contract.

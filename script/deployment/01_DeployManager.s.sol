@@ -14,7 +14,7 @@ import { Manager } from "../../src/Manager.sol";
 import { ManagerContainer } from "../../src/ManagerContainer.sol";
 
 /**
- * @notice Deploys Manager and ManagerContainer Contracts
+ * @notice Deploys Manager Contract
  * @notice Configures feeAddress in the Manager Contract
  */
 contract DeployManager is Script, Base {
@@ -23,23 +23,26 @@ contract DeployManager is Script, Base {
     // Read config files
     string internal commonConfig = vm.readFile("./deployment-config/00_CommonConfig.json");
     string internal managerConfig = vm.readFile("./deployment-config/01_ManagerConfig.json");
+    string internal deployments = vm.readFile("./deployments.json");
 
     // Get values from configs
     address internal INITIAL_OWNER = commonConfig.readAddress(".INITIAL_OWNER");
     address internal USDC = managerConfig.readAddress(".USDC");
     address internal WETH = managerConfig.readAddress(".WETH");
-    address internal JUSD_Oracle = managerConfig.readAddress(".JUSD_Oracle");
+    address internal JUSD_Oracle = deployments.readAddress(".JUSD_GENESIS_ORACLE");
     bytes internal JUSD_OracleData = managerConfig.readBytes(".JUSD_OracleData");
-    address internal FEE_ADDRESS = managerConfig.readAddress(".FEE_ADDRESS");
 
-    function run() external broadcast returns (Manager manager, ManagerContainer managerContainer) {
+    // Salt for deterministic deployment using Create2
+    bytes32 internal salt = "0x";
+
+    function run() external broadcast returns (Manager manager) {
         // Validate interfaces
         _validateInterface(IERC20(USDC));
         _validateInterface(IERC20(WETH));
         _validateInterface(IOracle(JUSD_Oracle));
 
         // Deploy Manager contract
-        manager = new Manager({
+        manager = new Manager{ salt: salt }({
             _initialOwner: INITIAL_OWNER,
             _usdc: USDC,
             _weth: WETH,
@@ -47,19 +50,9 @@ contract DeployManager is Script, Base {
             _oracleData: JUSD_OracleData
         });
 
-        // Configure the fee address for the Manager Contract
-        manager.setFeeAddress(FEE_ADDRESS);
-
-        // Deploy ManagerContainer Contract
-        managerContainer = new ManagerContainer({ _initialOwner: INITIAL_OWNER, _manager: address(manager) });
-
-        // Save managerContainer address to the 00_CommonConfig.json for later use
-        Strings.toHexString(uint160(address(managerContainer)), 20).write(
-            "./deployment-config/00_CommonConfig.json", ".MANAGER_CONTAINER"
-        );
+        // @note setFeeAddress in Manager Contract using multisig
 
         // Save addresses of all the deployed contracts to the deployments.json
-        Strings.toHexString(uint160(address(managerContainer)), 20).write("./deployments.json", ".MANAGER_CONTAINER");
         Strings.toHexString(uint160(address(manager)), 20).write("./deployments.json", ".MANAGER");
     }
 }

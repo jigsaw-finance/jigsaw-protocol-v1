@@ -188,7 +188,9 @@ contract SwapManager is ISwapManager, Ownable2Step {
      *
      * @param _swapRouter Swap Router's new address.
      */
-    function setSwapRouter(address _swapRouter) external override onlyOwner validAddress(_swapRouter) {
+    function setSwapRouter(
+        address _swapRouter
+    ) external override onlyOwner validAddress(_swapRouter) {
         require(swapRouter != _swapRouter, "3017");
         emit SwapRouterUpdated(swapRouter, _swapRouter);
         swapRouter = _swapRouter;
@@ -240,7 +242,9 @@ contract SwapManager is ISwapManager, Ownable2Step {
      * @notice Validates that the address is not zero.
      * @param _address The address to validate.
      */
-    modifier validAddress(address _address) {
+    modifier validAddress(
+        address _address
+    ) {
         require(_address != address(0), "3000");
         _;
     }

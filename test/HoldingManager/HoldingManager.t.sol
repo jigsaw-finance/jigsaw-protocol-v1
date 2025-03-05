@@ -45,7 +45,9 @@ contract HoldingManagerTest is BasicContractsFixture {
         simpleContract.shouldCreateHolding(address(holdingManager));
     }
 
-    function test_should_create_holding_from_whitelisted(address _user) public {
+    function test_should_create_holding_from_whitelisted(
+        address _user
+    ) public {
         assumeNotOwnerNotZero(_user);
 
         vm.startPrank(OWNER);
@@ -64,7 +66,9 @@ contract HoldingManagerTest is BasicContractsFixture {
         assertTrue(holdingManager.isHolding(holding));
     }
 
-    function test_should_not_be_able_to_init_an_already_initialized_holding(address _user) public {
+    function test_should_not_be_able_to_init_an_already_initialized_holding(
+        address _user
+    ) public {
         assumeNotOwnerNotZero(_user);
 
         vm.prank(OWNER);
@@ -80,7 +84,9 @@ contract HoldingManagerTest is BasicContractsFixture {
         holdingContract.init(address(0));
     }
 
-    function test_should_not_be_able_to_create_multiple_holding_for_myself(address _user) public {
+    function test_should_not_be_able_to_create_multiple_holding_for_myself(
+        address _user
+    ) public {
         assumeNotOwnerNotZero(_user);
 
         vm.prank(OWNER);
@@ -99,7 +105,9 @@ contract HoldingManagerTest is BasicContractsFixture {
         holdingManager.renounceOwnership();
     }
 
-    function test_should_test_pause(address _user) public {
+    function test_should_test_pause(
+        address _user
+    ) public {
         assumeNotOwnerNotZero(_user);
 
         vm.prank(OWNER);
@@ -124,7 +132,9 @@ contract HoldingManagerTest is BasicContractsFixture {
     }
 
     // Tests if wrapAndDeposit reverts correctly when wETH is not whitelisted in Manager contract
-    function test_wrapAndDeposit_when_wEthNotWhitelisted(uint256 _amount) public {
+    function test_wrapAndDeposit_when_wEthNotWhitelisted(
+        uint256 _amount
+    ) public {
         vm.prank(manager.owner(), manager.owner());
         manager.removeToken(address(weth));
 
@@ -147,7 +157,9 @@ contract HoldingManagerTest is BasicContractsFixture {
     }
 
     // Tests if wrapAndDeposit reverts correctly when the contract is paused
-    function test_wrapAndDeposit_when_paused(uint256 _amount) public {
+    function test_wrapAndDeposit_when_paused(
+        uint256 _amount
+    ) public {
         vm.assume(_amount != 0);
         address user = address(uint160(uint256(keccak256(bytes("user")))));
         deal(user, _amount);
@@ -219,7 +231,9 @@ contract HoldingManagerTest is BasicContractsFixture {
     }
 
     // Tests if withdraw reverts correctly when caller doesn't have holding in the system
-    function test_withdraw_when_invalidHolding(address _user) public {
+    function test_withdraw_when_invalidHolding(
+        address _user
+    ) public {
         vm.assume(_user != address(0));
         vm.prank(_user, _user);
         vm.expectRevert(bytes("3002"));
@@ -227,7 +241,9 @@ contract HoldingManagerTest is BasicContractsFixture {
     }
 
     // Tests if withdraw reverts correctly when the contract is paused
-    function test_withdraw_when_paused(address _user) public {
+    function test_withdraw_when_paused(
+        address _user
+    ) public {
         vm.assume(_user != address(0));
 
         vm.prank(_user, _user);
@@ -268,7 +284,9 @@ contract HoldingManagerTest is BasicContractsFixture {
     }
 
     // Tests if withdraw works when withdrawable token has no registry in the system
-    function test_withdraw_when_noRegistryForToken(address _user) public {
+    function test_withdraw_when_noRegistryForToken(
+        address _user
+    ) public {
         vm.assume(_user != address(0));
 
         SampleTokenERC20 randomToken = new SampleTokenERC20("RT", "RT", 0);
@@ -422,7 +440,9 @@ contract HoldingManagerTest is BasicContractsFixture {
     }
 
     // Tests if withdrawAndUnwrap reverts correctly when the contract is paused
-    function test_withdrawAndUnwrap_when_paused(address _user) public {
+    function test_withdrawAndUnwrap_when_paused(
+        address _user
+    ) public {
         vm.assume(_user != address(0));
 
         vm.prank(_user, _user);
@@ -588,7 +608,9 @@ contract HoldingManagerTest is BasicContractsFixture {
     }
 
     // Tests if borrowMultiple reverts correctly when caller doesn't have holding in the system
-    function test_borrowMultiple_when_invalidHolding(address _user) public {
+    function test_borrowMultiple_when_invalidHolding(
+        address _user
+    ) public {
         IHoldingManager.BorrowOrRepayData[] memory data;
 
         vm.prank(_user, _user);
@@ -671,7 +693,9 @@ contract HoldingManagerTest is BasicContractsFixture {
     }
 
     // Tests if repayMultiple reverts correctly when caller doesn't have holding in the system
-    function test_repayMultiple_when_invalidHolding(address _user) public {
+    function test_repayMultiple_when_invalidHolding(
+        address _user
+    ) public {
         IHoldingManager.BorrowOrRepayData[] memory data;
 
         vm.prank(_user, _user);
@@ -777,7 +801,9 @@ contract HoldingManagerTest is BasicContractsFixture {
     }
 
     // Tests if repay reverts correctly when caller doesn't have holding in the system
-    function test_repay_when_invalidHolding(address _user) public {
+    function test_repay_when_invalidHolding(
+        address _user
+    ) public {
         vm.prank(_user, _user);
         vm.expectRevert(bytes("3002"));
         holdingManager.repay(address(1), 1, true);

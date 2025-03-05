@@ -9,7 +9,9 @@ contract SampleTokenERC20 is ERC20 {
         _mint(msg.sender, initialSupply);
     }
 
-    function getTokens(uint256 _val) external {
+    function getTokens(
+        uint256 _val
+    ) external {
         _mint(msg.sender, _val);
     }
 

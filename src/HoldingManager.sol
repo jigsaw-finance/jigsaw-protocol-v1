@@ -215,14 +215,9 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
      *
      * @param _amount Withdrawal amount.
      */
-    function withdrawAndUnwrap(uint256 _amount)
-        external
-        override
-        validAmount(_amount)
-        validHolding(userHolding[msg.sender])
-        nonReentrant
-        whenNotPaused
-    {
+    function withdrawAndUnwrap(
+        uint256 _amount
+    ) external override validAmount(_amount) validHolding(userHolding[msg.sender]) nonReentrant whenNotPaused {
         address wethAddress = _getManager().WETH();
         IHolding(userHolding[msg.sender]).transfer({ _token: wethAddress, _to: address(this), _amount: _amount });
         _unwrap(_amount);
@@ -475,7 +470,9 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
      *
      * @param _amount The amount of WETH to unwrap.
      */
-    function _unwrap(uint256 _amount) private {
+    function _unwrap(
+        uint256 _amount
+    ) private {
         emit NativeCoinUnwrapped({ user: msg.sender, amount: _amount });
         IWETH(_getManager().WETH()).withdraw(_amount);
     }
@@ -547,7 +544,9 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
      * @notice Validates that the address is not zero.
      * @param _address The address to validate.
      */
-    modifier validAddress(address _address) {
+    modifier validAddress(
+        address _address
+    ) {
         require(_address != address(0), "3000");
         _;
     }
@@ -556,7 +555,9 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
      * @notice Validates that the holding exists.
      * @param _holding The address of the holding.
      */
-    modifier validHolding(address _holding) {
+    modifier validHolding(
+        address _holding
+    ) {
         require(isHolding[_holding], "3002");
         _;
     }
@@ -565,7 +566,9 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
      * @notice Validates that the amount is greater than zero.
      * @param _amount The amount to validate.
      */
-    modifier validAmount(uint256 _amount) {
+    modifier validAmount(
+        uint256 _amount
+    ) {
         require(_amount > 0, "2001");
         _;
     }
@@ -574,7 +577,9 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
      * @notice Validates that the token is whitelisted.
      * @param _token The address of the token.
      */
-    modifier validToken(address _token) {
+    modifier validToken(
+        address _token
+    ) {
         require(_getManager().isTokenWhitelisted(_token), "3001");
         _;
     }

@@ -86,9 +86,8 @@ abstract contract BasicContractsFixture is Test {
         stablesManager.registerOrUpdateShareRegistry(address(wethSharesRegistry), address(weth), true);
         registries[address(weth)] = address(wethSharesRegistry);
 
-        receiptTokenFactory = new ReceiptTokenFactory(OWNER);
         receiptTokenReference = IReceiptToken(new ReceiptToken());
-        receiptTokenFactory.setReceiptTokenReferenceImplementation(address(receiptTokenReference));
+        receiptTokenFactory = new ReceiptTokenFactory(OWNER, address(receiptTokenReference));
 
         manager.setReceiptTokenFactory(address(receiptTokenFactory));
 
@@ -114,7 +113,9 @@ abstract contract BasicContractsFixture is Test {
         vm.stopPrank();
     }
 
-    function assumeNotOwnerNotZero(address _user) internal pure virtual {
+    function assumeNotOwnerNotZero(
+        address _user
+    ) internal pure virtual {
         vm.assume(_user != OWNER);
         vm.assume(_user != address(0));
     }

@@ -144,14 +144,18 @@ interface ILiquidationManager {
      * @dev The value must be less than LIQUIDATION_PRECISION
      * @param _val The new value for the liquidator bonus
      */
-    function setLiquidatorBonus(uint256 _val) external;
+    function setLiquidatorBonus(
+        uint256 _val
+    ) external;
 
     /**
      * @notice Sets a new value for the self-liquidation fee
      * @dev The value must be less than LIQUIDATION_PRECISION
      * @param _val The new value for the self-liquidation fee
      */
-    function setSelfLiquidationFee(uint256 _val) external;
+    function setSelfLiquidationFee(
+        uint256 _val
+    ) external;
 
     /**
      * @notice Triggers stopped state.

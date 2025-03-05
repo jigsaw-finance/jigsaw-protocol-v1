@@ -56,7 +56,9 @@ interface IStrategy {
      * @return investedAmount The amount invested.
      * @return totalShares The total shares.
      */
-    function recipients(address _recipient) external view returns (uint256 investedAmount, uint256 totalShares);
+    function recipients(
+        address _recipient
+    ) external view returns (uint256 investedAmount, uint256 totalShares);
 
     /**
      * @notice Returns the address of the token accepted by the strategy's underlying protocol as input.
