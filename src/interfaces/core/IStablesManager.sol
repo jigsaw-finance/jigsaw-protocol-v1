@@ -3,13 +3,38 @@ pragma solidity ^0.8.20;
 
 import { IJigsawUSD } from "../core/IJigsawUSD.sol";
 import { ISharesRegistry } from "../core/ISharesRegistry.sol";
-import { IManagerContainer } from "./IManagerContainer.sol";
+import { IManager } from "./IManager.sol";
 
 /**
  * @title IStablesManager
  * @notice Interface for the Stables Manager.
  */
 interface IStablesManager {
+    // -- Custom types --
+
+    /**
+     * @notice Structure to store state and deployment address for a share registry
+     */
+    struct ShareRegistryInfo {
+        bool active; // Flag indicating if the registry is active
+        address deployedAt; // Address where the registry is deployed
+    }
+
+    /**
+     * @notice Temporary struct used to store data during borrow operations to avoid stack too deep errors.
+     * @dev This struct helps organize variables used in the borrow function.
+     * @param registry The shares registry contract for the collateral token
+     * @param exchangeRatePrecision The precision used for exchange rate calculations
+     * @param amount The normalized amount (18 decimals) of collateral being borrowed against
+     * @param amountValue The USD value of the collateral amount
+     */
+    struct BorrowTempData {
+        ISharesRegistry registry;
+        uint256 exchangeRatePrecision;
+        uint256 amount;
+        uint256 amountValue;
+    }
+
     // -- Events --
 
     /**
@@ -31,10 +56,10 @@ interface IStablesManager {
     /**
      * @notice Emitted when a borrow action is performed.
      * @param holding The address of the holding.
-     * @param amount The amount borrowed.
+     * @param jUsdMinted The amount of jUSD minted.
      * @param mintToUser Boolean indicating if the amount is minted directly to the user.
      */
-    event Borrowed(address indexed holding, uint256 amount, bool mintToUser);
+    event Borrowed(address indexed holding, uint256 jUsdMinted, bool mintToUser);
 
     /**
      * @notice Emitted when a repay action is performed.
@@ -83,10 +108,10 @@ interface IStablesManager {
     function jUSD() external view returns (IJigsawUSD);
 
     /**
-     * @notice Returns managerContainer address that contains the address of the Manager Contract.
-     * @return The address of the manager container contract.
+     * @notice Contract that contains all the necessary configs of the protocol.
+     * @return The manager contract.
      */
-    function managerContainer() external view returns (IManagerContainer);
+    function manager() external view returns (IManager);
 
     // -- User specific methods --
 
@@ -172,10 +197,19 @@ interface IStablesManager {
      *
      * @param _holding The holding for which collateral is added.
      * @param _token Collateral token.
-     * @param _amount The collateral amount used for borrowing.
+     * @param _amount The collateral amount equivalent for borrowed jUSD.
+     * @param _minJUsdAmountOut The minimum amount of jUSD that is expected to be received.
      * @param _mintDirectlyToUser If true, mints to user instead of holding.
+     *
+     * @return jUsdMintAmount The amount of jUSD minted.
      */
-    function borrow(address _holding, address _token, uint256 _amount, bool _mintDirectlyToUser) external;
+    function borrow(
+        address _holding,
+        address _token,
+        uint256 _amount,
+        uint256 _minJUsdAmountOut,
+        bool _mintDirectlyToUser
+    ) external returns (uint256 jUsdMintAmount);
 
     /**
      * @notice Repays debt.
@@ -234,22 +268,31 @@ interface IStablesManager {
     function isSolvent(address _token, address _holding) external view returns (bool);
 
     /**
-     * @notice Get liquidation info for holding and token.
+     * @notice Checks if a holding can be liquidated for a specific token.
      *
-     * @param _holding Address of the holding to check for.
-     * @param _token Address of the token to check for.
+     * @notice Requirements:
+     * - `_holding` must not be the zero address.
+     * - There must be registry for `_token`.
      *
-     * @return `holding`'s borrowed amount against specified `token`.
-     * @return collateral amount in specified `token`.
-     * @return flag indicating whether `holding` is solvent.
+     * @param _token The token for which the check is done.
+     * @param _holding The user address.
+     *
+     * @return flag indicating whether `holding` is liquidatable.
      */
-    function getLiquidationInfo(address _holding, address _token) external view returns (uint256, uint256, uint256);
+    function isLiquidatable(address _token, address _holding) external view returns (bool);
 
     /**
-     * @notice Structure to store state and deployment address for a share registry
+     * @notice Computes the solvency ratio.
+     *
+     * @dev Solvency ratio is calculated based on the used collateral type, its collateralization and exchange rates,
+     * and `_holding`'s borrowed amount.
+     *
+     * @param _holding The holding address to check for.
+     * @param registry The Shares Registry Contract for the token.
+     * @param rate The rate to compute ratio for (either collateralization rate for `isSolvent` or liquidation
+     * threshold for `isLiquidatable`).
+     *
+     * @return The calculated solvency ratio.
      */
-    struct ShareRegistryInfo {
-        bool active; // Flag indicating if the registry is active
-        address deployedAt; // Address where the registry is deployed
-    }
+    function getRatio(address _holding, ISharesRegistry registry, uint256 rate) external view returns (uint256);
 }

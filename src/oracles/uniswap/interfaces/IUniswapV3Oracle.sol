@@ -13,6 +13,13 @@ interface IUniswapV3Oracle is IOracle {
      */
     event PoolsUpdated(bytes32 oldPoolsHash, bytes32 newPoolsHash);
 
+    /**
+     * @notice Emitted when the quote token oracle is updated.
+     * @param oldOracle The address of the old oracle before the update.
+     * @param newOracle The address of the new oracle after the update.
+     */
+    event QuoteTokenOracleUpdated(address oldOracle, address newOracle);
+
     // -- Errors --
 
     /**
@@ -63,6 +70,14 @@ interface IUniswapV3Oracle is IOracle {
      * @return The decimals of the quote token.
      */
     function quoteTokenDecimals() external view returns (uint256);
+
+    /**
+     * @notice Oracle used to convert price denominated in quote token to USD value
+     * @return The oracle contract used for quote token to USD conversion
+     */
+    function quoteTokenOracle() external view returns (IOracle);
+
+    // -- Getters --
 
     /**
      * @notice Returns the list of UniswapV3 pool addresses used for price calculations.

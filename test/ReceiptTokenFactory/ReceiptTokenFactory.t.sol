@@ -62,4 +62,13 @@ contract ReceiptTokenFactoryTest is Test {
             "ReferenceImplementation is set wrong"
         );
     }
+
+    // Test if renounce ownership overridden, to avoid losing contract's ownership.
+    function test_renounceOwnershipImplementation() public {
+        receiptTokenFactory = new ReceiptTokenFactory(OWNER, address(this));
+
+        vm.prank(OWNER);
+        vm.expectRevert(bytes("1000"));
+        receiptTokenFactory.renounceOwnership();
+    }
 }

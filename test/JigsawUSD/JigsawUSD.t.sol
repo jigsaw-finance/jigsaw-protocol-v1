@@ -64,4 +64,16 @@ contract JigsawUsdTest is BasicContractsFixture {
 
         jUsd.updateMintLimit(100);
     }
+
+    function test_should_not_mint(
+        address user
+    ) public {
+        vm.assume(user != address(0));
+
+        vm.expectRevert(bytes("1000"));
+        jUsd.mint(user, 100);
+
+        vm.expectRevert(bytes("1000"));
+        jUsd.burnFrom(user, 100);
+    }
 }

@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "forge-std/StdMath.sol";
 
 import { IHolding } from "../../../src/interfaces/core/IHolding.sol";
 import { IManager } from "../../../src/interfaces/core/IManager.sol";
@@ -12,21 +13,25 @@ import { IReceiptTokenFactory } from "../../../src/interfaces/core/IReceiptToken
 import { IStrategy } from "../../../src/interfaces/core/IStrategy.sol";
 import { StrategyBase } from "./StrategyBase.sol";
 
-/// @title StrategyWithoutRewardsMockBroken
-/// @dev This contract simulates situation when during deposit {tokenOutAmount} is returned as 0,
-//  which should make Strategy Manager contract revert with an error 3030.
-contract StrategyWithoutRewardsMockBroken is IStrategy, StrategyBase {
+interface ITokenMock {
+    function getTokens(
+        uint256 _val
+    ) external;
+}
+
+contract StrategyWithRewardsYieldsMock is IStrategy, StrategyBase {
     using SafeERC20 for IERC20;
+    using stdMath for int256;
 
     address public immutable override tokenIn;
     address public immutable override tokenOut;
     address public override rewardToken;
-    //returns the number of decimals of the strategy's shares
     uint256 public immutable override sharesDecimals;
 
     mapping(address => IStrategy.RecipientInfo) public override recipients;
 
     uint256 public totalInvestments;
+    int256 public yieldAmount;
     IReceiptToken public immutable override receiptToken;
 
     constructor(
@@ -64,7 +69,9 @@ contract StrategyWithoutRewardsMockBroken is IStrategy, StrategyBase {
         // solhint-disable-next-line reentrancy
         totalInvestments += _amount;
 
-        return (0, 0);
+        _mint(receiptToken, _recipient, _amount, IERC20Metadata(tokenIn).decimals());
+
+        return (_amount, _amount);
     }
 
     function withdraw(
@@ -84,15 +91,37 @@ contract StrategyWithoutRewardsMockBroken is IStrategy, StrategyBase {
         recipients[_recipient].investedAmount -= _shares;
         totalInvestments -= _shares;
 
-        IERC20(_asset).safeTransfer(_recipient, _shares);
-        return (_shares, _shares, 0, 0);
+        uint256 totalAmount = _shares;
+        if (yieldAmount > 0) {
+            ITokenMock(_asset).getTokens(yieldAmount.abs());
+            totalAmount += yieldAmount.abs();
+        } else if (yieldAmount < 0) {
+            totalAmount -= yieldAmount.abs();
+        }
+
+        IERC20(_asset).safeTransfer(_recipient, totalAmount);
+        return (_shares, _shares, yieldAmount, 0);
     }
 
     function claimRewards(
-        address,
+        address _recipient,
         bytes calldata
-    ) external view override onlyStrategyManager returns (uint256[] memory, address[] memory) {
-        revert("not implemented");
+    ) external override onlyStrategyManager returns (uint256[] memory returned, address[] memory tokens) {
+        returned = new uint256[](1);
+        tokens = new address[](1);
+
+        uint256 _earned = 100 * 10 ** IERC20Metadata(rewardToken).decimals();
+
+        ITokenMock(rewardToken).getTokens(_earned);
+        IERC20(rewardToken).safeTransfer(_recipient, _earned);
+        returned[0] = _earned;
+        tokens[0] = rewardToken;
+    }
+
+    function setYield(
+        int256 _amount
+    ) external {
+        yieldAmount = _amount;
     }
 
     function getReceiptTokenAddress() external view override returns (address) {

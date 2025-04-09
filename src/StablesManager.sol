@@ -12,7 +12,6 @@ import { OperationsLib } from "./libraries/OperationsLib.sol";
 import { IHoldingManager } from "./interfaces/core/IHoldingManager.sol";
 import { IJigsawUSD } from "./interfaces/core/IJigsawUSD.sol";
 import { IManager } from "./interfaces/core/IManager.sol";
-import { IManagerContainer } from "./interfaces/core/IManagerContainer.sol";
 import { ISharesRegistry } from "./interfaces/core/ISharesRegistry.sol";
 import { IStablesManager } from "./interfaces/core/IStablesManager.sol";
 
@@ -46,9 +45,9 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
     IJigsawUSD public immutable override jUSD;
 
     /**
-     * @notice Returns managerContainer address that contains the address of the Manager Contract.
+     * @notice Contract that contains all the necessary configs of the protocol.
      */
-    IManagerContainer public immutable override managerContainer;
+    IManager public immutable override manager;
 
     // -- Constructor --
 
@@ -56,13 +55,13 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
      * @notice Creates a new StablesManager contract.
      *
      * @param _initialOwner The initial owner of the contract.
-     * @param _managerContainer Contract that contains the address of the manager contract.
+     * @param _manager Contract that holds all the necessary configs of the protocol.
      * @param _jUSD The protocol's stablecoin address.
      */
-    constructor(address _initialOwner, address _managerContainer, address _jUSD) Ownable(_initialOwner) {
-        require(_managerContainer != address(0), "3065");
+    constructor(address _initialOwner, address _manager, address _jUSD) Ownable(_initialOwner) {
+        require(_manager != address(0), "3065");
         require(_jUSD != address(0), "3001");
-        managerContainer = IManagerContainer(_managerContainer);
+        manager = IManager(_manager);
         jUSD = IJigsawUSD(_jUSD);
     }
 
@@ -149,7 +148,7 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
      * @param _amount Amount of collateral.
      */
     function forceRemoveCollateral(address _holding, address _token, uint256 _amount) external override whenNotPaused {
-        require(msg.sender == _getManager().liquidationManager(), "1000");
+        require(msg.sender == manager.liquidationManager(), "1000");
         require(shareRegistryInfo[_token].active, "1201");
 
         emit RemovedCollateral({ holding: _holding, token: _token, amount: _amount });
@@ -175,41 +174,59 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
      *
      * @param _holding The holding for which collateral is added.
      * @param _token Collateral token.
-     * @param _amount The collateral amount used for borrowing.
+     * @param _amount The collateral amount equivalent for borrowed jUSD.
+     * @param _minJUsdAmountOut The minimum amount of jUSD that is expected to be received.
      * @param _mintDirectlyToUser If true, mints to user instead of holding.
+     *
+     * @return jUsdMintAmount The amount of jUSD minted.
+     *
      */
     function borrow(
         address _holding,
         address _token,
         uint256 _amount,
+        uint256 _minJUsdAmountOut,
         bool _mintDirectlyToUser
-    ) external override onlyAllowed whenNotPaused {
+    ) external override onlyAllowed whenNotPaused returns (uint256 jUsdMintAmount) {
         require(_amount > 0, "3010");
         require(shareRegistryInfo[_token].active, "1201");
 
-        // Update exchange rate and get USD value of the collateral.
-        ISharesRegistry registry = ISharesRegistry(shareRegistryInfo[_token].deployedAt);
-
-        uint256 EXCHANGE_RATE_PRECISION = _getManager().EXCHANGE_RATE_PRECISION();
+        BorrowTempData memory tempData = BorrowTempData({
+            registry: ISharesRegistry(shareRegistryInfo[_token].deployedAt),
+            exchangeRatePrecision: manager.EXCHANGE_RATE_PRECISION(),
+            amount: 0,
+            amountValue: 0
+        });
 
         // Ensure amount uses 18 decimals.
-        uint256 amount = _transformTo18Decimals({ _amount: _amount, _decimals: IERC20Metadata(_token).decimals() });
+        tempData.amount = _transformTo18Decimals({ _amount: _amount, _decimals: IERC20Metadata(_token).decimals() });
+
         // Get the USD value for the provided collateral amount.
-        uint256 amountValue = amount.mulDiv(registry.getExchangeRate(), EXCHANGE_RATE_PRECISION);
+        tempData.amountValue =
+            tempData.amount.mulDiv(tempData.registry.getExchangeRate(), tempData.exchangeRatePrecision);
+
         // Get the jUSD amount based on the provided collateral's USD value.
-        uint256 jUsdMintAmount = amountValue.mulDiv(EXCHANGE_RATE_PRECISION, _getManager().getJUsdExchangeRate());
+        jUsdMintAmount = tempData.amountValue.mulDiv(tempData.exchangeRatePrecision, manager.getJUsdExchangeRate());
+
+        // Ensure the amount of jUSD minted is greater than the minimum amount specified by the user.
+        require(jUsdMintAmount >= _minJUsdAmountOut, "2100");
+
+        emit Borrowed({ holding: _holding, jUsdMinted: jUsdMintAmount, mintToUser: _mintDirectlyToUser });
 
         // Update internal values.
         totalBorrowed[_token] += jUsdMintAmount;
 
-        emit Borrowed({ holding: _holding, amount: jUsdMintAmount, mintToUser: _mintDirectlyToUser });
         // Update holding's borrowed amount.
-        registry.setBorrowed({ _holding: _holding, _newVal: registry.borrowed(_holding) + jUsdMintAmount });
+        tempData.registry.setBorrowed({
+            _holding: _holding,
+            _newVal: tempData.registry.borrowed(_holding) + jUsdMintAmount
+        });
 
-        // Based on user's choice, jUSD is minted directly to him or the `_holding`.
-        _mintDirectlyToUser
-            ? jUSD.mint({ _to: _getHoldingManager().holdingUser(_holding), _amount: jUsdMintAmount })
-            : jUSD.mint({ _to: _holding, _amount: jUsdMintAmount });
+        // Based on user's choice, jUSD is minted directly to them or the `_holding`.
+        jUSD.mint({
+            _to: _mintDirectlyToUser ? _getHoldingManager().holdingUser(_holding) : _holding,
+            _amount: jUsdMintAmount
+        });
 
         // Make sure user is solvent after borrowing operation.
         require(isSolvent({ _token: _token, _holding: _holding }), "3009");
@@ -248,7 +265,7 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
         require(shareRegistryInfo[_token].active, "1201");
         ISharesRegistry registry = ISharesRegistry(shareRegistryInfo[_token].deployedAt);
         require(registry.borrowed(_holding) > 0, "3011");
-        require(registry.borrowed(_holding) >= _amount, "2100");
+        require(registry.borrowed(_holding) >= _amount, "2003");
         require(_amount > 0, "3012");
         require(_burnFrom != address(0), "3000");
 
@@ -292,6 +309,7 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
 
         if (shareRegistryInfo[_token].deployedAt == address(0)) {
             info.deployedAt = _registry;
+            manager.addWithdrawableToken(_token);
             emit RegistryAdded({ token: _token, registry: _registry });
         } else {
             info.deployedAt = shareRegistryInfo[_token].deployedAt;
@@ -345,28 +363,63 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
 
         if (registry.borrowed(_holding) == 0) return true;
 
-        return _getSolvencyRatio({ _holding: _holding, registry: registry })
-            >= registry.borrowed(_holding).mulDiv(
-                _getManager().getJUsdExchangeRate(), _getManager().EXCHANGE_RATE_PRECISION()
-            );
+        return getRatio({ _holding: _holding, registry: registry, rate: registry.getConfig().collateralizationRate })
+            >= registry.borrowed(_holding).mulDiv(manager.getJUsdExchangeRate(), manager.EXCHANGE_RATE_PRECISION());
     }
 
     /**
-     * @notice Get liquidation info for holding and token.
+     * @notice Checks if a holding can be liquidated for a specific token.
      *
-     * @param _holding Address of the holding to check for.
-     * @param _token Address of the token to check for.
+     * @notice Requirements:
+     * - `_holding` must not be the zero address.
+     * - There must be registry for `_token`.
      *
-     * @return `holding`'s borrowed amount against specified `token`.
-     * @return collateral amount in specified `token`.
-     * @return flag indicating whether `holding` is solvent.
+     * @param _token The token for which the check is done.
+     * @param _holding The user address.
+     *
+     * @return flag indicating whether `holding` is liquidatable.
      */
-    function getLiquidationInfo(
-        address _holding,
-        address _token
-    ) external view override returns (uint256, uint256, uint256) {
+    function isLiquidatable(address _token, address _holding) public view override returns (bool) {
+        require(_holding != address(0), "3031");
         ISharesRegistry registry = _getRegistry(_token);
-        return (registry.borrowed(_holding), registry.collateral(_holding), _getSolvencyRatio(_holding, registry));
+        require(address(registry) != address(0), "3008");
+
+        if (registry.borrowed(_holding) == 0) return false;
+
+        // Compute threshold for specified collateral
+        ISharesRegistry.RegistryConfig memory registryConfig = registry.getConfig();
+        uint256 threshold = registryConfig.collateralizationRate + registryConfig.liquidationBuffer;
+
+        // Returns true when the ratio is below the liquidation threshold
+        return getRatio({ _holding: _holding, registry: registry, rate: threshold })
+            <= registry.borrowed(_holding).mulDiv(manager.getJUsdExchangeRate(), manager.EXCHANGE_RATE_PRECISION());
+    }
+
+    /**
+     * @notice Computes the solvency ratio.
+     *
+     * @dev Solvency ratio is calculated based on the used collateral type, its collateralization and exchange rates,
+     * and `_holding`'s borrowed amount.
+     *
+     * @param _holding The holding address to check for.
+     * @param registry The Shares Registry Contract for the token.
+     * @param rate The rate to compute ratio for (either collateralization rate for `isSolvent` or liquidation
+     * threshold for `isLiquidatable`).
+     *
+     * @return The calculated solvency ratio.
+     */
+    function getRatio(address _holding, ISharesRegistry registry, uint256 rate) public view returns (uint256) {
+        // Get collateral's exchange rate.
+        uint256 exchangeRate = registry.getExchangeRate();
+        // Get holding's available collateral amount.
+        uint256 colAmount = registry.collateral(_holding);
+        // Calculate the final divider for precise calculations.
+        uint256 precision = manager.EXCHANGE_RATE_PRECISION() * manager.PRECISION();
+
+        // Calculate the solvency ratio.
+        uint256 result = colAmount * rate * exchangeRate / precision;
+        // Transform to 18 decimals if needed.
+        return _transformTo18Decimals({ _amount: result, _decimals: IERC20Metadata(registry.token()).decimals() });
     }
 
     // -- Private methods --
@@ -387,33 +440,6 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Computes the solvency ratio.
-     *
-     * @dev Solvency ratio is calculated based on the used collateral type, its collateralization and exchange rates,
-     * and `_holding`'s borrowed amount.
-     *
-     * @param _holding The holding address to check for.
-     * @param registry The Shares Registry Contract for the token.
-     *
-     * @return The calculated solvency ratio.
-     */
-    function _getSolvencyRatio(address _holding, ISharesRegistry registry) private view returns (uint256) {
-        // Get collateralization rate for specified collateral.
-        uint256 colRate = registry.collateralizationRate();
-        // Get collateral's exchange rate.
-        uint256 exchangeRate = registry.getExchangeRate();
-        // Get holding's available collateral amount.
-        uint256 colAmount = registry.collateral(_holding);
-        // Calculate the final divider for precise calculations.
-        uint256 precision = _getManager().EXCHANGE_RATE_PRECISION() * _getManager().PRECISION();
-
-        // Calculate the solvency ratio.
-        uint256 result = (colAmount * colRate * exchangeRate * 1e18 / precision) / 1e18;
-        // Transform to 18 decimals if needed.
-        return _transformTo18Decimals({ _amount: result, _decimals: IERC20Metadata(registry.token()).decimals() });
-    }
-
-    /**
      * @notice Gets the Shares registry for a specific token.
      * @param _token address for which the registry is being fetched.
      * @return The Shares Registry Contract.
@@ -425,20 +451,12 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Gets the Manager Contract from the Manager Container Contract.
-     * @return The  Manager Contract.
-     */
-    function _getManager() private view returns (IManager) {
-        return IManager(managerContainer.manager());
-    }
-
-    /**
      * @notice Gets the Holding Manager Contract.
      * @dev Returns the address of the Holding Manager Contract from the Manager Contract.
      * @return The Holding Manager Contract.
      */
     function _getHoldingManager() private view returns (IHoldingManager) {
-        return IHoldingManager(_getManager().holdingManager());
+        return IHoldingManager(manager.holdingManager());
     }
 
     // -- Modifiers --
@@ -452,7 +470,6 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
      * - Strategy Manager Contract.
      */
     modifier onlyAllowed() {
-        IManager manager = _getManager();
         require(
             msg.sender == manager.holdingManager() || msg.sender == manager.liquidationManager()
                 || msg.sender == manager.strategyManager(),

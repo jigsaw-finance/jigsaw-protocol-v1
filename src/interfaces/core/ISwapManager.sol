@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import { IManagerContainer } from "./IManagerContainer.sol";
+import { IManager } from "./IManager.sol";
 
 /**
  * @title ISwapManager
@@ -39,9 +39,10 @@ interface ISwapManager {
     function uniswapFactory() external view returns (address);
 
     /**
-     * @notice Returns the contract that contains the address of the Manager contract.
+     * @notice Contract that contains all the necessary configs of the protocol.
+     * @return The manager contract.
      */
-    function managerContainer() external view returns (IManagerContainer);
+    function manager() external view returns (IManager);
 
     // -- User specific methods --
 

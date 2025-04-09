@@ -94,7 +94,7 @@ contract StablesManagerInvariantTestHandlerWithReverts is CommonBase, StdCheats,
         _deposit(user, _amount);
 
         vm.startPrank(address(holdingManager), address(holdingManager));
-        stablesManager.borrow(userHolding[user], collateral, _amount, true);
+        stablesManager.borrow(userHolding[user], collateral, _amount, 0, true);
         vm.stopPrank();
 
         borrowed[user] += _amount;
@@ -155,7 +155,7 @@ contract StablesManagerInvariantTestHandlerWithReverts is CommonBase, StdCheats,
         _deposit(_user, _amount);
 
         vm.prank(address(holdingManager), address(holdingManager));
-        stablesManager.borrow(userHolding[_user], collateral, _amount, true);
+        stablesManager.borrow(userHolding[_user], collateral, _amount, 0, true);
 
         borrowed[_user] += _amount;
         borrowersSet.add(_user);

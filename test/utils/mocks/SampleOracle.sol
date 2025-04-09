@@ -20,7 +20,7 @@ contract SampleOracle is IOracle {
     }
 
     function setPriceForLiquidation() external {
-        price = 5e17;
+        price = 8e17;
     }
 
     function setPriceForPossibleLiquidation() external {

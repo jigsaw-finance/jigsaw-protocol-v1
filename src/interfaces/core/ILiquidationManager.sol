@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import { IHoldingManager } from "./IHoldingManager.sol";
-import { IManagerContainer } from "./IManagerContainer.sol";
+import { IManager } from "./IManager.sol";
 import { IStablesManager } from "./IStablesManager.sol";
 import { ISwapManager } from "./ISwapManager.sol";
 
@@ -32,6 +32,15 @@ interface ILiquidationManager {
     event Liquidated(address indexed holding, address indexed token, uint256 amount, uint256 collateralUsed);
 
     /**
+     * @notice Emitted when liquidation of bad debt occurs.
+     * @param holding address involved in the liquidation of bad debt.
+     * @param token address of the collateral used for the liquidation of bad debt.
+     * @param amount of the `token` used for the liquidation of bad debt.
+     * @param collateralUsed amount used for the liquidation of bad debt.
+     */
+    event BadDebtLiquidated(address indexed holding, address indexed token, uint256 amount, uint256 collateralUsed);
+
+    /**
      * @notice Emitted when collateral is retrieved from a strategy.
      * @param token address retrieved as collateral.
      * @param holding address from which collateral is retrieved.
@@ -43,19 +52,31 @@ interface ILiquidationManager {
     );
 
     /**
-     * @notice returns the address of the manager container contract
+     * @notice Emitted when the self-liquidation fee is updated.
+     * @param oldAmount The previous amount of the self-liquidation fee.
+     * @param newAmount The new amount of the self-liquidation fee.
      */
-    function managerContainer() external view returns (IManagerContainer);
+    event SelfLiquidationFeeUpdated(uint256 oldAmount, uint256 newAmount);
 
     /**
-     * @notice returns the liquidator's bonus amount
+     * @notice Contract that contains all the necessary configs of the protocol.
+     * @return The manager contract.
      */
-    function liquidatorBonus() external view returns (uint256);
+    function manager() external view returns (IManager);
 
     /**
-     * @notice returns the self-liquidation fee percentage
+     * @notice The max % amount the protocol gets when a self-liquidation operation happens.
+     * @dev Uses 3 decimal precision, where 1% is represented as 1000.
+     * @dev 8% is the default self-liquidation fee.
      */
     function selfLiquidationFee() external view returns (uint256);
+
+    /**
+     * @notice The max % amount the protocol gets when a self-liquidation operation happens.
+     * @dev Uses 3 decimal precision, where 1% is represented as 1000.
+     * @dev 10% is the max self-liquidation fee.
+     */
+    function MAX_SELF_LIQUIDATION_FEE() external view returns (uint256);
 
     /**
      * @notice returns utility variable used for preciser computations
@@ -102,8 +123,6 @@ interface ILiquidationManager {
 
     /**
      * @notice Method used to liquidate stablecoin debt if a user is no longer solvent.
-     * @notice If there is insufficient collateral for the `_jUsdAmount` specified by the liquidator, the function
-     * calculates the maximum possible jUsd amount to repay based on the user's available collateral.
      *
      * @notice Requirements:
      * - `_user` must have holding.
@@ -113,11 +132,9 @@ interface ILiquidationManager {
      *
      * @notice Effects:
      * - Retrieves collateral from specified strategies if needed.
-     * - Adjusts the liquidator bonus and ensures it is less than the total required collateral.
-     * - Repays user's debt in the amount of `jUsdAmountRepaid`.
+     * - Sends the liquidator their bonus and underlying collateral.
+     * - Repays user's debt in the amount of `_jUsdAmount`.
      * - Removes used `collateralUsed` from `holding`.
-     * - Sends liquidator their bonus.
-     * - Sends fees to `feeAddress`.
      *
      * @notice Emits:
      * - `Liquidated` event indicating liquidation.
@@ -125,33 +142,49 @@ interface ILiquidationManager {
      * @param _user address whose holding is to be liquidated.
      * @param _collateral token used for borrowing.
      * @param _jUsdAmount to repay.
-     * @param _data  for strategies to retrieve collateral from in case the Holding balance is not enough.
+     * @param _minCollateralReceive amount of collateral the liquidator wants to get.
+     * @param _data for strategies to retrieve collateral from in case the Holding balance is not enough.
      *
-     * @return collateralUsed The amount of collateral used for liquidation
-     * @return jUsdAmountRepaid The amount of jUsd repaid
+     * @return collateralUsed The amount of collateral used for liquidation.
      */
     function liquidate(
         address _user,
         address _collateral,
         uint256 _jUsdAmount,
+        uint256 _minCollateralReceive,
         LiquidateCalldata calldata _data
-    ) external returns (uint256 collateralUsed, uint256 jUsdAmountRepaid);
+    ) external returns (uint256 collateralUsed);
+
+    /**
+     * @notice Method used to liquidate positions with bad debt (where collateral value is less than borrowed amount).
+     *
+     * @notice Requirements:
+     * - Only owner can call this function.
+     * - `_user` must have holding.
+     * - Holding must have bad debt (collateral value < borrowed amount).
+     * - All strategies associated with the holding must be provided.
+     *
+     * @notice Effects:
+     * - Retrieves collateral from specified strategies.
+     * - Repays user's total debt with jUSD from msg.sender.
+     * - Removes all remaining collateral from holding.
+     * - Transfers all remaining collateral to msg.sender.
+     *
+     * @notice Emits:
+     * - `CollateralRetrieved` event for each strategy collateral is retrieved from.
+     *
+     * @param _user Address whose holding is to be liquidated.
+     * @param _collateral Token used for borrowing.
+     * @param _data Struct containing arrays of strategies and their associated data for retrieving collateral.
+     */
+    function liquidateBadDebt(address _user, address _collateral, LiquidateCalldata calldata _data) external;
 
     // -- Administration --
 
     /**
-     * @notice Sets a new value for the liquidator bonus
-     * @dev The value must be less than LIQUIDATION_PRECISION
-     * @param _val The new value for the liquidator bonus
-     */
-    function setLiquidatorBonus(
-        uint256 _val
-    ) external;
-
-    /**
-     * @notice Sets a new value for the self-liquidation fee
-     * @dev The value must be less than LIQUIDATION_PRECISION
-     * @param _val The new value for the self-liquidation fee
+     * @notice Sets a new value for the self-liquidation fee.
+     * @dev The value must be less than MAX_SELF_LIQUIDATION_FEE.
+     * @param _val The new value for the self-liquidation fee.
      */
     function setSelfLiquidationFee(
         uint256 _val
@@ -194,25 +227,6 @@ interface ILiquidationManager {
         bool useHoldingBalance; // Flag indicating whether to use Holding balance
         address[] strategies; // Array of strategy addresses
         bytes[] strategiesData; // Array of data associated with each strategy
-    }
-
-    /**
-     * @notice Temporary data structure for liquidation process.
-     */
-    struct LiquidateTempData {
-        IHoldingManager holdingManager; // Address of the Holding Manager contract.
-        IStablesManager stablesManager; // Address of the Stables Manager contract.
-        address holding; // Address of the user's Holding involved in liquidation.
-        bool isRegistryActive; // Flag indicating if the Registry is active.
-        address registryAddress; // Address of the Registry contract.
-        uint256 totalBorrowed; //  Total amount borrowed by user from the system.
-        uint256 totalAvailableCollateral; // Total available collateral.
-        uint256 totalRequiredCollateral; // Total required collateral.
-        uint256 totalFeeCollateral; // Total fee collateral to be deducted.
-        uint256 totalLiquidatorCollateral; // Total collateral for liquidator.
-        uint256 jUsdAmountToBurn; // Amount of jUSD to burn.
-        uint256 exchangeRate; // Current exchange rate.
-        uint256 collateralInStrategies; // Collateral locked in strategies.
     }
 
     /**

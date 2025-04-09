@@ -8,7 +8,7 @@ import { Base } from "../Base.s.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 import { JigsawUSD } from "../../src/JigsawUSD.sol";
-import { ManagerContainer } from "../../src/ManagerContainer.sol";
+import { IManager } from "../../src/interfaces/core/IManager.sol";
 
 /**
  * @notice Deploys jUSD Contract
@@ -22,17 +22,17 @@ contract DeployJUSD is Script, Base {
 
     // Get values from config
     address internal INITIAL_OWNER = commonConfig.readAddress(".INITIAL_OWNER");
-    address internal MANAGER_CONTAINER = deployments.readAddress(".MANAGER_CONTAINER");
+    address internal MANAGER = deployments.readAddress(".MANAGER");
 
     // Salt for deterministic deployment using Create2
     bytes32 internal salt = "0x";
 
     function run() external broadcast returns (JigsawUSD jUSD) {
         // Validate interface
-        _validateInterface(ManagerContainer(MANAGER_CONTAINER));
+        _validateInterface(IManager(MANAGER));
 
         // Deploy JigsawUSD contract
-        jUSD = new JigsawUSD{ salt: salt }({ _initialOwner: INITIAL_OWNER, _managerContainer: MANAGER_CONTAINER });
+        jUSD = new JigsawUSD{ salt: salt }({ _initialOwner: INITIAL_OWNER, _manager: MANAGER });
 
         // Save addresses of all the deployed contracts to the deployments.json
         Strings.toHexString(uint160(address(jUSD)), 20).write("./deployments.json", ".jUSD");

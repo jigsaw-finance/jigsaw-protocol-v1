@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import { IManagerContainer } from "../core/IManagerContainer.sol";
+import { IManager } from "./IManager.sol";
 
 /**
  * @title IJigsawUSD
@@ -16,10 +16,10 @@ interface IJigsawUSD is IERC20 {
     event MintLimitUpdated(uint256 oldLimit, uint256 newLimit);
 
     /**
-     * @notice Contract that contains the address of the manager contract.
-     * @return The manager container.
+     * @notice Contract that contains all the necessary configs of the protocol.
+     * @return The manager contract.
      */
-    function managerContainer() external view returns (IManagerContainer);
+    function manager() external view returns (IManager);
 
     /**
      * @notice Returns the max mint limit.

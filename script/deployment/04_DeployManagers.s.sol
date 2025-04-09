@@ -14,7 +14,7 @@ import { ISwapRouter } from "@uniswap/v3-periphery/contracts/interfaces/ISwapRou
 import { HoldingManager } from "../../src/HoldingManager.sol";
 import { LiquidationManager } from "../../src/LiquidationManager.sol";
 import { Manager } from "../../src/Manager.sol";
-import { ManagerContainer } from "../../src/ManagerContainer.sol";
+
 import { StablesManager } from "../../src/StablesManager.sol";
 import { StrategyManager } from "../../src/StrategyManager.sol";
 import { SwapManager } from "../../src/SwapManager.sol";
@@ -33,7 +33,7 @@ contract DeployManagers is Script, Base {
 
     // Get values from configs
     address internal INITIAL_OWNER = commonConfig.readAddress(".INITIAL_OWNER");
-    address internal MANAGER_CONTAINER = deployments.readAddress(".MANAGER_CONTAINER");
+    address internal MANAGER = deployments.readAddress(".MANAGER");
     address internal JUSD = deployments.readAddress(".jUSD");
     address internal UNISWAP_FACTORY = managersConfig.readAddress(".UNISWAP_FACTORY");
     address internal UNISWAP_SWAP_ROUTER = managersConfig.readAddress(".UNISWAP_SWAP_ROUTER");
@@ -57,42 +57,36 @@ contract DeployManagers is Script, Base {
         )
     {
         // Validate interfaces
-        _validateInterface(ManagerContainer(MANAGER_CONTAINER));
+        _validateInterface(Manager(MANAGER));
         _validateInterface(IERC20(JUSD));
         _validateInterface(IUniswapV3Factory(UNISWAP_FACTORY));
         _validateInterface(ISwapRouter(UNISWAP_SWAP_ROUTER));
 
         // Deploy HoldingManager Contract
-        holdingManager = new HoldingManager{ salt: holdingManager_salt }({
-            _initialOwner: INITIAL_OWNER,
-            _managerContainer: MANAGER_CONTAINER
-        });
+        holdingManager =
+            new HoldingManager{ salt: holdingManager_salt }({ _initialOwner: INITIAL_OWNER, _manager: MANAGER });
 
         // Deploy Liquidation Manager Contract
-        liquidationManager = new LiquidationManager{ salt: liquidationManager_salt }({
-            _initialOwner: INITIAL_OWNER,
-            _managerContainer: MANAGER_CONTAINER
-        });
+        liquidationManager =
+            new LiquidationManager{ salt: liquidationManager_salt }({ _initialOwner: INITIAL_OWNER, _manager: MANAGER });
 
         // Deploy StablesManager Contract
         stablesManager = new StablesManager{ salt: stablesManager_salt }({
             _initialOwner: INITIAL_OWNER,
-            _managerContainer: MANAGER_CONTAINER,
+            _manager: MANAGER,
             _jUSD: JUSD
         });
 
         // Deploy StrategyManager Contract
-        strategyManager = new StrategyManager{ salt: strategyManager_salt }({
-            _initialOwner: INITIAL_OWNER,
-            _managerContainer: MANAGER_CONTAINER
-        });
+        strategyManager =
+            new StrategyManager{ salt: strategyManager_salt }({ _initialOwner: INITIAL_OWNER, _manager: MANAGER });
 
         // Deploy SwapManager Contract
         swapManager = new SwapManager{ salt: swapManager_salt }({
             _initialOwner: INITIAL_OWNER,
             _uniswapFactory: UNISWAP_FACTORY,
             _swapRouter: UNISWAP_SWAP_ROUTER,
-            _managerContainer: MANAGER_CONTAINER
+            _manager: MANAGER
         });
 
         // @note set deployed managers' addresses in Manager Contract using multisig

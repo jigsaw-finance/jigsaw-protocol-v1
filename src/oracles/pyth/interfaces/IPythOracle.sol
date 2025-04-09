@@ -76,7 +76,7 @@ interface IPythOracle is IOracle {
      * @notice Thrown when an invalid confidence value is provided.
      * @dev This error is used to signal that the confidence is greater than the price, which would lead to underflow.
      */
-    error InvaidConfidence();
+    error InvalidConfidence();
 
     // -- State variables --
 

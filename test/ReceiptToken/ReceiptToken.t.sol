@@ -57,4 +57,15 @@ contract ReceiptTokenTest is Test {
         vm.expectRevert(bytes("1000"));
         receiptToken.renounceOwnership();
     }
+
+    function test_only_minter_or_owner(address _user) public {
+        vm.expectRevert(bytes("1000"));
+        receiptToken.mint(_user, 0);
+
+        vm.expectRevert(bytes("1000"));
+        receiptToken.setMinter(_user);
+
+        vm.expectRevert(bytes("1000"));
+        receiptToken.burnFrom(_user, 100);
+    }
 }

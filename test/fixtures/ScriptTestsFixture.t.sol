@@ -9,7 +9,6 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 import { DeployGenesisOracle } from "../../script/deployment/00_DeployGenesisOracle.s.sol";
 import { DeployManager } from "../../script/deployment/01_DeployManager.s.sol";
-import { DeployManagerContainer } from "../../script/deployment/02_DeployManagerContainer.s.sol";
 import { DeployJUSD } from "../../script/deployment/03_DeployJUSD.s.sol";
 import { DeployManagers } from "../../script/deployment/04_DeployManagers.s.sol";
 import { DeployReceiptToken } from "../../script/deployment/05_DeployReceiptToken.s.sol";
@@ -22,7 +21,7 @@ import { HoldingManager } from "../../src/HoldingManager.sol";
 import { JigsawUSD } from "../../src/JigsawUSD.sol";
 import { LiquidationManager } from "../../src/LiquidationManager.sol";
 import { Manager } from "../../src/Manager.sol";
-import { ManagerContainer } from "../../src/ManagerContainer.sol";
+
 import { ReceiptToken } from "../../src/ReceiptToken.sol";
 import { ReceiptTokenFactory } from "../../src/ReceiptTokenFactory.sol";
 import { SharesRegistry } from "../../src/SharesRegistry.sol";
@@ -61,7 +60,6 @@ contract ScriptTestsFixture is Test {
     address internal USDT_USDC_POOL = 0x3416cF6C708Da44DB2624D63ea0AAef7113527C6; // pretend that this is jUSD/USDC pool
 
     Manager internal manager;
-    ManagerContainer internal managerContainer;
     JigsawUSD internal jUSD;
 
     HoldingManager internal holdingManager;
@@ -90,20 +88,18 @@ contract ScriptTestsFixture is Test {
 
         // Update config files with needed values
         Strings.toHexString(uint160(INITIAL_OWNER), 20).write(commonConfigPath, ".INITIAL_OWNER");
-        Strings.toHexString(uint160(USDC), 20).write(managerConfigPath, ".USDC");
         Strings.toHexString(uint160(WETH), 20).write(managerConfigPath, ".WETH");
         Strings.toHexString(uint256(bytes32("")), 32).write(managerConfigPath, ".JUSD_OracleData");
         Strings.toHexString(uint160(UNISWAP_FACTORY), 20).write(managersConfigPath, ".UNISWAP_FACTORY");
         Strings.toHexString(uint160(UNISWAP_SWAP_ROUTER), 20).write(managersConfigPath, ".UNISWAP_SWAP_ROUTER");
         Strings.toHexString(uint160(PYTH), 20).write(pythConfigPath, ".PYTH");
         Strings.toHexString(uint160(USDT_USDC_POOL), 20).write(uniswapV3OracleConfigPath, ".JUSD_USDC_UNISWAP_POOL");
+        Strings.toHexString(uint160(USDC), 20).write(uniswapV3OracleConfigPath, ".USDC");
+        Strings.toHexString(uint160(JUSD_Oracle), 20).write(uniswapV3OracleConfigPath, ".USDC_ORACLE");
 
         //Run Manager deployment script
         DeployManager deployManagerScript = new DeployManager();
         manager = deployManagerScript.run();
-
-        DeployManagerContainer deployManagerContainerScript = new DeployManagerContainer();
-        managerContainer = deployManagerContainerScript.run();
 
         //Run JUSD deployment script
         DeployJUSD deployJUSDScript = new DeployJUSD();

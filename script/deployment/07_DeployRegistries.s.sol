@@ -8,13 +8,13 @@ import { Base } from "../Base.s.sol";
 import { IERC20, IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
+import { IManager } from "../../src/interfaces/core/IManager.sol";
+import { ISharesRegistry } from "../../src/interfaces/core/ISharesRegistry.sol";
+import { IStablesManager } from "../../src/interfaces/core/IStablesManager.sol";
 import { IOracle } from "../../src/interfaces/oracle/IOracle.sol";
-
-import { ManagerContainer } from "../../src/ManagerContainer.sol";
+import { PythOracleFactory } from "../../src/oracles/pyth/PythOracleFactory.sol";
 
 import { SharesRegistry } from "../../src/SharesRegistry.sol";
-import { StablesManager } from "../../src/StablesManager.sol";
-import { PythOracleFactory } from "../../src/oracles/pyth/PythOracleFactory.sol";
 
 /**
  * @notice Deploys SharesRegistry Contracts for each configured token (a.k.a. collateral)
@@ -25,6 +25,8 @@ contract DeployRegistries is Script, Base {
     struct RegistryConfig {
         address token;
         uint256 collateralizationRate;
+        uint256 liquidationBuffer;
+        uint256 liquidatorBonus;
         bytes oracleData;
         bytes32 pythId;
         uint256 age;
@@ -42,13 +44,15 @@ contract DeployRegistries is Script, Base {
 
     // Get values from configs
     address internal INITIAL_OWNER = commonConfig.readAddress(".INITIAL_OWNER");
-    address internal MANAGER_CONTAINER = deployments.readAddress(".MANAGER_CONTAINER");
+    address internal MANAGER = deployments.readAddress(".MANAGER");
     address internal STABLES_MANAGER = deployments.readAddress(".STABLES_MANAGER");
     address internal PYTH_ORACLE_FACTORY = deployments.readAddress(".PYTH_ORACLE_FACTORY");
 
     // Store configuration for each SharesRegistry
     address internal USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     uint256 internal USDC_CR = 50_000;
+    uint256 internal USDC_LiquidationBuffer = 5e3;
+    uint256 internal USDC_LiquidationBonus = 8e3;
     bytes32 internal USDC_PYTH_ID = 0xeaa020c61cc479712813461ce153894a96a6c00b21ed0cfc2798d1f9a9e9c94a;
 
     // Common configs for oracle
@@ -57,8 +61,8 @@ contract DeployRegistries is Script, Base {
 
     function run() external broadcast returns (address[] memory deployedRegistries) {
         // Validate interfaces
-        _validateInterface(ManagerContainer(MANAGER_CONTAINER));
-        _validateInterface(StablesManager(STABLES_MANAGER));
+        _validateInterface(IManager(MANAGER));
+        _validateInterface(IStablesManager(STABLES_MANAGER));
 
         _populateRegistriesArray();
 
@@ -76,11 +80,15 @@ contract DeployRegistries is Script, Base {
             // Deploy SharesRegistry contract
             SharesRegistry registry = new SharesRegistry({
                 _initialOwner: INITIAL_OWNER,
-                _managerContainer: MANAGER_CONTAINER,
+                _manager: MANAGER,
                 _token: registryConfigs[i].token,
                 _oracle: oracle,
                 _oracleData: registryConfigs[i].oracleData,
-                _collateralizationRate: registryConfigs[i].collateralizationRate
+                _config: ISharesRegistry.RegistryConfig({
+                    collateralizationRate: registryConfigs[i].collateralizationRate,
+                    liquidationBuffer: registryConfigs[i].liquidationBuffer,
+                    liquidatorBonus: registryConfigs[i].liquidatorBonus
+                })
             });
 
             // @note save the deployed SharesRegistry contract to the StablesManager contract
@@ -104,6 +112,8 @@ contract DeployRegistries is Script, Base {
             RegistryConfig({
                 token: USDC,
                 collateralizationRate: USDC_CR,
+                liquidationBuffer: USDC_LiquidationBuffer,
+                liquidatorBonus: USDC_LiquidationBonus,
                 pythId: USDC_PYTH_ID,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE

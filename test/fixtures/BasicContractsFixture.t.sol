@@ -7,22 +7,22 @@ import "forge-std/console.sol";
 import { IERC20, IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
+import { ILiquidationManager } from "../../src/interfaces/core/ILiquidationManager.sol";
+import { IManager } from "../../src/interfaces/core/IManager.sol";
+import { IReceiptToken } from "../../src/interfaces/core/IReceiptToken.sol";
+import { ISharesRegistry } from "../../src/interfaces/core/ISharesRegistry.sol";
+import { IStrategy } from "../../src/interfaces/core/IStrategy.sol";
+import { IStrategyManager } from "../../src/interfaces/core/IStrategyManager.sol";
+
 import { HoldingManager } from "../../src/HoldingManager.sol";
 import { JigsawUSD } from "../../src/JigsawUSD.sol";
 import { LiquidationManager } from "../../src/LiquidationManager.sol";
 import { Manager } from "../../src/Manager.sol";
-import { ManagerContainer } from "../../src/ManagerContainer.sol";
 import { ReceiptToken } from "../../src/ReceiptToken.sol";
 import { ReceiptTokenFactory } from "../../src/ReceiptTokenFactory.sol";
 import { SharesRegistry } from "../../src/SharesRegistry.sol";
 import { StablesManager } from "../../src/StablesManager.sol";
 import { StrategyManager } from "../../src/StrategyManager.sol";
-
-import { ILiquidationManager } from "../../src/interfaces/core/ILiquidationManager.sol";
-import { IReceiptToken } from "../../src/interfaces/core/IReceiptToken.sol";
-import { IStrategy } from "../../src/interfaces/core/IStrategy.sol";
-import { IStrategyManager } from "../../src/interfaces/core/IStrategyManager.sol";
-
 import { SampleOracle } from "../utils/mocks/SampleOracle.sol";
 import { SampleTokenERC20 } from "../utils/mocks/SampleTokenERC20.sol";
 import { StrategyWithoutRewardsMock } from "../utils/mocks/StrategyWithoutRewardsMock.sol";
@@ -36,8 +36,7 @@ abstract contract BasicContractsFixture is Test {
     IReceiptToken public receiptTokenReference;
     HoldingManager internal holdingManager;
     LiquidationManager internal liquidationManager;
-    Manager internal manager;
-    ManagerContainer internal managerContainer;
+    IManager internal manager;
     JigsawUSD internal jUsd;
     ReceiptTokenFactory internal receiptTokenFactory;
     SampleOracle internal usdcOracle;
@@ -65,26 +64,41 @@ abstract contract BasicContractsFixture is Test {
 
         jUsdOracle = new SampleOracle();
 
-        manager = new Manager(OWNER, address(usdc), address(weth), address(jUsdOracle), bytes(""));
-        managerContainer = new ManagerContainer(OWNER, address(manager));
+        manager = new Manager(OWNER, address(weth), address(jUsdOracle), bytes(""));
 
-        jUsd = new JigsawUSD(OWNER, address(managerContainer));
+        jUsd = new JigsawUSD(OWNER, address(manager));
         jUsd.updateMintLimit(type(uint256).max);
 
-        holdingManager = new HoldingManager(OWNER, address(managerContainer));
-        liquidationManager = new LiquidationManager(OWNER, address(managerContainer));
-        stablesManager = new StablesManager(OWNER, address(managerContainer), address(jUsd));
-        strategyManager = new StrategyManager(OWNER, address(managerContainer));
+        holdingManager = new HoldingManager(OWNER, address(manager));
+        liquidationManager = new LiquidationManager(OWNER, address(manager));
+        stablesManager = new StablesManager(OWNER, address(manager), address(jUsd));
+        strategyManager = new StrategyManager(OWNER, address(manager));
 
-        sharesRegistry =
-            new SharesRegistry(OWNER, address(managerContainer), address(usdc), address(usdcOracle), bytes(""), 50_000);
-        stablesManager.registerOrUpdateShareRegistry(address(sharesRegistry), address(usdc), true);
-        registries[address(usdc)] = address(sharesRegistry);
+        sharesRegistry = new SharesRegistry(
+            OWNER,
+            address(manager),
+            address(usdc),
+            address(usdcOracle),
+            bytes(""),
+            ISharesRegistry.RegistryConfig({
+                collateralizationRate: 50_000,
+                liquidationBuffer: 5e3,
+                liquidatorBonus: 8e3
+            })
+        );
 
-        wethSharesRegistry =
-            new SharesRegistry(OWNER, address(managerContainer), address(weth), address(wethOracle), bytes(""), 50_000);
-        stablesManager.registerOrUpdateShareRegistry(address(wethSharesRegistry), address(weth), true);
-        registries[address(weth)] = address(wethSharesRegistry);
+        wethSharesRegistry = new SharesRegistry(
+            OWNER,
+            address(manager),
+            address(weth),
+            address(wethOracle),
+            bytes(""),
+            ISharesRegistry.RegistryConfig({
+                collateralizationRate: 50_000,
+                liquidationBuffer: 5e3,
+                liquidatorBonus: 8e3
+            })
+        );
 
         receiptTokenReference = IReceiptToken(new ReceiptToken());
         receiptTokenFactory = new ReceiptTokenFactory(OWNER, address(receiptTokenReference));
@@ -102,7 +116,7 @@ abstract contract BasicContractsFixture is Test {
         manager.setStrategyManager(address(strategyManager));
 
         strategyWithoutRewardsMock = new StrategyWithoutRewardsMock({
-            _managerContainer: address(managerContainer),
+            _manager: address(manager),
             _tokenIn: address(usdc),
             _tokenOut: address(usdc),
             _rewardToken: address(0),
@@ -110,6 +124,12 @@ abstract contract BasicContractsFixture is Test {
             _receiptTokenSymbol: "RUSDCM"
         });
         strategyManager.addStrategy(address(strategyWithoutRewardsMock));
+
+        stablesManager.registerOrUpdateShareRegistry(address(wethSharesRegistry), address(weth), true);
+        registries[address(weth)] = address(wethSharesRegistry);
+
+        stablesManager.registerOrUpdateShareRegistry(address(sharesRegistry), address(usdc), true);
+        registries[address(usdc)] = address(sharesRegistry);
         vm.stopPrank();
     }
 

@@ -35,16 +35,16 @@ interface IManager {
     event TokenRemoved(address indexed token);
 
     /**
-     * @notice Emitted when a non-withdrawable token is added.
-     * @param token The address of the non-withdrawable token.
+     * @notice Emitted when a withdrawable token is added.
+     * @param token The address of the withdrawable token.
      */
-    event NonWithdrawableTokenAdded(address indexed token);
+    event WithdrawableTokenAdded(address indexed token);
 
     /**
-     * @notice Emitted when a non-withdrawable token is removed.
-     * @param token The address of the non-withdrawable token.
+     * @notice Emitted when a withdrawable token is removed.
+     * @param token The address of the withdrawable token.
      */
-    event NonWithdrawableTokenRemoved(address indexed token);
+    event WithdrawableTokenRemoved(address indexed token);
 
     /**
      * @notice Emitted when invoker is updated.
@@ -59,6 +59,13 @@ interface IManager {
      * @param newAddress The new address of the holding manager.
      */
     event HoldingManagerUpdated(address indexed oldAddress, address indexed newAddress);
+
+    /**
+     * @notice Emitted when a new liquidation manager is requested.
+     * @param oldAddress The previous address of the liquidation manager.
+     * @param newAddress The new address of the liquidation manager.
+     */
+    event NewLiquidationManagerRequested(address indexed oldAddress, address indexed newAddress);
 
     /**
      * @notice Emitted when the liquidation manager is set.
@@ -80,6 +87,13 @@ interface IManager {
      * @param newAddress The new address of the strategy manager.
      */
     event StrategyManagerUpdated(address indexed oldAddress, address indexed newAddress);
+
+    /**
+     * @notice Emitted when a new swap manager is requested.
+     * @param oldAddress The previous address of the swap manager.
+     * @param newAddress The new address of the swap manager.
+     */
+    event NewSwapManagerRequested(address indexed oldAddress, address indexed newAddress);
 
     /**
      * @notice Emitted when the swap manager is set.
@@ -108,13 +122,6 @@ interface IManager {
      * @param newAmount The new amount of the liquidator's bonus.
      */
     event LiquidatorBonusUpdated(uint256 oldAmount, uint256 newAmount);
-
-    /**
-     * @notice Emitted when the self-liquidation fee is updated.
-     * @param oldAmount The previous amount of the self-liquidation fee.
-     * @param newAmount The new amount of the self-liquidation fee.
-     */
-    event SelfLiquidationFeeUpdated(uint256 oldAmount, uint256 newAmount);
 
     /**
      * @notice Emitted when the fee address is changed.
@@ -190,10 +197,10 @@ interface IManager {
     ) external view returns (bool);
 
     /**
-     * @notice Returns true if the token cannot be withdrawn from a holding.
+     * @notice Returns true if the token can be withdrawn from a holding.
      * @param _token The address of the token.
      */
-    function isTokenNonWithdrawable(
+    function isTokenWithdrawable(
         address _token
     ) external view returns (bool);
 
@@ -206,11 +213,6 @@ interface IManager {
     ) external view returns (bool);
 
     // -- Essential tokens --
-
-    /**
-     * @notice USDC address.
-     */
-    function USDC() external view returns (address);
 
     /**
      * @notice WETH address.
@@ -265,24 +267,22 @@ interface IManager {
     function performanceFee() external view returns (uint256);
 
     /**
+     * @notice Returns the maximum performance fee.
+     * @dev Uses 2 decimal precision, where 1% is represented as 100.
+     */
+    function MAX_PERFORMANCE_FEE() external view returns (uint256);
+
+    /**
      * @notice Fee for withdrawing from a holding.
      * @dev Uses 2 decimal precision, where 1% is represented as 100.
      */
     function withdrawalFee() external view returns (uint256);
 
     /**
-     * @notice The % amount a liquidator gets.
-     * @dev Uses 3 decimal precision, where 1% is represented as 1000.
-     * @dev 10% is the default liquidator's bonus.
+     * @notice Returns the maximum withdrawal fee.
+     * @dev Uses 2 decimal precision, where 1% is represented as 100.
      */
-    function liquidatorBonus() external view returns (uint256);
-
-    /**
-     * @notice The max % amount the protocol gets when a self-liquidation operation happens.
-     * @dev Uses 3 decimal precision, where 1% is represented as 1000.
-     * @dev 8% is the default self-liquidation fee.
-     */
-    function selfLiquidationFee() external view returns (uint256);
+    function MAX_WITHDRAWAL_FEE() external view returns (uint256);
 
     /**
      * @notice Returns the fee address, where all the fees are collected.
@@ -299,6 +299,11 @@ interface IManager {
     // -- Utility values --
 
     /**
+     * @notice Minimum allowed jUSD debt amount for a holding to ensure successful liquidation.
+     */
+    function minDebtAmount() external view returns (uint256);
+
+    /**
      * @notice Returns the collateral rate precision.
      * @dev Should be less than exchange rate precision due to optimization in math.
      */
@@ -313,6 +318,51 @@ interface IManager {
      * @notice Timelock amount in seconds for changing the oracle data.
      */
     function timelockAmount() external view returns (uint256);
+
+    /**
+     * @notice Returns the old timelock value for delayed timelock update.
+     */
+    function oldTimelock() external view returns (uint256);
+
+    /**
+     * @notice Returns the new timelock value for delayed timelock update.
+     */
+    function newTimelock() external view returns (uint256);
+
+    /**
+     * @notice Returns the timestamp when the new timelock was requested.
+     */
+    function newTimelockTimestamp() external view returns (uint256);
+
+    /**
+     * @notice Returns the new oracle address for delayed oracle update.
+     */
+    function newOracle() external view returns (address);
+
+    /**
+     * @notice Returns the timestamp when the new oracle was requested.
+     */
+    function newOracleTimestamp() external view returns (uint256);
+
+    /**
+     * @notice Returns the new swap manager address for delayed swap manager update.
+     */
+    function newSwapManager() external view returns (address);
+
+    /**
+     * @notice Returns the timestamp when the new swap manager was requested.
+     */
+    function newSwapManagerTimestamp() external view returns (uint256);
+
+    /**
+     * @notice Returns the new liquidation manager address for delayed liquidation manager update.
+     */
+    function newLiquidationManager() external view returns (address);
+
+    /**
+     * @notice Returns the timestamp when the new liquidation manager was requested.
+     */
+    function newLiquidationManagerTimestamp() external view returns (uint256);
 
     // -- Setters --
 
@@ -389,39 +439,39 @@ interface IManager {
     ) external;
 
     /**
-     * @notice Registers the `_token` as non-withdrawable.
+     * @notice Registers the `_token` as withdrawable.
      *
      * @notice Requirements:
      * - `msg.sender` must be owner or `strategyManager`.
-     * - `_token` must not be non-withdrawable.
+     * - `_token` must not be withdrawable.
      *
      * @notice Effects:
-     * - Updates the `isTokenNonWithdrawable` mapping.
+     * - Updates the `isTokenWithdrawable` mapping.
      *
      * @notice Emits:
-     * - `NonWithdrawableTokenAdded` event indicating successful non-withdrawable token addition operation.
+     * - `WithdrawableTokenAdded` event indicating successful withdrawable token addition operation.
      *
-     * @param _token The address of the token to be added as non-withdrawable.
+     * @param _token The address of the token to be added as withdrawable.
      */
-    function addNonWithdrawableToken(
+    function addWithdrawableToken(
         address _token
     ) external;
 
     /**
-     * @notice Unregisters the `_token` as non-withdrawable.
+     * @notice Unregisters the `_token` as withdrawable.
      *
      * @notice Requirements:
-     * - `_token` must be non-withdrawable.
+     * - `_token` must be withdrawable.
      *
      * @notice Effects:
-     * - Updates the `isTokenNonWithdrawable` mapping.
+     * - Updates the `isTokenWithdrawable` mapping.
      *
      * @notice Emits:
-     * - `NonWithdrawableTokenRemoved` event indicating successful non-withdrawable token removal operation.
+     * - `WithdrawableTokenRemoved` event indicating successful withdrawable token removal operation.
      *
-     * @param _token The address of the token to be removed as non-withdrawable.
+     * @param _token The address of the token to be removed as withdrawable.
      */
-    function removeNonWithdrawableToken(
+    function removeWithdrawableToken(
         address _token
     ) external;
 
@@ -461,7 +511,8 @@ interface IManager {
      * @notice Sets the Liquidation Manager Contract's address.
      *
      * @notice Requirements:
-     * - `_val` must be different from previous `liquidationManager` address.
+     * - Can only be called once.
+     * - `_val` must be non-zero address.
      *
      * @notice Effects:
      * - Updates the `liquidationManager` state variable.
@@ -474,6 +525,43 @@ interface IManager {
     function setLiquidationManager(
         address _val
     ) external;
+
+    /**
+     * @notice Initiates the process to update the Liquidation Manager Contract's address.
+     *
+     * @notice Requirements:
+     * - `_val` must be non-zero address.
+     * - `_val` must be different from previous `liquidationManager` address.
+     *
+     * @notice Effects:
+     * - Updates the the `_newLiquidationManager` state variable.
+     * - Updates the the `_newLiquidationManagerTimestamp` state variable.
+     *
+     * @notice Emits:
+     * - `LiquidationManagerUpdateRequested` event indicating successful liquidation manager change request.
+     *
+     * @param _val The new liquidation manager's address.
+     */
+    function requestNewLiquidationManager(
+        address _val
+    ) external;
+
+    /**
+     * @notice Sets the Liquidation Manager Contract's address.
+     *
+     * @notice Requirements:
+     * - `_val` must be different from previous `liquidationManager` address.
+     * - Timelock must expire.
+     *
+     * @notice Effects:
+     * - Updates the `liquidationManager` state variable.
+     * - Updates the the `_newLiquidationManager` state variable.
+     * - Updates the the `_newLiquidationManagerTimestamp` state variable.
+     *
+     * @notice Emits:
+     * - `LiquidationManagerUpdated` event indicating the successful setting of the Liquidation Manager's address.
+     */
+    function acceptNewLiquidationManager() external;
 
     /**
      * @notice Sets the Stablecoin Manager Contract's address.
@@ -515,7 +603,8 @@ interface IManager {
      * @notice Sets the Swap Manager Contract's address.
      *
      * @notice Requirements:
-     * - `_val` must be different from previous `swapManager` address.
+     * - Can only be called once.
+     * - `_val` must be non-zero address.
      *
      * @notice Effects:
      * - Updates the `swapManager` state variable.
@@ -528,6 +617,42 @@ interface IManager {
     function setSwapManager(
         address _val
     ) external;
+
+    /**
+     * @notice Initiates the process to update the Swap Manager Contract's address.
+     *
+     * @notice Requirements:
+     * - `_val` must be non-zero address.
+     * - `_val` must be different from previous `swapManager` address.
+     *
+     * @notice Effects:
+     * - Updates the the `_newSwapManager` state variable.
+     * - Updates the the `_newSwapManagerTimestamp` state variable.
+     *
+     * @notice Emits:
+     * - `NewSwapManagerRequested` event indicating successful swap manager change request.
+     *
+     * @param _val The new swap manager's address.
+     */
+    function requestNewSwapManager(
+        address _val
+    ) external;
+
+    /**
+     * @notice Updates the Swap Manager Contract    .
+     *
+     * @notice Requirements:
+     * - Timelock must expire.
+     *
+     * @notice Effects:
+     * - Updates the `swapManager` state variable.
+     * - Resets `_newSwapManager` to address(0).
+     * - Resets `_newSwapManagerTimestamp` to 0.
+     *
+     * @notice Emits:
+     * - `SwapManagerUpdated` event indicating the successful setting of the Swap Manager's address.
+     */
+    function acceptNewSwapManager() external;
 
     /**
      * @notice Sets the performance fee.
@@ -566,48 +691,6 @@ interface IManager {
      * @param _val The new withdrawal fee value.
      */
     function setWithdrawalFee(
-        uint256 _val
-    ) external;
-
-    /**
-     * @notice Sets the liquidator bonus.
-     *
-     * @notice Requirements:
-     * - `_val` must be smaller than `PRECISION` to avoid wrong computations.
-     *
-     * @notice Effects:
-     * - Updates the `liquidatorBonus` state variable.
-     * - Updates the `liquidatorBonus` state variable in the LiquidationManager Contract.
-     *
-     * @notice Emits:
-     * - `SwapRouteLiquidatorBonusUpdated` event indicating successful liquidator bonus update operation.
-     *
-     * @dev `_val` uses 3 decimals precision, where 1000 == 1%.
-     *
-     * @param _val The new value.
-     */
-    function setLiquidatorBonus(
-        uint256 _val
-    ) external;
-
-    /**
-     * @notice Sets the self-liquidation fee.
-     *
-     * @notice Requirements:
-     * - `_val` must be smaller than `PRECISION` to avoid wrong computations.
-     *
-     * @notice Effects:
-     * - Updates the `selfLiquidationFee` state variable.
-     * - Updates the `selfLiquidationFee` state variable in the LiquidationManager Contract.
-     *
-     * @notice Emits:
-     * - `SelfLiquidationFeeUpdated` event indicating successful self-liquidation fee update operation.
-     *
-     * @dev `_val` uses 3 decimals precision, where 1000 == 1%.
-     *
-     * @param _val The new value.
-     */
-    function setSelfLiquidationFee(
         uint256 _val
     ) external;
 
@@ -683,7 +766,7 @@ interface IManager {
      * @notice Emits:
      * - `OracleUpdated` event indicating successful jUSD's oracle change.
      */
-    function setJUsdOracle() external;
+    function acceptNewJUsdOracle() external;
 
     /**
      * @notice Updates the jUSD's oracle data.
@@ -704,15 +787,26 @@ interface IManager {
     ) external;
 
     /**
+     * @notice Sets the minimum debt amount.
+     *
+     * @notice Requirements:
+     * - `_minDebtAmount` must be greater than zero.
+     * - `_minDebtAmount` must be different from previous `minDebtAmount`.
+     *
+     * @param _minDebtAmount The new minimum debt amount.
+     */
+    function setMinDebtAmount(
+        uint256 _minDebtAmount
+    ) external;
+
+    /**
      * @notice Registers timelock change request.
      *
      * @notice Requirements:
-     * - Contract must not be in active change.
      * - `_oldTimelock` must be set zero.
      * - `_newVal` must be greater than zero.
      *
      * @notice Effects:
-     * - Updates the the `_isActiveChange` state variable.
      * - Updates the the `_oldTimelock` state variable.
      * - Updates the the `_newTimelock` state variable.
      * - Updates the the `_newTimelockTimestamp` state variable.
@@ -722,7 +816,7 @@ interface IManager {
      *
      * @param _newVal The new timelock value in seconds.
      */
-    function requestTimelockAmountChange(
+    function requestNewTimelock(
         uint256 _newVal
     ) external;
 
@@ -743,7 +837,7 @@ interface IManager {
      * @notice Emits:
      * - `TimelockAmountUpdated` event indicating successful timelock amount change.
      */
-    function acceptTimelockAmountChange() external;
+    function acceptNewTimelock() external;
 
     // -- Getters --
 

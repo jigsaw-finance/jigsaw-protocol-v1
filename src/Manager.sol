@@ -36,7 +36,7 @@ contract Manager is IManager, Ownable2Step {
     /**
      * @notice Returns true if the token cannot be withdrawn from a holding.
      */
-    mapping(address token => bool withdrawable) public override isTokenNonWithdrawable;
+    mapping(address token => bool withdrawable) public override isTokenWithdrawable;
 
     /**
      * @notice Returns true if caller is allowed invoker.
@@ -44,11 +44,6 @@ contract Manager is IManager, Ownable2Step {
     mapping(address invoker => bool allowed) public override allowedInvokers;
 
     // -- Essential tokens --
-
-    /**
-     * @notice USDC address.
-     */
-    address public immutable override USDC;
 
     /**
      * @notice WETH address.
@@ -103,24 +98,22 @@ contract Manager is IManager, Ownable2Step {
     uint256 public override performanceFee = 1500; //15%
 
     /**
+     * @notice Returns the maximum performance fee.
+     * @dev Uses 2 decimal precision, where 1% is represented as 100.
+     */
+    uint256 public immutable override MAX_PERFORMANCE_FEE = 2500; //25%
+
+    /**
      * @notice Fee for withdrawing from a holding.
      * @dev Uses 2 decimal precision, where 1% is represented as 100.
      */
     uint256 public override withdrawalFee;
 
     /**
-     * @notice The % amount a liquidator gets.
-     * @dev Uses 3 decimal precision, where 1% is represented as 1000.
-     * @dev 8% is the default liquidator's bonus.
+     * @notice Returns the maximum withdrawal fee.
+     * @dev Uses 2 decimal precision, where 1% is represented as 100.
      */
-    uint256 public override liquidatorBonus = 8e3;
-
-    /**
-     * @notice The max % amount the protocol gets when a self-liquidation operation happens.
-     * @dev Uses 3 decimal precision, where 1% is represented as 1000.
-     * @dev 8% is the default self-liquidation fee.
-     */
-    uint256 public override selfLiquidationFee = 8e3;
+    uint256 public immutable override MAX_WITHDRAWAL_FEE = 800; //8%
 
     /**
      * @notice Returns the fee address, where all the fees are collected.
@@ -137,9 +130,10 @@ contract Manager is IManager, Ownable2Step {
     // -- Utility values --
 
     /**
-     * @notice Flag indicating whether the Manager Contract is in the active change state.
+     * @notice Minimum allowed jUSD debt amount for a holding to ensure successful liquidation.
+     * @dev 200 jUSD is the initial minimum allowed debt amount for a holding to ensure successful liquidation.
      */
-    bool private _isActiveChange = false;
+    uint256 public override minDebtAmount = 200e18;
 
     /**
      * @notice Returns the collateral rate precision.
@@ -160,33 +154,42 @@ contract Manager is IManager, Ownable2Step {
     /**
      * @notice Variables required for delayed timelock update.
      */
-    uint256 private _oldTimelock;
-    uint256 private _newTimelock;
-    uint256 private _newTimelockTimestamp;
+    uint256 public override oldTimelock;
+    uint256 public override newTimelock;
+    uint256 public override newTimelockTimestamp;
 
     /**
      * @notice Variables required for delayed oracle update.
      */
-    address private _newOracle;
-    uint256 private _newOracleTimestamp;
+    address public override newOracle;
+    uint256 public override newOracleTimestamp;
+
+    /**
+     * @notice Variables required for delayed swap manager update.
+     */
+    address public override newSwapManager;
+    uint256 public override newSwapManagerTimestamp;
+
+    /**
+     * @notice Variables required for delayed liquidation manager update.
+     */
+    address public override newLiquidationManager;
+    uint256 public override newLiquidationManagerTimestamp;
 
     /**
      * @notice Creates a new Manager Contract.
      *
      * @param _initialOwner The initial owner of the contract.
-     * @param _usdc The USDC address.
      * @param _weth The WETH address.
      * @param _oracle The jUSD oracle address.
      * @param _oracleData The jUSD initial oracle data.
      */
     constructor(
         address _initialOwner,
-        address _usdc,
         address _weth,
         address _oracle,
         bytes memory _oracleData
-    ) Ownable(_initialOwner) validAddress(_usdc) validAddress(_weth) validAddress(_oracle) {
-        USDC = _usdc;
+    ) Ownable(_initialOwner) validAddress(_weth) validAddress(_oracle) {
         WETH = _weth;
         jUsdOracle = IOracle(_oracle);
         oracleData = _oracleData;
@@ -283,49 +286,49 @@ contract Manager is IManager, Ownable2Step {
     }
 
     /**
-     * @notice Registers the `_token` as non-withdrawable.
+     * @notice Registers the `_token` as withdrawable.
      *
      * @notice Requirements:
-     * - `msg.sender` must be owner or `strategyManager`.
-     * - `_token` must not be non-withdrawable.
+     * - `msg.sender` must be owner or `stablesManager`.
+     * - `_token` must not be withdrawable.
      *
      * @notice Effects:
-     * - Updates the `isTokenNonWithdrawable` mapping.
+     * - Updates the `isTokenWithdrawable` mapping.
      *
      * @notice Emits:
-     * - `NonWithdrawableTokenAdded` event indicating successful non-withdrawable token addition operation.
+     * - `WithdrawableTokenAdded` event indicating successful withdrawable token addition operation.
      *
-     * @param _token The address of the token to be added as non-withdrawable.
+     * @param _token The address of the token to be added as withdrawable.
      */
-    function addNonWithdrawableToken(
+    function addWithdrawableToken(
         address _token
     ) external override validAddress(_token) {
-        require(owner() == msg.sender || strategyManager == msg.sender, "1000");
-        require(!isTokenNonWithdrawable[_token], "3069");
-        isTokenNonWithdrawable[_token] = true;
-        emit NonWithdrawableTokenAdded(_token);
+        require(owner() == msg.sender || stablesManager == msg.sender, "1000");
+        require(!isTokenWithdrawable[_token], "3069");
+        isTokenWithdrawable[_token] = true;
+        emit WithdrawableTokenAdded(_token);
     }
 
     /**
-     * @notice Unregisters the `_token` as non-withdrawable.
+     * @notice Unregisters the `_token` as withdrawable.
      *
      * @notice Requirements:
-     * - `_token` must be non-withdrawable.
+     * - `_token` must be withdrawable.
      *
      * @notice Effects:
-     * - Updates the `isTokenNonWithdrawable` mapping.
+     * - Updates the `isTokenWithdrawable` mapping.
      *
      * @notice Emits:
-     * - `NonWithdrawableTokenRemoved` event indicating successful non-withdrawable token removal operation.
+     * - `WithdrawableTokenRemoved` event indicating successful withdrawable token removal operation.
      *
-     * @param _token The address of the token to be removed as non-withdrawable.
+     * @param _token The address of the token to be removed as withdrawable.
      */
-    function removeNonWithdrawableToken(
+    function removeWithdrawableToken(
         address _token
     ) external override onlyOwner validAddress(_token) {
-        require(isTokenNonWithdrawable[_token], "3070");
-        isTokenNonWithdrawable[_token] = false;
-        emit NonWithdrawableTokenRemoved(_token);
+        require(isTokenWithdrawable[_token], "3070");
+        isTokenWithdrawable[_token] = false;
+        emit WithdrawableTokenRemoved(_token);
     }
 
     /**
@@ -349,7 +352,8 @@ contract Manager is IManager, Ownable2Step {
      * @notice Sets the Holding Manager Contract's address.
      *
      * @notice Requirements:
-     * - `_val` must be different from previous `holdingManager` address.
+     * - Can only be called once.
+     * - `_val` must be non-zero address.
      *
      * @notice Effects:
      * - Updates the `holdingManager` state variable.
@@ -362,7 +366,7 @@ contract Manager is IManager, Ownable2Step {
     function setHoldingManager(
         address _val
     ) external override onlyOwner validAddress(_val) {
-        require(holdingManager != _val, "3017");
+        require(holdingManager == address(0), "3017");
         emit HoldingManagerUpdated(holdingManager, _val);
         holdingManager = _val;
     }
@@ -371,7 +375,8 @@ contract Manager is IManager, Ownable2Step {
      * @notice Sets the Liquidation Manager Contract's address.
      *
      * @notice Requirements:
-     * - `_val` must be different from previous `liquidationManager` address.
+     * - Can only be called once.
+     * - `_val` must be non-zero address.
      *
      * @notice Effects:
      * - Updates the `liquidationManager` state variable.
@@ -384,9 +389,62 @@ contract Manager is IManager, Ownable2Step {
     function setLiquidationManager(
         address _val
     ) external override onlyOwner validAddress(_val) {
-        require(liquidationManager != _val, "3017");
+        require(liquidationManager == address(0), "3017");
         emit LiquidationManagerUpdated(liquidationManager, _val);
         liquidationManager = _val;
+    }
+
+    /**
+     * @notice Initiates the process to update the Liquidation Manager Contract's address.
+     *
+     * @notice Requirements:
+     * - `_val` must be non-zero address.
+     * - `_val` must be different from previous `liquidationManager` address.
+     *
+     * @notice Effects:
+     * - Updates the the `newLiquidationManager` state variable.
+     * - Updates the the `newLiquidationManagerTimestamp` state variable.
+     *
+     * @notice Emits:
+     * - `LiquidationManagerUpdateRequested` event indicating successful liquidation manager change request.
+     *
+     * @param _val The new liquidation manager's address.
+     */
+    function requestNewLiquidationManager(
+        address _val
+    ) external override onlyOwner validAddress(_val) {
+        require(liquidationManager != _val, "3017");
+
+        emit NewLiquidationManagerRequested(liquidationManager, _val);
+
+        newLiquidationManager = _val;
+        newLiquidationManagerTimestamp = block.timestamp;
+    }
+
+    /**
+     * @notice Sets the Liquidation Manager Contract's address.
+     *
+     * @notice Requirements:
+     * - `_val` must be different from previous `liquidationManager` address.
+     * - Timelock must expire.
+     *
+     * @notice Effects:
+     * - Updates the `liquidationManager` state variable.
+     * - Updates the the `newLiquidationManager` state variable.
+     * - Updates the the `newLiquidationManagerTimestamp` state variable.
+     *
+     * @notice Emits:
+     * - `LiquidationManagerUpdated` event indicating the successful setting of the Liquidation Manager's address.
+     */
+    function acceptNewLiquidationManager() external override onlyOwner {
+        require(newLiquidationManager != address(0), "3063");
+        require(newLiquidationManagerTimestamp + timelockAmount <= block.timestamp, "3066");
+
+        emit LiquidationManagerUpdated(liquidationManager, newLiquidationManager);
+
+        liquidationManager = newLiquidationManager;
+        newLiquidationManager = address(0);
+        newLiquidationManagerTimestamp = 0;
     }
 
     /**
@@ -406,7 +464,7 @@ contract Manager is IManager, Ownable2Step {
     function setStablecoinManager(
         address _val
     ) external override onlyOwner validAddress(_val) {
-        require(stablesManager != _val, "3017");
+        require(stablesManager == address(0), "3017");
         emit StablecoinManagerUpdated(stablesManager, _val);
         stablesManager = _val;
     }
@@ -428,7 +486,7 @@ contract Manager is IManager, Ownable2Step {
     function setStrategyManager(
         address _val
     ) external override onlyOwner validAddress(_val) {
-        require(strategyManager != _val, "3017");
+        require(strategyManager == address(0), "3017");
         emit StrategyManagerUpdated(strategyManager, _val);
         strategyManager = _val;
     }
@@ -437,7 +495,8 @@ contract Manager is IManager, Ownable2Step {
      * @notice Sets the Swap Manager Contract's address.
      *
      * @notice Requirements:
-     * - `_val` must be different from previous `swapManager` address.
+     * - Can only be called once.
+     * - `_val` must be non-zero address.
      *
      * @notice Effects:
      * - Updates the `swapManager` state variable.
@@ -450,16 +509,68 @@ contract Manager is IManager, Ownable2Step {
     function setSwapManager(
         address _val
     ) external override onlyOwner validAddress(_val) {
-        require(swapManager != _val, "3017");
+        require(swapManager == address(0), "3017");
         emit SwapManagerUpdated(swapManager, _val);
         swapManager = _val;
+    }
+
+    /**
+     * @notice Initiates the process to update the Swap Manager Contract's address.
+     *
+     * @notice Requirements:
+     * - `_val` must be non-zero address.
+     * - `_val` must be different from previous `swapManager` address.
+     *
+     * @notice Effects:
+     * - Updates the the `newSwapManager` state variable.
+     * - Updates the the `newSwapManagerTimestamp` state variable.
+     *
+     * @notice Emits:
+     * - `NewSwapManagerRequested` event indicating successful swap manager change request.
+     *
+     * @param _val The new swap manager's address.
+     */
+    function requestNewSwapManager(
+        address _val
+    ) external override onlyOwner validAddress(_val) {
+        require(swapManager != _val, "3017");
+
+        emit NewSwapManagerRequested(swapManager, _val);
+
+        newSwapManager = _val;
+        newSwapManagerTimestamp = block.timestamp;
+    }
+
+    /**
+     * @notice Updates the Swap Manager Contract    .
+     *
+     * @notice Requirements:
+     * - Timelock must expire.
+     *
+     * @notice Effects:
+     * - Updates the `swapManager` state variable.
+     * - Resets `newSwapManager` to address(0).
+     * - Resets `newSwapManagerTimestamp` to 0.
+     *
+     * @notice Emits:
+     * - `SwapManagerUpdated` event indicating the successful setting of the Swap Manager's address.
+     */
+    function acceptNewSwapManager() external override onlyOwner {
+        require(newSwapManager != address(0), "3063");
+        require(newSwapManagerTimestamp + timelockAmount <= block.timestamp, "3066");
+
+        emit SwapManagerUpdated(swapManager, newSwapManager);
+
+        swapManager = newSwapManager;
+        newSwapManager = address(0);
+        newSwapManagerTimestamp = 0;
     }
 
     /**
      * @notice Sets the performance fee.
      *
      * @notice Requirements:
-     * - `_val` must be smaller than `FEE_FACTOR` to avoid wrong computations.
+     * - `_val` must be smaller than `MAX_PERFORMANCE_FEE`.
      *
      * @notice Effects:
      * - Updates the `performanceFee` state variable.
@@ -473,8 +584,9 @@ contract Manager is IManager, Ownable2Step {
      */
     function setPerformanceFee(
         uint256 _val
-    ) external override onlyOwner validAmount(_val) {
-        require(_val < OperationsLib.FEE_FACTOR, "3018");
+    ) external override onlyOwner {
+        require(performanceFee != _val, "3017");
+        require(_val < MAX_PERFORMANCE_FEE, "3018");
         emit PerformanceFeeUpdated(performanceFee, _val);
         performanceFee = _val;
     }
@@ -499,61 +611,9 @@ contract Manager is IManager, Ownable2Step {
         uint256 _val
     ) external override onlyOwner {
         require(withdrawalFee != _val, "3017");
-        require(_val <= OperationsLib.FEE_FACTOR, "2066");
+        require(_val <= MAX_WITHDRAWAL_FEE, "3018");
         emit WithdrawalFeeUpdated(withdrawalFee, _val);
         withdrawalFee = _val;
-    }
-
-    /**
-     * @notice Sets the liquidator bonus.
-     *
-     * @notice Requirements:
-     * - `_val` must be smaller than `PRECISION` to avoid wrong computations.
-     *
-     * @notice Effects:
-     * - Updates the `liquidatorBonus` state variable.
-     * - Updates the `liquidatorBonus` state variable in the LiquidationManager Contract.
-     *
-     * @notice Emits:
-     * - `SwapRouteLiquidatorBonusUpdated` event indicating successful liquidator bonus update operation.
-     *
-     * @dev `_val` uses 3 decimals precision, where 1000 == 1%.
-     *
-     * @param _val The new value.
-     */
-    function setLiquidatorBonus(
-        uint256 _val
-    ) external override onlyOwner {
-        require(_val <= PRECISION, "3066");
-        emit LiquidatorBonusUpdated(liquidatorBonus, _val);
-        liquidatorBonus = _val;
-        ILiquidationManager(liquidationManager).setLiquidatorBonus(_val);
-    }
-
-    /**
-     * @notice Sets the self-liquidation fee.
-     *
-     * @notice Requirements:
-     * - `_val` must be smaller than `PRECISION` to avoid wrong computations.
-     *
-     * @notice Effects:
-     * - Updates the `selfLiquidationFee` state variable.
-     * - Updates the `selfLiquidationFee` state variable in the LiquidationManager Contract.
-     *
-     * @notice Emits:
-     * - `SelfLiquidationFeeUpdated` event indicating successful self-liquidation fee update operation.
-     *
-     * @dev `_val` uses 3 decimals precision, where 1000 == 1%.
-     *
-     * @param _val The new value.
-     */
-    function setSelfLiquidationFee(
-        uint256 _val
-    ) external override onlyOwner {
-        require(_val <= PRECISION, "3066");
-        emit SelfLiquidationFeeUpdated(selfLiquidationFee, _val);
-        selfLiquidationFee = _val;
-        ILiquidationManager(liquidationManager).setSelfLiquidationFee(_val);
     }
 
     /**
@@ -607,9 +667,8 @@ contract Manager is IManager, Ownable2Step {
      * - Contract must not be in active change.
      *
      * @notice Effects:
-     * - Updates the the `_isActiveChange` state variable.
-     * - Updates the the `_newOracle` state variable.
-     * - Updates the the `_newOracleTimestamp` state variable.
+     * - Updates the the `newOracle` state variable.
+     * - Updates the the `newOracleTimestamp` state variable.
      *
      * @notice Emits:
      * - `NewOracleRequested` event indicating successful jUSD's oracle change request.
@@ -618,12 +677,14 @@ contract Manager is IManager, Ownable2Step {
      */
     function requestNewJUsdOracle(
         address _oracle
-    ) external override onlyOwner {
-        require(!_isActiveChange, "1000");
-        _isActiveChange = true;
-        _newOracle = _oracle;
-        _newOracleTimestamp = block.timestamp;
+    ) external override onlyOwner validAddress(_oracle) {
+        require(newOracle == address(0), "3017");
+        require(address(jUsdOracle) != _oracle, "3017");
+
         emit NewOracleRequested(_oracle);
+
+        newOracle = _oracle;
+        newOracleTimestamp = block.timestamp;
     }
 
     /**
@@ -635,28 +696,28 @@ contract Manager is IManager, Ownable2Step {
      *
      * @notice Effects:
      * - Updates the the `jUsdOracle` state variable.
-     * - Updates the the `_isActiveChange` state variable.
-     * - Updates the the `_newOracle` state variable.
-     * - Updates the the `_newOracleTimestamp` state variable.
+     * - Updates the the `newOracle` state variable.
+     * - Updates the the `newOracleTimestamp` state variable.
      *
      * @notice Emits:
      * - `OracleUpdated` event indicating successful jUSD's oracle change.
      */
-    function setJUsdOracle() external override onlyOwner {
-        require(_isActiveChange, "1000");
-        require(_newOracleTimestamp + timelockAmount <= block.timestamp, "3066");
-        emit OracleUpdated(address(jUsdOracle), _newOracle);
-        jUsdOracle = IOracle(_newOracle);
-        _isActiveChange = false;
-        _newOracle = address(0);
-        _newOracleTimestamp = 0;
+    function acceptNewJUsdOracle() external override onlyOwner {
+        require(newOracle != address(0), "3063");
+        require(newOracleTimestamp + timelockAmount <= block.timestamp, "3066");
+
+        emit OracleUpdated(address(jUsdOracle), newOracle);
+
+        jUsdOracle = IOracle(newOracle);
+        newOracle = address(0);
+        newOracleTimestamp = 0;
     }
 
     /**
      * @notice Updates the jUSD's oracle data.
      *
      * @notice Requirements:
-     * - `_newOracleData` must be different from previous `oracleData`.
+     * - `newOracleData` must be different from previous `oracleData`.
      *
      * @notice Effects:
      * - Updates the `oracleData` state variable.
@@ -664,46 +725,62 @@ contract Manager is IManager, Ownable2Step {
      * @notice Emits:
      * - `OracleDataUpdated` event indicating successful update of the oracle Data.
      *
-     * @param _newOracleData New data used for jUSD's oracle data.
+     * @param newOracleData New data used for jUSD's oracle data.
      */
     function setJUsdOracleData(
-        bytes calldata _newOracleData
+        bytes calldata newOracleData
     ) external override onlyOwner {
-        require(keccak256(oracleData) != keccak256(_newOracleData), "3017");
-        emit OracleDataUpdated(oracleData, _newOracleData);
-        oracleData = _newOracleData;
+        require(keccak256(oracleData) != keccak256(newOracleData), "3017");
+        emit OracleDataUpdated(oracleData, newOracleData);
+        oracleData = newOracleData;
+    }
+
+    /**
+     * @notice Sets the minimum debt amount.
+     *
+     * @notice Requirements:
+     * - `_minDebtAmount` must be greater than zero.
+     * - `_minDebtAmount` must be different from previous `minDebtAmount`.
+     *
+     * @param _minDebtAmount The new minimum debt amount.
+     */
+    function setMinDebtAmount(
+        uint256 _minDebtAmount
+    ) external override onlyOwner {
+        require(_minDebtAmount > 0, "2100");
+        require(_minDebtAmount != minDebtAmount, "3017");
+        minDebtAmount = _minDebtAmount;
     }
 
     /**
      * @notice Registers timelock change request.
      *
      * @notice Requirements:
-     * - Contract must not be in active change.
-     * - `_oldTimelock` must be set zero.
-     * - `_newVal` must be greater than zero.
+     * - `oldTimelock` must be set zero.
+     * - `newVal` must be greater than zero.
      *
      * @notice Effects:
-     * - Updates the the `_isActiveChange` state variable.
-     * - Updates the the `_oldTimelock` state variable.
-     * - Updates the the `_newTimelock` state variable.
-     * - Updates the the `_newTimelockTimestamp` state variable.
+     * - Updates the the `oldTimelock` state variable.
+     * - Updates the the `newTimelock` state variable.
+     * - Updates the the `newTimelockTimestamp` state variable.
      *
      * @notice Emits:
      * - `TimelockAmountUpdateRequested` event indicating successful timelock change request.
      *
-     * @param _newVal The new timelock value in seconds.
+     * @param newVal The new timelock value in seconds.
      */
-    function requestTimelockAmountChange(
-        uint256 _newVal
+    function requestNewTimelock(
+        uint256 newVal
     ) external override onlyOwner {
-        require(!_isActiveChange, "1000");
-        require(_oldTimelock == 0, "2100");
-        require(_newVal != 0, "2001");
-        _isActiveChange = true;
-        _oldTimelock = timelockAmount;
-        _newTimelock = _newVal;
-        _newTimelockTimestamp = block.timestamp;
-        emit TimelockAmountUpdateRequested(_oldTimelock, _newTimelock);
+        require(oldTimelock == 0, "3017");
+        require(newVal != 0, "2001");
+
+        newTimelock = newVal;
+        oldTimelock = timelockAmount;
+
+        emit TimelockAmountUpdateRequested(oldTimelock, newTimelock);
+
+        newTimelockTimestamp = block.timestamp;
     }
 
     /**
@@ -711,27 +788,28 @@ contract Manager is IManager, Ownable2Step {
      *
      * @notice Requirements:
      * - Contract must be in active change.
-     * - `_newTimelock` must be greater than zero.
+     * - `newTimelock` must be greater than zero.
      * - The old timelock must expire.
      *
      * @notice Effects:
      * - Updates the the `timelockAmount` state variable.
-     * - Updates the the `_oldTimelock` state variable.
-     * - Updates the the `_newTimelock` state variable.
-     * - Updates the the `_newTimelockTimestamp` state variable.
+     * - Updates the the `oldTimelock` state variable.
+     * - Updates the the `newTimelock` state variable.
+     * - Updates the the `newTimelockTimestamp` state variable.
      *
      * @notice Emits:
      * - `TimelockAmountUpdated` event indicating successful timelock amount change.
      */
-    function acceptTimelockAmountChange() external override onlyOwner {
-        require(_isActiveChange, "1000");
-        require(_newTimelock != 0, "2001");
-        require(_newTimelockTimestamp + _oldTimelock <= block.timestamp, "3066");
-        timelockAmount = _newTimelock;
-        emit TimelockAmountUpdated(_oldTimelock, _newTimelock);
-        _oldTimelock = 0;
-        _newTimelock = 0;
-        _newTimelockTimestamp = 0;
+    function acceptNewTimelock() external override onlyOwner {
+        require(newTimelock != 0, "2001");
+        require(newTimelockTimestamp + oldTimelock <= block.timestamp, "3066");
+
+        emit TimelockAmountUpdated(oldTimelock, newTimelock);
+
+        timelockAmount = newTimelock;
+        oldTimelock = 0;
+        newTimelock = 0;
+        newTimelockTimestamp = 0;
     }
 
     /**
@@ -769,17 +847,6 @@ contract Manager is IManager, Ownable2Step {
         address _address
     ) {
         require(_address != address(0), "3000");
-        _;
-    }
-
-    /**
-     * @dev Modifier to check if the amount is valid (greater than zero).
-     * @param _amount being checked.
-     */
-    modifier validAmount(
-        uint256 _amount
-    ) {
-        require(_amount > 0, "2001");
         _;
     }
 }

@@ -6,7 +6,6 @@ import { Ownable2Step } from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { IManager } from "./interfaces/core/IManager.sol";
-import { IManagerContainer } from "./interfaces/core/IManagerContainer.sol";
 import { ISharesRegistry } from "./interfaces/core/ISharesRegistry.sol";
 import { IStablesManager } from "./interfaces/core/IStablesManager.sol";
 import { IOracle } from "./interfaces/oracle/IOracle.sol";
@@ -22,6 +21,11 @@ import { IOracle } from "./interfaces/oracle/IOracle.sol";
  */
 contract SharesRegistry is ISharesRegistry, Ownable2Step {
     /**
+     * @notice Returns the token address for which this registry was created.
+     */
+    address public immutable override token;
+
+    /**
      * @notice Returns holding's borrowed amount.
      */
     mapping(address holding => uint256 amount) public override borrowed;
@@ -32,19 +36,28 @@ contract SharesRegistry is ISharesRegistry, Ownable2Step {
     mapping(address holding => uint256 amount) public override collateral;
 
     /**
-     * @notice Returns the token address for which this registry was created.
+     * /**
+     * @notice Contract that contains the address of the Manager Contract.
      */
-    address public immutable override token;
+    IManager public override manager;
 
     /**
-     * @notice Collateralization rate for token.
+     * @notice Configuration parameters for the registry.
+     * @dev Stores collateralization rate, liquidation threshold, and liquidator bonus.
      */
-    uint256 public override collateralizationRate;
+    RegistryConfig private config;
 
     /**
-     * @notice Returns the address of the manager container contract.
+     * @notice Minimal collateralization rate acceptable for registry to avoid computational errors.
+     * @dev 20e3 means 20% LTV.
      */
-    IManagerContainer public immutable override managerContainer;
+    uint16 private immutable minCR = 20e3;
+
+    /**
+     * @notice Maximum liquidation buffer acceptable for registry to avoid computational errors.
+     * @dev 20e3 means 20% buffer.
+     */
+    uint16 private immutable maxLiquidationBuffer = 20e3;
 
     /**
      * @notice Oracle contract associated with this share registry.
@@ -73,40 +86,33 @@ contract SharesRegistry is ISharesRegistry, Ownable2Step {
     bool private _isTimelockActiveChange = false;
 
     /**
-     * @notice Minimal collateralization rate acceptable for registry to avoid computational errors.
-     * @dev 20e3 means 20% LTV.
-     */
-    uint256 private immutable minCR = 20e3;
-
-    /**
      * @notice Creates a SharesRegistry for a specific token.
      *
      * @param _initialOwner The initial owner of the contract.
-     * @param _managerContainer Contract that contains the address of the manager contract.
+     * @param _manager Contract that holds all the necessary configs of the protocol.
      * @param _token The address of the token contract, used as a collateral within this contract.
      * @param _oracle The oracle used to retrieve price data for the `_token`.
      * @param _oracleData Extra data for the oracle.
-     * @param _collateralizationRate Collateralization value.
+     * @param _config Configuration parameters for the registry.
      */
     constructor(
         address _initialOwner,
-        address _managerContainer,
+        address _manager,
         address _token,
         address _oracle,
         bytes memory _oracleData,
-        uint256 _collateralizationRate
+        RegistryConfig memory _config
     ) Ownable(_initialOwner) {
-        require(_managerContainer != address(0), "3065");
+        require(_manager != address(0), "3065");
         require(_token != address(0), "3001");
         require(_oracle != address(0), "3034");
-        require(_collateralizationRate >= minCR, "2001");
-        require(_collateralizationRate <= IManager(IManagerContainer(_managerContainer).manager()).PRECISION(), "3066");
 
         token = _token;
         oracle = IOracle(_oracle);
         oracleData = _oracleData;
-        managerContainer = IManagerContainer(_managerContainer);
-        collateralizationRate = _collateralizationRate;
+        manager = IManager(_manager);
+
+        _updateConfig(_config);
     }
 
     // -- User specific methods --
@@ -116,6 +122,7 @@ contract SharesRegistry is ISharesRegistry, Ownable2Step {
      *
      * @notice Requirements:
      * - `msg.sender` must be the Stables Manager Contract.
+     * - `_newVal` must be greater than or equal to the minimum debt amount.
      *
      * @notice Effects:
      * - Updates `borrowed` mapping.
@@ -127,7 +134,11 @@ contract SharesRegistry is ISharesRegistry, Ownable2Step {
      * @param _newVal The new borrowed amount.
      */
     function setBorrowed(address _holding, uint256 _newVal) external override onlyStableManager {
+        // Ensure the `holding` holds allowed minimum jUSD debt amount
+        require(_newVal == 0 || _newVal >= manager.minDebtAmount(), "3102");
+        // Emit event indicating successful update
         emit BorrowedSet({ _holding: _holding, oldVal: borrowed[_holding], newVal: _newVal });
+        // Update the borrowed amount for the holding
         borrowed[_holding] = _newVal;
     }
 
@@ -177,27 +188,20 @@ contract SharesRegistry is ISharesRegistry, Ownable2Step {
     // -- Administration --
 
     /**
-     * @notice Updates the collateralization rate.
-     *
-     * @notice Requirements:
-     * - `_newVal` must be greater than or equal to minimal collateralization rate - `minCR`.
-     * - `_newVal` must be less than or equal to the precision defined by the manager.
+     * @notice Updates the registry configuration parameters.
      *
      * @notice Effects:
-     * - Updates `collateralizationRate` state variable.
+     * - Updates `config` state variable.
      *
      * @notice Emits:
-     * - `CollateralizationRateUpdated` event indicating collateralization rate update operation.
+     * - `ConfigUpdated` event indicating config update operation.
      *
-     * @param _newVal The new value.
+     * @param _newConfig The new configuration parameters.
      */
-    function setCollateralizationRate(
-        uint256 _newVal
+    function updateConfig(
+        RegistryConfig memory _newConfig
     ) external override onlyOwner {
-        require(_newVal >= minCR, "2001");
-        require(_newVal <= IManager(managerContainer.manager()).PRECISION(), "3066");
-        emit CollateralizationRateUpdated(collateralizationRate, _newVal);
-        collateralizationRate = _newVal;
+        _updateConfig(_newConfig);
     }
 
     /**
@@ -371,6 +375,8 @@ contract SharesRegistry is ISharesRegistry, Ownable2Step {
         _oldTimelock = 0;
         _newTimelock = 0;
         _newTimelockTimestamp = 0;
+
+        _isTimelockActiveChange = false;
     }
 
     // -- Getters --
@@ -391,13 +397,42 @@ contract SharesRegistry is ISharesRegistry, Ownable2Step {
         return rate;
     }
 
+    /**
+     * @notice Returns the configuration parameters for the registry.
+     * @return The RegistryConfig struct containing the parameters.
+     */
+    function getConfig() external view override returns (RegistryConfig memory) {
+        return config;
+    }
+
+    // -- Private methods --
+
+    /**
+     * @notice Updates the configuration parameters for the registry.
+     * @param _config The new configuration parameters.
+     */
+    function _updateConfig(
+        RegistryConfig memory _config
+    ) private {
+        uint256 precision = manager.PRECISION();
+
+        require(_config.collateralizationRate >= minCR && _config.collateralizationRate <= precision, "3066");
+        require(_config.liquidationBuffer <= maxLiquidationBuffer, "3100");
+
+        uint256 maxLiquidatorBonus = precision - _config.collateralizationRate - _config.liquidationBuffer;
+        require(_config.liquidatorBonus <= maxLiquidatorBonus, "3101");
+
+        emit ConfigUpdated(token, config, _config);
+        config = _config;
+    }
+
     // -- Modifiers --
 
     /**
      * @notice Modifier to only allow access to a function by the Stables Manager Contract.
      */
     modifier onlyStableManager() {
-        require(msg.sender == IManager(managerContainer.manager()).stablesManager(), "1000");
+        require(msg.sender == manager.stablesManager(), "1000");
         _;
     }
 }

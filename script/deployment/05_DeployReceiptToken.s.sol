@@ -7,8 +7,8 @@ import { Base } from "../Base.s.sol";
 
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
-import { Manager } from "../../src/Manager.sol";
-import { ManagerContainer } from "../../src/ManagerContainer.sol";
+import { IManager } from "../../src/interfaces/core/IManager.sol";
+
 import { ReceiptToken } from "../../src/ReceiptToken.sol";
 import { ReceiptTokenFactory } from "../../src/ReceiptTokenFactory.sol";
 
@@ -25,14 +25,14 @@ contract DeployReceiptToken is Script, Base {
 
     // Get values from config
     address internal INITIAL_OWNER = commonConfig.readAddress(".INITIAL_OWNER");
-    address internal MANAGER_CONTAINER = deployments.readAddress(".MANAGER_CONTAINER");
+    address internal MANAGER = deployments.readAddress(".MANAGER");
 
     // Salt for deterministic deployment using Create2
     bytes32 internal salt = "0x";
 
     function run() external broadcast returns (ReceiptTokenFactory receiptTokenFactory, ReceiptToken receiptToken) {
         // Validate interface
-        _validateInterface(ManagerContainer(MANAGER_CONTAINER));
+        _validateInterface(IManager(MANAGER));
 
         // Deploy ReceiptToken Contract
         receiptToken = new ReceiptToken();

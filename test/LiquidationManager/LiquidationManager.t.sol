@@ -4,12 +4,13 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+
+import { ILiquidationManager } from "../../src/interfaces/core/ILiquidationManager.sol";
 import { LiquidationManager } from "../../src/LiquidationManager.sol";
 
-import { Manager } from "../../src/Manager.sol";
-import { ManagerContainer } from "../../src/ManagerContainer.sol";
-import { ILiquidationManager } from "../../src/interfaces/core/ILiquidationManager.sol";
 import { IManager } from "../../src/interfaces/core/IManager.sol";
+import { Manager } from "../../src/Manager.sol";
 
 import { SampleOracle } from "../utils/mocks/SampleOracle.sol";
 import { SampleTokenERC20 } from "../utils/mocks/SampleTokenERC20.sol";
@@ -29,76 +30,30 @@ contract LiquidationManagerTest is Test {
 
     LiquidationManager public liquidationManager;
     Manager public manager;
-    ManagerContainer public managerContainer;
     SampleTokenERC20 public usdc;
     SampleTokenERC20 public weth;
+    address internal OWNER = vm.addr(uint256(keccak256(bytes("OWNER"))));
 
     function setUp() public {
         usdc = new SampleTokenERC20("USDC", "USDC", 0);
         weth = new SampleTokenERC20("WETH", "WETH", 0);
         SampleOracle jUsdOracle = new SampleOracle();
-        manager = new Manager(address(this), address(usdc), address(weth), address(jUsdOracle), bytes(""));
-        managerContainer = new ManagerContainer(address(this), address(manager));
-        liquidationManager = new LiquidationManager(address(this), address(managerContainer));
+        manager = new Manager(OWNER, address(weth), address(jUsdOracle), bytes(""));
+        liquidationManager = new LiquidationManager(OWNER, address(manager));
 
+        vm.prank(OWNER, OWNER);
         manager.setLiquidationManager(address(liquidationManager));
     }
 
     // Checks if initial state of the contract is correct
     function test_liquidationManager_initialState() public {
-        assertEq(liquidationManager.liquidatorBonus(), manager.liquidatorBonus());
-        assertEq(liquidationManager.selfLiquidationFee(), manager.selfLiquidationFee());
+        assertEq(liquidationManager.selfLiquidationFee(), 8e3);
+        assertEq(liquidationManager.MAX_SELF_LIQUIDATION_FEE(), 10e3);
+        assertEq(liquidationManager.LIQUIDATION_PRECISION(), 1e5);
         assertEq(liquidationManager.paused(), false);
-    }
 
-    // Tests setting liquidator bonus from non-Manager's address
-    function test_setLiquidatorBonus_when_unauthorized(
-        address _caller
-    ) public {
-        uint256 prevBonus = liquidationManager.liquidatorBonus();
-        vm.assume(_caller != address(manager));
-        vm.startPrank(_caller, _caller);
-        vm.expectRevert(bytes("1000"));
-
-        liquidationManager.setLiquidatorBonus(1);
-
-        assertEq(prevBonus, liquidationManager.liquidatorBonus());
-    }
-
-    // Tests setting liquidator bonus from Manager's address
-    function test_setLiquidatorBonus_when_authorized(
-        uint256 _amount
-    ) public {
-        uint256 liqP = liquidationManager.LIQUIDATION_PRECISION();
-
-        vm.startPrank(address(manager), address(manager));
-
-        //Tests setting liquidator's bonus, when LiquidatorBonus < LIQUIDATION_PRECISION
-        if (_amount < liqP) {
-            liquidationManager.setLiquidatorBonus(_amount);
-            assertEq(_amount, liquidationManager.liquidatorBonus());
-        }
-        //Tests setting liquidator's bonus, when LiquidatorBonus > LIQUIDATION_PRECISION
-        else {
-            //Tests if reverts with error code 2001
-            vm.expectRevert(bytes("2001"));
-            liquidationManager.setLiquidatorBonus(_amount);
-        }
-    }
-
-    // Tests the liquidator bonus setting in a real-world scenario via the Manager Contract
-    function test_setLiquidatorBonus_when_fromManager(
-        uint256 _amount
-    ) public {
-        vm.assume(_amount < liquidationManager.LIQUIDATION_PRECISION());
-
-        vm.expectEmit();
-        emit LiquidatorBonusUpdated(manager.liquidatorBonus(), _amount);
-
-        manager.setLiquidatorBonus(_amount);
-
-        assertEq(_amount, manager.liquidatorBonus());
-        assertEq(manager.liquidatorBonus(), liquidationManager.liquidatorBonus());
+        vm.expectRevert(bytes("3065"));
+        new LiquidationManager(OWNER, address(0));
     }
 
     // Tests setting SL fee from non-Manager's address
@@ -108,54 +63,35 @@ contract LiquidationManagerTest is Test {
         uint256 prevFee = liquidationManager.selfLiquidationFee();
         vm.assume(_caller != address(manager));
         vm.startPrank(_caller, _caller);
-        vm.expectRevert(bytes("1000"));
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, _caller));
 
         liquidationManager.setSelfLiquidationFee(1);
 
         assertEq(prevFee, liquidationManager.selfLiquidationFee());
     }
 
-    // Tests setting liquidator bonus from Manager's address
-    function test_setSelfLiquidationFee_when_authorized(
-        uint256 _amount
-    ) public {
-        uint256 liqP = liquidationManager.LIQUIDATION_PRECISION();
+    // Tests the liquidator bonus setting in a real-world scenario through owner
+    function test_setSelfLiquidationFee_when_authorized() public {
+        vm.startPrank(OWNER, OWNER);
+        uint256 maxFee = liquidationManager.MAX_SELF_LIQUIDATION_FEE();
 
-        vm.startPrank(address(manager), address(manager));
-
-        //Tests setting SL fee , when SL fee  < LIQUIDATION_PRECISION
-        if (_amount < liqP) {
-            liquidationManager.setSelfLiquidationFee(_amount);
-            assertEq(_amount, liquidationManager.selfLiquidationFee());
-        }
-        //Tests setting SL fee , when SL fee > LIQUIDATION_PRECISION
-        else {
-            //Tests if reverts with error code 2001
-            vm.expectRevert(bytes("2001"));
-            liquidationManager.setSelfLiquidationFee(_amount);
-        }
-    }
-
-    // Tests the liquidator bonus setting in a real-world scenario via the Manager Contract
-    function test_setSelfLiquidationFee_when_fromManager(
-        uint256 _amount
-    ) public {
-        vm.assume(_amount < liquidationManager.LIQUIDATION_PRECISION());
+        vm.expectRevert(bytes("3066"));
+        liquidationManager.setSelfLiquidationFee(maxFee + 1);
 
         vm.expectEmit();
-        emit SelfLiquidationFeeUpdated(manager.selfLiquidationFee(), _amount);
+        emit SelfLiquidationFeeUpdated(liquidationManager.selfLiquidationFee(), maxFee);
+        liquidationManager.setSelfLiquidationFee(maxFee);
 
-        manager.setSelfLiquidationFee(_amount);
+        assertEq(maxFee, liquidationManager.selfLiquidationFee());
 
-        assertEq(_amount, manager.selfLiquidationFee());
-        assertEq(manager.selfLiquidationFee(), liquidationManager.selfLiquidationFee());
+        vm.stopPrank();
     }
 
     // Tests setting contract paused from non-Owner's address
     function test_setPaused_when_unauthorized(
         address _caller
     ) public {
-        vm.assume(_caller != liquidationManager.owner());
+        vm.assume(_caller != OWNER);
         vm.startPrank(_caller, _caller);
         vm.expectRevert();
         liquidationManager.pause();
@@ -164,10 +100,12 @@ contract LiquidationManagerTest is Test {
     // Tests setting contract paused from Owner's address
     function test_setPaused_when_authorized() public {
         //Sets contract paused and checks if after pausing contract is paused and event is emitted
+        vm.prank(OWNER, OWNER);
         liquidationManager.pause();
         assertEq(liquidationManager.paused(), true);
 
         //Sets contract unpaused and checks if after pausing contract is unpaused and event is emitted
+        vm.prank(OWNER, OWNER);
         liquidationManager.unpause();
         assertEq(liquidationManager.paused(), false);
     }
@@ -176,5 +114,23 @@ contract LiquidationManagerTest is Test {
     function test_renounceOwnership() public {
         vm.expectRevert(bytes("1000"));
         liquidationManager.renounceOwnership();
+    }
+
+    //Tests if renouncing ownership reverts with error code 1000
+    function test_validAddress(address _user) public {
+        vm.startPrank(OWNER, OWNER);
+
+        ILiquidationManager.LiquidateCalldata memory liquidateCalldata;
+        vm.expectRevert(bytes("3000"));
+        liquidationManager.liquidateBadDebt(_user, address(0), liquidateCalldata);
+
+        ILiquidationManager.SwapParamsCalldata memory swapParams;
+        ILiquidationManager.StrategiesParamsCalldata memory strategiesParams;
+
+        vm.expectRevert(bytes("3000"));
+        liquidationManager.selfLiquidate(address(0), 100, swapParams, strategiesParams);
+
+        vm.expectRevert(bytes("3000"));
+        liquidationManager.liquidate(_user, address(0), 100, 0, liquidateCalldata);
     }
 }

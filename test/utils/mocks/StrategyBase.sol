@@ -5,12 +5,11 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IERC20, SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import { IManager } from "../interfaces/core/IManager.sol";
-import { IManagerContainer } from "../interfaces/core/IManagerContainer.sol";
+import { IManager } from "../../../src/interfaces/core/IManager.sol";
 
-import { IReceiptToken } from "../interfaces/core/IReceiptToken.sol";
-import { IStrategy } from "../interfaces/core/IStrategy.sol";
-import { IStrategyManager } from "../interfaces/core/IStrategyManager.sol";
+import { IReceiptToken } from "../../../src/interfaces/core/IReceiptToken.sol";
+import { IStrategy } from "../../../src/interfaces/core/IStrategy.sol";
+import { IStrategyManager } from "../../../src/interfaces/core/IStrategyManager.sol";
 
 /// @title StrategyBase contract used for any Aave strategy
 /// @author Cosmin Grigore (@gcosmintech)
@@ -30,8 +29,8 @@ abstract contract StrategyBase is Ownable, ReentrancyGuard {
     /// @notice emitted when receipt tokens are burned
     event ReceiptTokensBurned(address indexed receipt, uint256 amount);
 
-    /// @notice contract that contains the address of the manager contract
-    IManagerContainer public managerContainer;
+    /// @notice contract that contains all the necessary configs of the protocol
+    IManager public manager;
 
     constructor(
         address _owner
@@ -48,14 +47,6 @@ abstract contract StrategyBase is Ownable, ReentrancyGuard {
         require(_amount <= balance, "2005");
         IERC20(_token).safeTransfer(msg.sender, _amount);
         emit SavedFunds(_token, _amount);
-    }
-
-    function _getManager() internal view returns (IManager) {
-        return IManager(managerContainer.manager());
-    }
-
-    function _getStrategyManager() internal view returns (IStrategyManager) {
-        return IStrategyManager(_getManager().strategyManager());
     }
 
     /// @notice mints an amount of receipt tokens
@@ -98,7 +89,7 @@ abstract contract StrategyBase is Ownable, ReentrancyGuard {
     }
 
     modifier onlyStrategyManager() {
-        require(msg.sender == address(_getStrategyManager()), "1000");
+        require(msg.sender == manager.strategyManager(), "1000");
         _;
     }
 

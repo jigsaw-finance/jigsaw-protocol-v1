@@ -29,8 +29,8 @@ contract StablesManagerTest is BasicContractsFixture {
         allowedCallers = [manager.strategyManager(), manager.holdingManager(), manager.liquidationManager()];
     }
 
-    // Tests if init fails correctly when managerContainer address is address(0)
-    function test_init_when_invalidManagerContainer() public {
+    // Tests if init fails correctly when manager address is address(0)
+    function test_init_when_invalidManager() public {
         vm.expectRevert(bytes("3065"));
         StablesManager failedStablesManager = new StablesManager(address(this), address(0), address(0));
         failedStablesManager;
@@ -47,7 +47,7 @@ contract StablesManagerTest is BasicContractsFixture {
     function test_setPaused_when_unauthorized(
         address _caller
     ) public {
-        vm.assume(_caller != stablesManager.owner());
+        vm.assume(_caller != OWNER);
         vm.prank(_caller, _caller);
         vm.expectRevert();
 
@@ -56,7 +56,7 @@ contract StablesManagerTest is BasicContractsFixture {
 
     // Tests setting contract paused from Owner's address
     function test_setPaused_when_authorized() public {
-        vm.startPrank(stablesManager.owner());
+        vm.startPrank(OWNER);
         stablesManager.pause();
         assertEq(stablesManager.paused(), true);
 
@@ -69,7 +69,7 @@ contract StablesManagerTest is BasicContractsFixture {
     function test_registerOrUpdateShareRegistry_when_unauthorized(
         address _caller
     ) public {
-        vm.assume(_caller != stablesManager.owner());
+        vm.assume(_caller != OWNER);
         vm.prank(_caller, _caller);
         vm.expectRevert();
         stablesManager.registerOrUpdateShareRegistry(address(1), address(2), true);
@@ -77,14 +77,14 @@ contract StablesManagerTest is BasicContractsFixture {
 
     // Tests registerOrUpdateShareRegistry reverts correctly when invalid token address
     function test_registerOrUpdateShareRegistry_when_invalidToken() public {
-        vm.prank(stablesManager.owner(), stablesManager.owner());
+        vm.prank(OWNER, OWNER);
         vm.expectRevert(bytes("3007"));
         stablesManager.registerOrUpdateShareRegistry(address(1), address(0), true);
     }
 
     // Tests if registerOrUpdateShareRegistry reverts correctly when invalid registry
     function test_registerOrUpdateShareRegistry_when_invalidRegistry() public {
-        vm.prank(stablesManager.owner(), stablesManager.owner());
+        vm.prank(OWNER, OWNER);
         vm.expectRevert(bytes("3008"));
         stablesManager.registerOrUpdateShareRegistry(registries[address(usdc)], address(1), true);
     }
@@ -92,13 +92,25 @@ contract StablesManagerTest is BasicContractsFixture {
     // Tests if registerOrUpdateShareRegistry works correctly when adding new registry
     function test_registerOrUpdateShareRegistry_when_addNew(address _token, bool _active) public {
         vm.assume(_token != address(0));
-        address testRegistry =
-            address(new SharesRegistry(msg.sender, address(managerContainer), _token, address(1), bytes(""), 50_000));
+        address testRegistry = address(
+            new SharesRegistry(
+                msg.sender,
+                address(manager),
+                _token,
+                address(1),
+                bytes(""),
+                ISharesRegistry.RegistryConfig({
+                    collateralizationRate: 50_000,
+                    liquidationBuffer: 5e3,
+                    liquidatorBonus: 8e3
+                })
+            )
+        );
 
         (, address d) = stablesManager.shareRegistryInfo(_token);
         if (d != address(0)) return;
 
-        vm.prank(stablesManager.owner(), stablesManager.owner());
+        vm.prank(OWNER, OWNER);
         vm.expectEmit();
         emit RegistryAdded(_token, testRegistry);
         stablesManager.registerOrUpdateShareRegistry(testRegistry, _token, _active);
@@ -112,13 +124,25 @@ contract StablesManagerTest is BasicContractsFixture {
     // Tests if registerOrUpdateShareRegistry works correctly when updating an existing registry
     function test_registerOrUpdateShareRegistry_when_updateExisting(address _token, bool _active) public {
         vm.assume(_token != address(0));
-        address testRegistry =
-            address(new SharesRegistry(msg.sender, address(managerContainer), _token, address(1), bytes(""), 50_000));
+        address testRegistry = address(
+            new SharesRegistry(
+                msg.sender,
+                address(manager),
+                _token,
+                address(1),
+                bytes(""),
+                ISharesRegistry.RegistryConfig({
+                    collateralizationRate: 50_000,
+                    liquidationBuffer: 5e3,
+                    liquidatorBonus: 8e3
+                })
+            )
+        );
 
         (, address d) = stablesManager.shareRegistryInfo(_token);
         if (d != address(0)) return;
 
-        vm.startPrank(stablesManager.owner(), stablesManager.owner());
+        vm.startPrank(OWNER, OWNER);
         stablesManager.registerOrUpdateShareRegistry(testRegistry, _token, _active);
         vm.expectEmit();
         emit RegistryUpdated(_token, testRegistry);
@@ -155,13 +179,13 @@ contract StablesManagerTest is BasicContractsFixture {
     // Tests if isSolvent works correctly when jUSD price is more than $1
     function test_isSolvent_when_expensiveJusd(address _user, uint256 _mintAmount) public {
         vm.assume(_user != address(0));
-        _mintAmount = bound(_mintAmount, 1, 100_000e18);
+        _mintAmount = bound(_mintAmount, 200e18, 100_000e18);
 
         address collateral = address(usdc);
         address holding = initiateUser(_user, collateral, _mintAmount);
 
         vm.prank(_user, _user);
-        holdingManager.borrow(collateral, _mintAmount, true);
+        holdingManager.borrow(collateral, _mintAmount, 0, true);
 
         jUsdOracle.setPrice(2e18);
 
@@ -173,13 +197,13 @@ contract StablesManagerTest is BasicContractsFixture {
     // Tests if isSolvent works correctly when jUSD price is less than $1
     function test_isSolvent_when_cheapJusd(address _user, uint256 _mintAmount) public {
         vm.assume(_user != address(0));
-        _mintAmount = bound(_mintAmount, 1, 100_000e18);
+        _mintAmount = bound(_mintAmount, 200e18, 100_000e18);
 
         address collateral = address(usdc);
         address holding = initiateUser(_user, collateral, _mintAmount);
 
         vm.prank(_user, _user);
-        holdingManager.borrow(collateral, _mintAmount, true);
+        holdingManager.borrow(collateral, _mintAmount, 0, true);
 
         jUsdOracle.setPrice(1e7);
 
@@ -191,13 +215,13 @@ contract StablesManagerTest is BasicContractsFixture {
     // Tests if isSolvent works correctly when jUSD price is less than $1
     function test_isSolvent_when_cheapCollateral(address _user, uint256 _mintAmount) public {
         vm.assume(_user != address(0));
-        _mintAmount = bound(_mintAmount, 1, 100_000e18);
+        _mintAmount = bound(_mintAmount, 200e18, 100_000e18);
 
         address collateral = address(usdc);
         address holding = initiateUser(_user, collateral, _mintAmount);
 
         vm.prank(_user, _user);
-        holdingManager.borrow(collateral, _mintAmount, true);
+        holdingManager.borrow(collateral, _mintAmount, 0, true);
 
         usdcOracle.setPrice(1e7);
 
@@ -208,30 +232,9 @@ contract StablesManagerTest is BasicContractsFixture {
         );
     }
 
-    // Tests if getLiquidationInfo works correctly
-    function test_getLiquidationInfo(address _user, uint256 _mintAmount) public {
-        vm.assume(_user != address(0));
-        _mintAmount = bound(_mintAmount, 1, 100_000e18);
-
-        address collateral = address(usdc);
-        address holding = initiateUser(_user, collateral, _mintAmount);
-
-        vm.prank(_user, _user);
-        holdingManager.borrow(collateral, _mintAmount, true);
-
-        uint256 expectedSolvencyRatio = _getSolvencyRatio(holding, ISharesRegistry(registries[collateral]));
-
-        (uint256 borrowedAmount, uint256 collateralAmount, uint256 solvencyRatio) =
-            stablesManager.getLiquidationInfo(holding, collateral);
-
-        assertEq(borrowedAmount, _mintAmount, "Borrowed amount returned by getLiquidationInfo() is incorrect");
-        assertEq(collateralAmount, _mintAmount * 2, "Collateral amount returned by getLiquidationInfo() is incorrect");
-        assertEq(solvencyRatio, expectedSolvencyRatio, "Solvency ratio returned by getLiquidationInfo() is incorrect");
-    }
-
     // Tests if addCollateral reverts correctly when paused
     function test_addCollateral_when_paused() public {
-        vm.prank(stablesManager.owner(), stablesManager.owner());
+        vm.prank(OWNER, OWNER);
         stablesManager.pause();
 
         vm.expectRevert();
@@ -253,7 +256,7 @@ contract StablesManagerTest is BasicContractsFixture {
     ) public {
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
 
-        vm.prank(stablesManager.owner(), stablesManager.owner());
+        vm.prank(OWNER, OWNER);
         stablesManager.registerOrUpdateShareRegistry(registries[address(usdc)], address(usdc), false);
 
         vm.prank(caller, caller);
@@ -276,7 +279,7 @@ contract StablesManagerTest is BasicContractsFixture {
     ) public {
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
 
-        vm.prank(stablesManager.owner(), stablesManager.owner());
+        vm.prank(OWNER, OWNER);
         stablesManager.pause();
 
         vm.prank(caller, caller);
@@ -302,7 +305,7 @@ contract StablesManagerTest is BasicContractsFixture {
     ) public {
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
 
-        vm.prank(stablesManager.owner(), stablesManager.owner());
+        vm.prank(OWNER, OWNER);
         stablesManager.registerOrUpdateShareRegistry(registries[address(usdc)], address(usdc), false);
 
         vm.prank(caller, caller);
@@ -318,7 +321,7 @@ contract StablesManagerTest is BasicContractsFixture {
         uint256 _removeAmount
     ) public {
         vm.assume(_user != address(0));
-        _mintAmount = bound(_mintAmount, 1, 100_000e18);
+        _mintAmount = bound(_mintAmount, 200e18, 100_000e18);
         _removeAmount = bound(_removeAmount, 1, _mintAmount * 2);
 
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
@@ -326,7 +329,7 @@ contract StablesManagerTest is BasicContractsFixture {
         address holding = initiateUser(_user, collateral, _mintAmount);
 
         vm.prank(_user, _user);
-        holdingManager.borrow(collateral, _mintAmount, true);
+        holdingManager.borrow(collateral, _mintAmount, 0, true);
 
         vm.prank(caller, caller);
         vm.expectRevert(bytes("3009"));
@@ -347,7 +350,7 @@ contract StablesManagerTest is BasicContractsFixture {
         uint256 _removeAmount
     ) public {
         vm.assume(_user != address(0));
-        _mintAmount = bound(_mintAmount, 1, 100_000e18);
+        _mintAmount = bound(_mintAmount, 200e18, 100_000e18);
         _removeAmount = bound(_removeAmount, 1, _mintAmount * 2);
 
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
@@ -370,7 +373,7 @@ contract StablesManagerTest is BasicContractsFixture {
     function test_forceRemoveCollateral_when_paused(
         address _caller
     ) public {
-        vm.prank(stablesManager.owner(), stablesManager.owner());
+        vm.prank(OWNER, OWNER);
         stablesManager.pause();
 
         vm.prank(_caller, _caller);
@@ -402,7 +405,7 @@ contract StablesManagerTest is BasicContractsFixture {
 
     // Tests if forceRemoveCollateral reverts correctly when registry is inactive
     function test_forceRemoveCollateral_when_registryInactive() public {
-        vm.prank(stablesManager.owner(), stablesManager.owner());
+        vm.prank(OWNER, OWNER);
         stablesManager.registerOrUpdateShareRegistry(registries[address(usdc)], address(usdc), false);
 
         vm.prank(manager.liquidationManager(), manager.liquidationManager());
@@ -417,7 +420,7 @@ contract StablesManagerTest is BasicContractsFixture {
         uint256 _removeAmount
     ) public {
         vm.assume(_user != address(0));
-        _mintAmount = bound(_mintAmount, 1, 100_000e18);
+        _mintAmount = bound(_mintAmount, 200e18, 100_000e18);
         _removeAmount = bound(_removeAmount, 1, _mintAmount * 2);
 
         address collateral = address(usdc);
@@ -441,7 +444,7 @@ contract StablesManagerTest is BasicContractsFixture {
     ) public onlyNotAllowed(_caller) {
         vm.prank(_caller, _caller);
         vm.expectRevert(bytes("1000"));
-        stablesManager.borrow(address(1), address(2), 1, true);
+        stablesManager.borrow(address(1), address(2), 1, 0, true);
     }
 
     // Tests if borrow reverts correctly when contract is paused
@@ -450,12 +453,12 @@ contract StablesManagerTest is BasicContractsFixture {
     ) public {
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
 
-        vm.prank(stablesManager.owner(), stablesManager.owner());
+        vm.prank(OWNER, OWNER);
         stablesManager.pause();
 
         vm.prank(caller, caller);
         vm.expectRevert();
-        stablesManager.borrow(address(1), address(2), 1, true);
+        stablesManager.borrow(address(1), address(2), 1, 0, true);
     }
 
     // Tests if borrow reverts correctly when invalid amount
@@ -466,7 +469,7 @@ contract StablesManagerTest is BasicContractsFixture {
 
         vm.prank(caller, caller);
         vm.expectRevert(bytes("3010"));
-        stablesManager.borrow(address(1), address(2), 0, true);
+        stablesManager.borrow(address(1), address(2), 0, 0, true);
     }
 
     // Tests if borrow reverts correctly when  registry is inactive
@@ -475,26 +478,26 @@ contract StablesManagerTest is BasicContractsFixture {
     ) public {
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
 
-        vm.prank(stablesManager.owner(), stablesManager.owner());
+        vm.prank(OWNER, OWNER);
         stablesManager.registerOrUpdateShareRegistry(registries[address(usdc)], address(usdc), false);
 
         vm.prank(caller, caller);
         vm.expectRevert(bytes("1201"));
-        stablesManager.borrow(address(1), address(2), 1, true);
+        stablesManager.borrow(address(1), address(2), 1, 0, true);
     }
 
     // Tests if borrow reverts correctly when insolvent
     function test_borrow_when_insolvent(address _user, uint256 _mintAmount, uint256 _callerId) public {
         vm.assume(_user != address(0));
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
-        _mintAmount = bound(_mintAmount, 1, 100_000e18);
+        _mintAmount = bound(_mintAmount, 200e18, 100_000e18);
         address collateral = address(usdc);
 
         address holding = initiateUser(_user, collateral, _mintAmount);
 
         vm.prank(caller, caller);
         vm.expectRevert(bytes("3009"));
-        stablesManager.borrow(holding, collateral, _mintAmount * 2, true);
+        stablesManager.borrow(holding, collateral, _mintAmount * 2, 0, true);
     }
 
     // Tests if borrow works correctly when authorized
@@ -506,7 +509,7 @@ contract StablesManagerTest is BasicContractsFixture {
     ) public {
         vm.assume(_user != address(0));
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
-        _mintAmount = bound(_mintAmount, 1, 100_000e18);
+        _mintAmount = bound(_mintAmount, 200e18, 100_000e18);
         address collateral = address(usdc);
 
         address holding = initiateUser(_user, collateral, _mintAmount);
@@ -514,7 +517,7 @@ contract StablesManagerTest is BasicContractsFixture {
         vm.prank(caller, caller);
         vm.expectEmit();
         emit Borrowed(holding, _mintAmount, _mintToUser);
-        stablesManager.borrow(holding, collateral, _mintAmount, _mintToUser);
+        stablesManager.borrow(holding, collateral, _mintAmount, 0, _mintToUser);
 
         assertEq(jUsd.balanceOf(_mintToUser ? _user : holding), _mintAmount, "Borrow failed when authorized");
         assertEq(stablesManager.totalBorrowed(collateral), _mintAmount, "Total borrowed wasn't updated after borrow");
@@ -535,7 +538,7 @@ contract StablesManagerTest is BasicContractsFixture {
     ) public {
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
 
-        vm.prank(stablesManager.owner(), stablesManager.owner());
+        vm.prank(OWNER, OWNER);
         stablesManager.pause();
 
         vm.prank(caller, caller);
@@ -549,7 +552,7 @@ contract StablesManagerTest is BasicContractsFixture {
     ) public {
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
 
-        vm.prank(stablesManager.owner(), stablesManager.owner());
+        vm.prank(OWNER, OWNER);
         stablesManager.registerOrUpdateShareRegistry(registries[address(usdc)], address(usdc), false);
 
         vm.prank(caller, caller);
@@ -576,16 +579,16 @@ contract StablesManagerTest is BasicContractsFixture {
         uint256 _callerId
     ) public {
         vm.assume(_user != address(0));
-        _mintAmount = bound(_mintAmount, 1, 100_000e18);
+        _mintAmount = bound(_mintAmount, 200e18, 100_000e18);
         address collateral = address(usdc);
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
         address holding = initiateUser(_user, collateral, _mintAmount);
 
         vm.prank(caller, caller);
-        stablesManager.borrow(holding, collateral, _mintAmount, _mintToUser);
+        stablesManager.borrow(holding, collateral, _mintAmount, 0, _mintToUser);
 
         vm.prank(caller, caller);
-        vm.expectRevert(bytes("2100"));
+        vm.expectRevert(bytes("2003"));
         stablesManager.repay(holding, collateral, _mintAmount + 1, holding);
     }
 
@@ -597,13 +600,13 @@ contract StablesManagerTest is BasicContractsFixture {
         uint256 _callerId
     ) public {
         vm.assume(_user != address(0));
-        _mintAmount = bound(_mintAmount, 1, 100_000e18);
+        _mintAmount = bound(_mintAmount, 200e18, 100_000e18);
         address collateral = address(usdc);
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
         address holding = initiateUser(_user, collateral, _mintAmount);
 
         vm.prank(caller, caller);
-        stablesManager.borrow(holding, collateral, _mintAmount, _mintToUser);
+        stablesManager.borrow(holding, collateral, _mintAmount, 0, _mintToUser);
 
         vm.prank(caller, caller);
         vm.expectRevert(bytes("3012"));
@@ -618,13 +621,13 @@ contract StablesManagerTest is BasicContractsFixture {
         uint256 _callerId
     ) public {
         vm.assume(_user != address(0));
-        _mintAmount = bound(_mintAmount, 1, 100_000e18);
+        _mintAmount = bound(_mintAmount, 200e18, 100_000e18);
         address collateral = address(usdc);
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
         address holding = initiateUser(_user, collateral, _mintAmount);
 
         vm.prank(caller, caller);
-        stablesManager.borrow(holding, collateral, _mintAmount, _mintToUser);
+        stablesManager.borrow(holding, collateral, _mintAmount, 0, _mintToUser);
 
         vm.prank(caller, caller);
         vm.expectRevert(bytes("3000"));
@@ -640,15 +643,15 @@ contract StablesManagerTest is BasicContractsFixture {
         uint256 _callerId
     ) public {
         vm.assume(_user != address(0));
-        _mintAmount = bound(_mintAmount, 1, 100_000e18);
-        _repayAmount = bound(_repayAmount, 1, _mintAmount);
+        _mintAmount = bound(_mintAmount, 200e18, 100_000e18);
+        _repayAmount = _mintAmount;
         address collateral = address(usdc);
         address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
         address holding = initiateUser(_user, collateral, _mintAmount);
         address burnFrom = _mintToUser ? _user : holding;
 
         vm.prank(caller, caller);
-        stablesManager.borrow(holding, collateral, _mintAmount, _mintToUser);
+        stablesManager.borrow(holding, collateral, _mintAmount, 0, _mintToUser);
 
         uint256 balanceBeforeRepay = jUsd.balanceOf(burnFrom);
         uint256 totalBorrowedBeforeRepay = stablesManager.totalBorrowed(collateral);
@@ -686,7 +689,7 @@ contract StablesManagerTest is BasicContractsFixture {
     // Utility functions
 
     function _getSolvencyRatio(address _holding, ISharesRegistry registry) private view returns (uint256) {
-        uint256 _colRate = registry.collateralizationRate();
+        uint256 _colRate = registry.getConfig().collateralizationRate;
         uint256 _exchangeRate = registry.getExchangeRate();
 
         uint256 _result = (

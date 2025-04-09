@@ -8,7 +8,6 @@ import { ERC20Permit } from "@openzeppelin/contracts/token/ERC20/extensions/ERC2
 
 import { IJigsawUSD } from "./interfaces/core/IJigsawUSD.sol";
 import { IManager } from "./interfaces/core/IManager.sol";
-import { IManagerContainer } from "./interfaces/core/IManagerContainer.sol";
 import { IStablesManager } from "./interfaces/core/IStablesManager.sol";
 
 /**
@@ -21,9 +20,9 @@ import { IStablesManager } from "./interfaces/core/IStablesManager.sol";
  */
 contract JigsawUSD is IJigsawUSD, ERC20, Ownable2Step, ERC20Permit {
     /**
-     * @notice Contract that contains the address of the manager contract.
+     * @notice Contract that contains all the necessary configs of the protocol.
      */
-    IManagerContainer public immutable override managerContainer;
+    IManager public immutable override manager;
 
     /**
      * @notice Returns the max mint limit.
@@ -33,14 +32,14 @@ contract JigsawUSD is IJigsawUSD, ERC20, Ownable2Step, ERC20Permit {
     /**
      * @notice Creates the JigsawUSD Contract.
      * @param _initialOwner The initial owner of the contract
-     * @param _managerContainer Contract that contains the address of the manager contract.
+     * @param _manager Contract that holds all the necessary configs of the protocol.
      */
     constructor(
         address _initialOwner,
-        address _managerContainer
+        address _manager
     ) Ownable(_initialOwner) ERC20("Jigsaw USD", "jUSD") ERC20Permit("Jigsaw USD") {
-        require(_managerContainer != address(0), "3065");
-        managerContainer = IManagerContainer(_managerContainer);
+        require(_manager != address(0), "3065");
+        manager = IManager(_manager);
         mintLimit = 15e6 * (10 ** decimals()); // initial 15M limit
     }
 
@@ -134,7 +133,7 @@ contract JigsawUSD is IJigsawUSD, ERC20, Ownable2Step, ERC20Permit {
      * @notice Ensures that the caller is the Stables Manager
      */
     modifier onlyStablesManager() {
-        require(msg.sender == IManager(managerContainer.manager()).stablesManager(), "1000");
+        require(msg.sender == manager.stablesManager(), "1000");
         _;
     }
 }

@@ -16,12 +16,9 @@ import { IWETH } from "./interfaces/IWETH.sol";
 import { IHolding } from "./interfaces/core/IHolding.sol";
 import { IHoldingManager } from "./interfaces/core/IHoldingManager.sol";
 import { IManager } from "./interfaces/core/IManager.sol";
-import { IManagerContainer } from "./interfaces/core/IManagerContainer.sol";
 
 import { ISharesRegistry } from "./interfaces/core/ISharesRegistry.sol";
 import { IStablesManager } from "./interfaces/core/IStablesManager.sol";
-import { IStrategy } from "./interfaces/core/IStrategy.sol";
-import { IStrategyManager } from "./interfaces/core/IStrategyManager.sol";
 
 /**
  * @title HoldingManager
@@ -58,19 +55,25 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
     address public immutable override holdingImplementationReference;
 
     /**
-     * @notice Contract that contains the address of the manager contract.
+     * @notice Contract that contains all the necessary configs of the protocol.
      */
-    IManagerContainer public immutable override managerContainer;
+    IManager public immutable override manager;
+
+    /**
+     * @notice Returns the address of the WETH contract to save on `manager.WETH()` calls.
+     */
+    address public immutable override WETH;
 
     /**
      * @notice Creates a new HoldingManager Contract.
      * @param _initialOwner The initial owner of the contract
-     * @param _managerContainer Contract that contains the address of the manager contract.
+     * @param _manager Contract that holds all the necessary configs of the protocol.
      */
-    constructor(address _initialOwner, address _managerContainer) Ownable(_initialOwner) {
-        require(_managerContainer != address(0), "3065");
-        managerContainer = IManagerContainer(_managerContainer);
+    constructor(address _initialOwner, address _manager) Ownable(_initialOwner) {
+        require(_manager != address(0), "3065");
+        manager = IManager(_manager);
         holdingImplementationReference = address(new Holding());
+        WETH = manager.WETH();
     }
 
     // -- User specific methods --
@@ -96,7 +99,7 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
         require(userHolding[msg.sender] == address(0), "1101");
 
         if (msg.sender != tx.origin) {
-            require(_getManager().isContractWhitelisted(msg.sender), "1000");
+            require(manager.isContractWhitelisted(msg.sender), "1000");
         }
 
         // Instead of deploying the contract, it is cloned to save on gas.
@@ -108,7 +111,7 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
         holdingUser[newHoldingAddress] = msg.sender;
 
         Holding newHolding = Holding(newHoldingAddress);
-        newHolding.init(address(managerContainer));
+        newHolding.init(address(manager));
 
         return newHoldingAddress;
     }
@@ -152,13 +155,13 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
         external
         payable
         override
-        validToken(_getManager().WETH())
+        validToken(WETH)
         validHolding(userHolding[msg.sender])
         nonReentrant
         whenNotPaused
     {
         _wrap();
-        _deposit({ _from: address(this), _token: _getManager().WETH(), _amount: msg.value });
+        _deposit({ _from: address(this), _token: WETH, _amount: msg.value });
     }
 
     /**
@@ -193,7 +196,10 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
         (uint256 userAmount, uint256 feeAmount) = _withdraw({ _token: _token, _amount: _amount });
 
         // Transfer the fee amount to the fee address.
-        holding.transfer({ _token: _token, _to: _getManager().feeAddress(), _amount: feeAmount });
+        if (feeAmount > 0) {
+            holding.transfer({ _token: _token, _to: manager.feeAddress(), _amount: feeAmount });
+        }
+
         // Transfer the remaining amount to the user.
         holding.transfer({ _token: _token, _to: msg.sender, _amount: userAmount });
     }
@@ -218,13 +224,14 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
     function withdrawAndUnwrap(
         uint256 _amount
     ) external override validAmount(_amount) validHolding(userHolding[msg.sender]) nonReentrant whenNotPaused {
-        address wethAddress = _getManager().WETH();
-        IHolding(userHolding[msg.sender]).transfer({ _token: wethAddress, _to: address(this), _amount: _amount });
+        IHolding(userHolding[msg.sender]).transfer({ _token: WETH, _to: address(this), _amount: _amount });
         _unwrap(_amount);
-        (uint256 userAmount, uint256 feeAmount) = _withdraw({ _token: wethAddress, _amount: _amount });
+        (uint256 userAmount, uint256 feeAmount) = _withdraw({ _token: WETH, _amount: _amount });
 
-        (bool feeSuccess,) = payable(_getManager().feeAddress()).call{ value: feeAmount }("");
-        require(feeSuccess, "3016");
+        if (feeAmount > 0) {
+            (bool feeSuccess,) = payable(manager.feeAddress()).call{ value: feeAmount }("");
+            require(feeSuccess, "3016");
+        }
 
         (bool success,) = payable(msg.sender).call{ value: userAmount }("");
         require(success, "3016");
@@ -233,10 +240,11 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
     /**
      * @notice Borrows jUSD stablecoin to the user or to the holding contract.
      *
-     * @dev This function will fail if the supplied `_amount` does not adhere to the collateralization ratio set in
-     * the registry for the specific collateral. For instance, if the collateralization ratio is 200%, the maximum
-     * `_amount` that can be used to borrow is half of the user's free collateral, otherwise the user's holding will
-     * become insolvent after borrowing.
+     * @dev The _amount does not account for the collateralization ratio and is meant to represent collateral's amount
+     * equivalent to jUSD's value the user wants to receive.
+     * @dev Ensure that the user will not become insolvent after borrowing before calling this function, as this
+     * function will revert ("3009") if the supplied `_amount` does not adhere to the collateralization ratio set in
+     * the registry for the specific collateral.
      *
      * @notice Requirements:
      * - `msg.sender` must have a valid holding.
@@ -249,23 +257,29 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
      * - `Borrowed` event indicating successful borrow operation.
      *
      * @param _token Collateral token.
-     * @param _amount The collateral amount used for borrowing.
+     * @param _amount The collateral amount equivalent for borrowed jUSD.
      * @param _mintDirectlyToUser If true, mints to user instead of holding.
+     * @param _minJUsdAmountOut The minimum amount of jUSD that is expected to be received.
+     *
+     * @return jUsdMinted The amount of jUSD minted.
      */
     function borrow(
         address _token,
         uint256 _amount,
+        uint256 _minJUsdAmountOut,
         bool _mintDirectlyToUser
-    ) external override nonReentrant whenNotPaused validHolding(userHolding[msg.sender]) {
+    ) external override nonReentrant whenNotPaused validHolding(userHolding[msg.sender]) returns (uint256 jUsdMinted) {
         address holding = userHolding[msg.sender];
 
-        emit Borrowed({ holding: holding, token: _token, amount: _amount, mintToUser: _mintDirectlyToUser });
-        _getStablesManager().borrow({
+        jUsdMinted = _getStablesManager().borrow({
             _holding: holding,
             _token: _token,
             _amount: _amount,
+            _minJUsdAmountOut: _minJUsdAmountOut,
             _mintDirectlyToUser: _mintDirectlyToUser
         });
+
+        emit Borrowed({ holding: holding, token: _token, jUsdMinted: jUsdMinted, mintToUser: _mintDirectlyToUser });
     }
 
     /**
@@ -289,30 +303,39 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
      *
      * @param _data Struct containing data for each collateral type.
      * @param _mintDirectlyToUser If true, mints to user instead of holding.
+     *
+     * @return  The amount of jUSD minted for each collateral type.
      */
     function borrowMultiple(
-        BorrowOrRepayData[] calldata _data,
+        BorrowData[] calldata _data,
         bool _mintDirectlyToUser
-    ) external override validHolding(userHolding[msg.sender]) nonReentrant whenNotPaused {
+    ) external override validHolding(userHolding[msg.sender]) nonReentrant whenNotPaused returns (uint256[] memory) {
         require(_data.length > 0, "3006");
 
         address holding = userHolding[msg.sender];
+
+        uint256[] memory jUsdMintedAmounts = new uint256[](_data.length);
         for (uint256 i = 0; i < _data.length; i++) {
-            _getStablesManager().borrow({
+            uint256 jUsdMinted = _getStablesManager().borrow({
                 _holding: holding,
                 _token: _data[i].token,
                 _amount: _data[i].amount,
+                _minJUsdAmountOut: _data[i].minJUsdAmountOut,
                 _mintDirectlyToUser: _mintDirectlyToUser
             });
+
             emit Borrowed({
                 holding: holding,
                 token: _data[i].token,
-                amount: _data[i].amount,
+                jUsdMinted: jUsdMinted,
                 mintToUser: _mintDirectlyToUser
             });
+
+            jUsdMintedAmounts[i] = jUsdMinted;
         }
 
         emit BorrowedMultiple({ holding: holding, length: _data.length, mintedToUser: _mintDirectlyToUser });
+        return jUsdMintedAmounts;
     }
 
     /**
@@ -367,7 +390,7 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
      * @param _repayFromUser If true, it will burn from user's wallet, otherwise from user's holding.
      */
     function repayMultiple(
-        BorrowOrRepayData[] calldata _data,
+        RepayData[] calldata _data,
         bool _repayFromUser
     ) external override validHolding(userHolding[msg.sender]) nonReentrant whenNotPaused {
         require(_data.length > 0, "3006");
@@ -392,9 +415,17 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
     }
 
     /**
-     * @notice Receives ETH.
+     * @notice Allows the contract to accept incoming Ether transfers.
+     * @dev This function is executed when the contract receives Ether with no data in the transaction.
+     * @dev Only allows transfers from the WETH contract.
+     *
+     * @notice Emits:
+     * - `Received` event to log the sender's address and the amount received.
      */
-    receive() external payable { }
+    receive() external payable {
+        require(msg.sender == WETH, "1000");
+        emit Received({ from: msg.sender, amount: msg.value });
+    }
 
     // -- Administration --
 
@@ -422,19 +453,11 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
     // -- Private methods --
 
     /**
-     * @notice Returns the manager contract.
-     * @return The IManager instance.
-     */
-    function _getManager() private view returns (IManager) {
-        return IManager(managerContainer.manager());
-    }
-
-    /**
      * @notice Returns the stables manager contract.
      * @return The IStablesManager instance.
      */
     function _getStablesManager() private view returns (IStablesManager) {
-        return IStablesManager(_getManager().stablesManager());
+        return IStablesManager(manager.stablesManager());
     }
 
     /**
@@ -453,7 +476,7 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
     function _wrap() private {
         require(msg.value > 0, "2001");
         emit NativeCoinWrapped({ user: msg.sender, amount: msg.value });
-        IWETH(_getManager().WETH()).deposit{ value: msg.value }();
+        IWETH(WETH).deposit{ value: msg.value }();
     }
 
     /**
@@ -474,7 +497,7 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
         uint256 _amount
     ) private {
         emit NativeCoinUnwrapped({ user: msg.sender, amount: _amount });
-        IWETH(_getManager().WETH()).withdraw(_amount);
+        IWETH(WETH).withdraw(_amount);
     }
 
     /**
@@ -498,7 +521,12 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
         address holding = userHolding[msg.sender];
 
         emit Deposit(holding, _token, _amount);
-        IERC20(_token).safeTransferFrom({ from: _from, to: holding, value: _amount });
+        if (_from == address(this)) {
+            IERC20(_token).safeTransfer({ to: holding, value: _amount });
+        } else {
+            IERC20(_token).safeTransferFrom({ from: _from, to: holding, value: _amount });
+        }
+
         _getStablesManager().addCollateral({ _holding: holding, _token: _token, _amount: _amount });
     }
 
@@ -522,7 +550,7 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
      * @return The available amount to be withdrawn and the withdrawal fee amount.
      */
     function _withdraw(address _token, uint256 _amount) private returns (uint256, uint256) {
-        require(!_getManager().isTokenNonWithdrawable(_token), "3071");
+        require(manager.isTokenWithdrawable(_token), "3071");
         address holding = userHolding[msg.sender];
 
         // Perform the check to see if this is an airdropped token or user actually has collateral for it
@@ -530,7 +558,7 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
         if (_tokenRegistry != address(0) && ISharesRegistry(_tokenRegistry).collateral(holding) > 0) {
             _getStablesManager().removeCollateral({ _holding: holding, _token: _token, _amount: _amount });
         }
-        uint256 withdrawalFee = _getManager().withdrawalFee();
+        uint256 withdrawalFee = manager.withdrawalFee();
         uint256 withdrawalFeeAmount = 0;
         if (withdrawalFee > 0) withdrawalFeeAmount = OperationsLib.getFeeAbsolute(_amount, withdrawalFee);
         emit Withdrawal({ holding: holding, token: _token, totalAmount: _amount, feeAmount: withdrawalFeeAmount });
@@ -580,7 +608,7 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
     modifier validToken(
         address _token
     ) {
-        require(_getManager().isTokenWhitelisted(_token), "3001");
+        require(manager.isTokenWhitelisted(_token), "3001");
         _;
     }
 }

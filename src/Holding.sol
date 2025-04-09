@@ -9,10 +9,10 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 import { OperationsLib } from "./libraries/OperationsLib.sol";
 
 import { IHolding } from "./interfaces/core/IHolding.sol";
-import { IManager } from "./interfaces/core/IManager.sol";
-import { IManagerContainer } from "./interfaces/core/IManagerContainer.sol";
-import { IStrategyManagerMin } from "./interfaces/core/IStrategyManagerMin.sol";
 
+import { IHoldingManager } from "./interfaces/core/IHoldingManager.sol";
+import { IManager } from "./interfaces/core/IManager.sol";
+import { IStrategyManagerMin } from "./interfaces/core/IStrategyManagerMin.sol";
 /**
  * @title Holding Contract
  *
@@ -26,18 +26,19 @@ import { IStrategyManagerMin } from "./interfaces/core/IStrategyManagerMin.sol";
  *
  * @custom:security-contact support@jigsaw.finance
  */
+
 contract Holding is IHolding, Initializable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     /**
-     * @notice Contract that contains the address of the manager contract.
+     * @notice The address of the emergency invoker.
      */
-    IManagerContainer public override managerContainer;
+    address public override emergencyInvoker;
 
     /**
-     * @notice Indicates if the contract has been initialized.
+     * @notice Contract that contains all the necessary configs of the protocol.
      */
-    bool private _initialized;
+    IManager public override manager;
 
     // --- Constructor ---
 
@@ -56,24 +57,42 @@ contract Holding is IHolding, Initializable, ReentrancyGuard {
      *
      * @notice Requirements:
      * - The contract must not be already initialized.
-     * - `_managerContainer` must not be the zero address.
+     * - `_manager` must not be the zero address.
      *
      * @notice Effects:
      * - Sets `_initialized` to true.
-     * - Sets `managerContainer` to the provided `_managerContainer` address.
+     * - Sets `manager` to the provided `_manager` address.
      *
-     * @param _managerContainer Contract that contains the address of the manager container contract.
+     * @param _manager Contract that holds all the necessary configs of the protocol.
      */
     function init(
-        address _managerContainer
-    ) public {
-        require(!_initialized, "3072");
-        require(_managerContainer != address(0), "3065");
-        _initialized = true;
-        managerContainer = IManagerContainer(_managerContainer);
+        address _manager
+    ) public initializer {
+        require(_manager != address(0), "3065");
+        manager = IManager(_manager);
     }
 
     // -- User specific methods --
+
+    /**
+     * @notice Sets the emergency invoker address for this holding.
+     *
+     * @notice Requirements:
+     * - The caller must be the owner of this holding.
+     *
+     * @notice Effects:
+     * - Updates the emergency invoker address to the provided value.
+     * - Emits an event to track the change for off-chain monitoring.
+     *
+     * @param _emergencyInvoker The address to set as the emergency invoker.
+     */
+    function setEmergencyInvoker(
+        address _emergencyInvoker
+    ) external onlyUser {
+        address oldInvoker = emergencyInvoker;
+        emergencyInvoker = _emergencyInvoker;
+        emit EmergencyInvokerSet(oldInvoker, _emergencyInvoker);
+    }
 
     /**
      * @notice Approves an `_amount` of a specified token to be spent on behalf of the `msg.sender` by `_destination`.
@@ -89,7 +108,7 @@ contract Holding is IHolding, Initializable, ReentrancyGuard {
      * @param _amount Withdrawal amount.
      */
     function approve(address _tokenAddress, address _destination, uint256 _amount) external override onlyAllowed {
-        OperationsLib.safeApprove({ token: _tokenAddress, to: _destination, value: _amount });
+        IERC20(_tokenAddress).forceApprove(_destination, _amount);
     }
 
     /**
@@ -131,18 +150,51 @@ contract Holding is IHolding, Initializable, ReentrancyGuard {
         (success, result) = _contract.call{ value: msg.value }(_call);
     }
 
+    /**
+     * @notice Executes an emergency generic call on the specified contract.
+     *
+     * @notice Requirements:
+     * - The caller must be the designated emergency invoker.
+     * - The emergency invoker must be an allowed invoker in the Manager contract.
+     * - Protected by nonReentrant modifier to prevent reentrancy attacks.
+     *
+     * @notice Effects:
+     * - Makes a low-level call to the `_contract` with the provided `_call` data.
+     * - Forwards any ETH value sent with the transaction.
+     *
+     * @param _contract The contract address for which the call will be invoked.
+     * @param _call Abi.encodeWithSignature data for the call.
+     *
+     * @return success Indicates if the call was successful.
+     * @return result The result returned by the call.
+     */
+    function emergencyGenericCall(
+        address _contract,
+        bytes calldata _call
+    ) external payable onlyEmergencyInvoker nonReentrant returns (bool success, bytes memory result) {
+        (success, result) = _contract.call{ value: msg.value }(_call);
+    }
+
     // -- Modifiers
 
     modifier onlyAllowed() {
-        IManager manager = IManager(managerContainer.manager());
         (,, bool isStrategyWhitelisted) = IStrategyManagerMin(manager.strategyManager()).strategyInfo(msg.sender);
 
         require(
-            msg.sender == manager.strategyManager() || msg.sender == manager.holdingManager()
-                || msg.sender == manager.liquidationManager() || msg.sender == manager.swapManager()
-                || isStrategyWhitelisted,
+            msg.sender == manager.holdingManager() || msg.sender == manager.liquidationManager()
+                || msg.sender == manager.swapManager() || isStrategyWhitelisted,
             "1000"
         );
+        _;
+    }
+
+    modifier onlyUser() {
+        require(msg.sender == IHoldingManager(manager.holdingManager()).holdingUser(address(this)), "1000");
+        _;
+    }
+
+    modifier onlyEmergencyInvoker() {
+        require(msg.sender == emergencyInvoker && manager.allowedInvokers(msg.sender), "1000");
         _;
     }
 }

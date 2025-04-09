@@ -61,11 +61,14 @@ contract PythOracleUnitTest is Test {
         vm.assertEq(pythOracleFactory.owner(), OWNER, "Owner in factory set wrong");
 
         // Check pythOracle initialization
-        vm.assertEq(pythOracle.owner(), OWNER, "Owner in oracle set wrong");
         vm.assertEq(pythOracle.underlying(), WETH, "underlying in oracle set wrong");
         vm.assertEq(pythOracle.pyth(), PYTH, "PYTH in oracle set wrong");
         vm.assertEq(pythOracle.priceId(), PRICE_ID, "PRICE_ID in oracle set wrong");
         vm.assertEq(pythOracle.age(), AGE, "AGE in oracle set wrong");
+        vm.assertEq(pythOracle.ALLOWED_DECIMALS(), 18, "ALLOWED_DECIMALS in oracle set wrong");
+        vm.assertEq(pythOracle.minConfidencePercentage(), 300, "minConfidencePercentage in oracle set wrong");
+        vm.assertEq(pythOracle.CONFIDENCE_PRECISION(), 1e4, "CONFIDENCE_PRECISION in oracle set wrong");
+        vm.assertEq(pythOracle.owner(), OWNER, "Owner in oracle set wrong");
         vm.assertEq(pythOracle.name(), IERC20Metadata(WETH).name(), "Name in oracle set wrong");
         vm.assertEq(pythOracle.symbol(), IERC20Metadata(WETH).symbol(), "Symbol in oracle set wrong");
     }
@@ -92,7 +95,7 @@ contract PythOracleUnitTest is Test {
         (bool success, uint256 rate) = pythOracle.peek("");
 
         vm.assertEq(success, true, "Peek failed");
-        vm.assertEq(rate, 3_286_215_397_790_000_000_000, "Rate is wrong");
+        vm.assertEq(rate, 3_295_633_182_430_000_000_000, "Rate is wrong");
     }
 
     function test_pyth_peek_when_NegativeOraclePrice() public {
@@ -159,14 +162,17 @@ contract PythOracleUnitTest is Test {
             })
         );
 
+        uint256 newPrice = 100_000_000;
+        uint256 newConfidence = 10_000_000;
+
         // Set pyth price with a small expo
-        _updateMockPythPrice(int64(100_000_000), uint64(1_000_000), int32(-8));
+        _updateMockPythPrice(int64(int256(newPrice)), uint64(newConfidence), int32(-8));
 
         // Expect the next call to revert with the correct error
         (bool success, uint256 rate) = pythOracle.peek("");
 
         vm.assertEq(success, true, "Peek failed");
-        vm.assertEq(rate, (100_000_000 - 1_000_000) * 10 ** (18 - 8), "Rate is wrong");
+        vm.assertEq(rate, (newPrice - newConfidence) * 10 ** (18 - 8), "Rate is wrong");
     }
 
     function test_pyth_peek_when_confidenceTooHigh() public {
@@ -183,7 +189,7 @@ contract PythOracleUnitTest is Test {
         _updateMockPythPrice(int64(100_000_000), uint64(1_000_000_000_000_000_000), int32(-8));
 
         // Expect the next call to revert with the correct error
-        vm.expectRevert(IPythOracle.InvaidConfidence.selector);
+        vm.expectRevert(IPythOracle.InvalidConfidence.selector);
         pythOracle.peek("");
     }
 

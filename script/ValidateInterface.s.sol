@@ -6,11 +6,9 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IUniswapV3Factory } from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import { ISwapRouter } from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
+import { IManager } from "../src/interfaces/core/IManager.sol";
+import { IStablesManager } from "../src/interfaces/core/IStablesManager.sol";
 import { IOracle } from "../src/interfaces/oracle/IOracle.sol";
-
-import { Manager } from "../src/Manager.sol";
-import { ManagerContainer } from "../src/ManagerContainer.sol";
-import { StablesManager } from "../src/StablesManager.sol";
 
 /**
  * @notice Validates that an address implements the expected interface by checking there is code at the provided address
@@ -18,7 +16,7 @@ import { StablesManager } from "../src/StablesManager.sol";
  */
 abstract contract ValidateInterface {
     function _validateInterface(
-        Manager manager
+        IManager manager
     ) internal view {
         require(address(manager).code.length > 0, "Manager must have code");
         manager.feeAddress();
@@ -27,15 +25,7 @@ abstract contract ValidateInterface {
     }
 
     function _validateInterface(
-        ManagerContainer managerContainer
-    ) internal view {
-        require(address(managerContainer).code.length > 0, "ManagerContainer must have code");
-        address manager = managerContainer.manager();
-        _validateInterface(Manager(manager));
-    }
-
-    function _validateInterface(
-        StablesManager stablesManager
+        IStablesManager stablesManager
     ) internal view {
         require(address(stablesManager).code.length > 0, "StablesManager must have code");
         stablesManager.shareRegistryInfo(address(1));

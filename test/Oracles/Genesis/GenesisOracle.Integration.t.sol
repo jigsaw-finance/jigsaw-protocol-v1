@@ -24,18 +24,18 @@ contract GenesisOracleIntegrationTest is Test, BasicContractsFixture {
 
     function test_borrow_when_genesisOracle(address _user, uint256 _mintAmount) public {
         vm.assume(_user != address(0));
-        _mintAmount = bound(_mintAmount, 1e18, 100_000e18);
+        _mintAmount = bound(_mintAmount, 500e18, 100_000e18);
         address collateral = address(usdc);
 
         vm.startPrank(OWNER, OWNER);
         manager.requestNewJUsdOracle(address(genesisJUsdOracle));
         skip(manager.timelockAmount() + 1);
-        manager.setJUsdOracle();
+        manager.acceptNewJUsdOracle();
         vm.stopPrank();
 
         address holding = initiateUser(_user, collateral, _mintAmount);
         vm.prank(address(holdingManager), address(holdingManager));
-        stablesManager.borrow(holding, collateral, _mintAmount, true);
+        stablesManager.borrow(holding, collateral, _mintAmount, 0, true);
 
         vm.assertEq(jUsd.balanceOf(_user), _mintAmount, "Borrow failed when authorized");
         vm.assertEq(stablesManager.totalBorrowed(collateral), _mintAmount, "Total borrowed wasn't updated after borrow");

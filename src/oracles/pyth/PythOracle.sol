@@ -55,7 +55,7 @@ contract PythOracle is IPythOracle, Initializable, Ownable2StepUpgradeable {
      * @notice The minimum confidence percentage.
      * @dev Uses 2 decimal precision, where 1% is represented as 100.
      */
-    uint256 public override minConfidencePercentage = 300;
+    uint256 public override minConfidencePercentage;
 
     /**
      * @notice The precision to be used for the confidence percentage to avoid precision loss.
@@ -97,6 +97,7 @@ contract PythOracle is IPythOracle, Initializable, Ownable2StepUpgradeable {
         pyth = _pyth;
         priceId = _priceId;
         age = _age;
+        minConfidencePercentage = 300;
     }
 
     // -- Administration --
@@ -167,12 +168,10 @@ contract PythOracle is IPythOracle, Initializable, Ownable2StepUpgradeable {
             if (invertedExpo > ALLOWED_DECIMALS) revert ExpoTooSmall();
 
             // Disallow excessively large confidence percentages to ensure underflow does not occur
-            if (price.conf > uPrice) revert InvaidConfidence();
+            if (price.conf > uPrice) revert InvalidConfidence();
 
             // Consider whether the price spread is too high
-            uint256 confDecimals = 10 ** invertedExpo;
-            bool isConfident =
-                price.conf * confDecimals / uPrice <= minConfidencePercentage * confDecimals / CONFIDENCE_PRECISION;
+            bool isConfident = price.conf * CONFIDENCE_PRECISION <= minConfidencePercentage * uPrice;
 
             // Calculate the actual price based on the confidence
             uint256 priceWithConfidence = isConfident ? uPrice : uPrice - price.conf;

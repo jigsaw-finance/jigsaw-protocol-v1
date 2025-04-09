@@ -5,7 +5,6 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 import { Manager } from "../../src/Manager.sol";
-import { ManagerContainer } from "../../src/ManagerContainer.sol";
 
 import { Staker } from "../../src/Staker.sol";
 
@@ -27,7 +26,6 @@ contract StakerTest is Test {
     address internal rewardToken;
 
     Manager internal manager;
-    ManagerContainer internal managerContainer;
     SampleTokenERC20 internal usdc;
     SampleTokenERC20 internal weth;
     Staker internal staker;
@@ -39,8 +37,7 @@ contract StakerTest is Test {
         usdc = new SampleTokenERC20("USDC", "USDC", 0);
         weth = new SampleTokenERC20("WETH", "WETH", 0);
         SampleOracle jUsdOracle = new SampleOracle();
-        manager = new Manager(OWNER, address(usdc), address(weth), address(jUsdOracle), bytes(""));
-        managerContainer = new ManagerContainer(address(this), address(manager));
+        manager = new Manager(OWNER, address(weth), address(jUsdOracle), bytes(""));
 
         tokenIn = address(new SampleTokenERC20("TokenIn", "TI", 0));
         rewardToken = address(new SampleTokenERC20("RewardToken", "RT", 0));
@@ -121,7 +118,7 @@ contract StakerTest is Test {
         staker.setRewardsDuration(_amount);
         vm.stopPrank();
 
-        assertEq(staker.rewardsDuration(), _amount, "Rewards duration set incrorect");
+        assertEq(staker.rewardsDuration(), _amount, "Rewards duration set incorrect");
     }
 
     // Tests if addRewards reverts correctly when caller is unauthorized
@@ -204,7 +201,7 @@ contract StakerTest is Test {
         assertEq(staker.rewardRate(), _amount / staker.rewardsDuration(), "Rewards added incorrectly");
     }
 
-    // Tests if totalSuply works correctly
+    // Tests if totalSupply works correctly
     function test_totalSupply(uint256 _amount, address _caller) public {
         vm.assume(_amount != 0 && _amount <= 1e34);
         vm.assume(_caller != address(0));

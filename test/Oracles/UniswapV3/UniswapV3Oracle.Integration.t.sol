@@ -18,25 +18,35 @@ contract UniswapV3OracleIntegrationTest is Test, BasicContractsFixture {
 
     function setUp() public {
         vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 21_722_108);
+
+        address[] memory initialPools = new address[](1);
+        initialPools[0] = USDC_POOL;
+
         init();
-        uniswapJUsdOracle =
-            new UniswapV3Oracle({ _initialOwner: OWNER, _jUSD: USDT, _quoteToken: USDC, _uniswapV3Pool: USDC_POOL });
+
+        uniswapJUsdOracle = new UniswapV3Oracle({
+            _initialOwner: OWNER,
+            _jUSD: USDT,
+            _quoteToken: USDC,
+            _quoteTokenOracle: address(usdcOracle),
+            _uniswapV3Pools: initialPools
+        });
     }
 
     function test_borrow_when_uniswapOracle(address _user, uint256 _mintAmount) public {
         vm.assume(_user != address(0));
-        _mintAmount = bound(_mintAmount, 1e18, 100_000e18);
+        _mintAmount = bound(_mintAmount, 500e18, 100_000e18);
         address collateral = address(usdc);
 
         vm.startPrank(OWNER, OWNER);
         manager.requestNewJUsdOracle(address(uniswapJUsdOracle));
         skip(manager.timelockAmount() + 1);
-        manager.setJUsdOracle();
+        manager.acceptNewJUsdOracle();
         vm.stopPrank();
 
         address holding = initiateUser(_user, collateral, _mintAmount);
         vm.prank(address(holdingManager), address(holdingManager));
-        stablesManager.borrow(holding, collateral, _mintAmount, true);
+        stablesManager.borrow(holding, collateral, _mintAmount, 0, true);
 
         vm.assertEq(jUsd.balanceOf(_user), _mintAmount, "Borrow failed when authorized");
         vm.assertEq(stablesManager.totalBorrowed(collateral), _mintAmount, "Total borrowed wasn't updated after borrow");

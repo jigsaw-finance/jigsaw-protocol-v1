@@ -7,7 +7,11 @@ import { console } from "forge-std/console.sol";
 import { UniswapV3Oracle } from "src/oracles/uniswap/UniswapV3Oracle.sol";
 import { IUniswapV3Oracle } from "src/oracles/uniswap/interfaces/IUniswapV3Oracle.sol";
 
+import { SampleOracle } from "../../utils/mocks/SampleOracle.sol";
+
 contract UniswapV3OracleUnitTest is Test {
+    error OwnableUnauthorizedAccount(address account);
+
     address internal constant OWNER = address(uint160(uint256(keccak256("owner"))));
     address internal constant jUSD = 0xdAC17F958D2ee523a2206206994597C13D831ec7; // pretend that USDT is jUSD
     address internal constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
@@ -19,8 +23,17 @@ contract UniswapV3OracleUnitTest is Test {
 
     function setUp() public {
         vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 21_722_108);
-        uniswapOracle =
-            new UniswapV3Oracle({ _initialOwner: OWNER, _jUSD: jUSD, _quoteToken: USDC, _uniswapV3Pool: USDC_POOL });
+
+        address[] memory initialPools = new address[](1);
+        initialPools[0] = USDC_POOL;
+
+        uniswapOracle = new UniswapV3Oracle({
+            _initialOwner: OWNER,
+            _jUSD: jUSD,
+            _quoteToken: USDC,
+            _quoteTokenOracle: address(new SampleOracle()),
+            _uniswapV3Pools: initialPools
+        });
     }
 
     function test_uniswapV3Oracle_initialization() public {
@@ -33,12 +46,16 @@ contract UniswapV3OracleUnitTest is Test {
     }
 
     function test_uniswapV3Oracle_invalidInitialization() public {
+        address[] memory initialPools = new address[](1);
+        address mockOracle = address(new SampleOracle());
+
         vm.expectRevert(IUniswapV3Oracle.InvalidAddress.selector);
         uniswapOracle = new UniswapV3Oracle({
             _initialOwner: OWNER,
             _jUSD: address(0),
             _quoteToken: USDC,
-            _uniswapV3Pool: USDC_POOL
+            _quoteTokenOracle: mockOracle,
+            _uniswapV3Pools: initialPools
         });
 
         vm.expectRevert(IUniswapV3Oracle.InvalidAddress.selector);
@@ -46,12 +63,27 @@ contract UniswapV3OracleUnitTest is Test {
             _initialOwner: OWNER,
             _jUSD: jUSD,
             _quoteToken: address(0),
-            _uniswapV3Pool: USDC_POOL
+            _quoteTokenOracle: mockOracle,
+            _uniswapV3Pools: initialPools
         });
 
         vm.expectRevert(IUniswapV3Oracle.InvalidAddress.selector);
-        uniswapOracle =
-            new UniswapV3Oracle({ _initialOwner: OWNER, _jUSD: jUSD, _quoteToken: USDC, _uniswapV3Pool: address(0) });
+        uniswapOracle = new UniswapV3Oracle({
+            _initialOwner: OWNER,
+            _jUSD: jUSD,
+            _quoteToken: USDC,
+            _quoteTokenOracle: address(0),
+            _uniswapV3Pools: initialPools
+        });
+
+        vm.expectRevert(IUniswapV3Oracle.InvalidPools.selector);
+        uniswapOracle = new UniswapV3Oracle({
+            _initialOwner: OWNER,
+            _jUSD: jUSD,
+            _quoteToken: USDC,
+            _quoteTokenOracle: address(2),
+            _uniswapV3Pools: initialPools
+        });
     }
 
     function test_uniswapV3Oracle_peek_when_smallQuoteTokenDecimals() public {
@@ -62,8 +94,16 @@ contract UniswapV3OracleUnitTest is Test {
     }
 
     function test_uniswapV3Oracle_peek_when_sameQuoteTokenDecimals() public {
-        uniswapOracle =
-            new UniswapV3Oracle({ _initialOwner: OWNER, _jUSD: WETH, _quoteToken: jUSD, _uniswapV3Pool: WETH_POOL });
+        address[] memory initialPools = new address[](1);
+        initialPools[0] = WETH_POOL;
+
+        uniswapOracle = new UniswapV3Oracle({
+            _initialOwner: OWNER,
+            _jUSD: WETH,
+            _quoteToken: jUSD,
+            _quoteTokenOracle: address(new SampleOracle()),
+            _uniswapV3Pools: initialPools
+        });
 
         (bool success, uint256 rate) = uniswapOracle.peek("");
 
@@ -106,6 +146,24 @@ contract UniswapV3OracleUnitTest is Test {
 
         vm.assertEq(success, true, "Peek failed");
         vm.assertEq(rate, 1_000_000_000_000_000_000, "Rate is wrong");
+    }
+
+    function test_uniswapV3Oracle_updateQuoteTokenOracle_not_auth() public {
+        vm.expectRevert(abi.encodeWithSelector(OwnableUnauthorizedAccount.selector, address(this)));
+        uniswapOracle.updateQuoteTokenOracle(address(uniswapOracle));
+    }
+
+    function test_uniswapV3Oracle_updateQuoteTokenOracle_auth() public {
+        vm.prank(OWNER, OWNER);
+        uniswapOracle.updateQuoteTokenOracle(address(uniswapOracle));
+    }
+
+    function test_uniswapV3Oracle_updateQuoteTokenOracle_same_oracle() public {
+        vm.startPrank(OWNER, OWNER);
+        uniswapOracle.updateQuoteTokenOracle(address(uniswapOracle));
+
+        vm.expectRevert(IUniswapV3Oracle.InvalidAddress.selector);
+        uniswapOracle.updateQuoteTokenOracle(address(uniswapOracle));
     }
 
     function test_renounceOwnership() public {

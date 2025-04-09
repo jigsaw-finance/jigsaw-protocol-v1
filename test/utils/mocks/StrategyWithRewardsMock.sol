@@ -5,12 +5,12 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { IHolding } from "../../../src/interfaces/core/IHolding.sol";
-import { IManagerContainer } from "../../../src/interfaces/core/IManagerContainer.sol";
+import { IManager } from "../../../src/interfaces/core/IManager.sol";
 
 import { IReceiptToken } from "../../../src/interfaces/core/IReceiptToken.sol";
 import { IReceiptTokenFactory } from "../../../src/interfaces/core/IReceiptTokenFactory.sol";
 import { IStrategy } from "../../../src/interfaces/core/IStrategy.sol";
-import { StrategyBase } from "../../../src/strategies/StrategyBase.sol";
+import { StrategyBase } from "./StrategyBase.sol";
 
 interface ITokenMock {
     function getTokens(
@@ -33,20 +33,20 @@ contract StrategyWithRewardsMock is IStrategy, StrategyBase {
     IReceiptToken public immutable override receiptToken;
 
     constructor(
-        address _managerContainer,
+        address _manager,
         address _tokenIn,
         address _tokenOut,
         address _rewardToken,
         string memory _receiptTokenName,
         string memory _receiptTokenSymbol
     ) StrategyBase(msg.sender) {
-        managerContainer = IManagerContainer(_managerContainer);
+        manager = IManager(_manager);
         rewardToken = _rewardToken;
         tokenIn = _tokenIn;
         tokenOut = _tokenOut;
         sharesDecimals = IERC20Metadata(_tokenIn).decimals();
         receiptToken = IReceiptToken(
-            IReceiptTokenFactory(_getManager().receiptTokenFactory()).createReceiptToken(
+            IReceiptTokenFactory(manager.receiptTokenFactory()).createReceiptToken(
                 _receiptTokenName, _receiptTokenSymbol, address(this), msg.sender
             )
         );
@@ -77,7 +77,7 @@ contract StrategyWithRewardsMock is IStrategy, StrategyBase {
         address _recipient,
         address _asset,
         bytes calldata
-    ) external override onlyStrategyManager onlyValidAmount(_shares) returns (uint256, uint256) {
+    ) external override onlyStrategyManager onlyValidAmount(_shares) returns (uint256, uint256, int256, uint256) {
         require(_shares > 0, "Too low");
         require(_shares <= recipients[_recipient].totalShares, "Too much");
 
@@ -90,7 +90,7 @@ contract StrategyWithRewardsMock is IStrategy, StrategyBase {
         totalInvestments -= _shares;
 
         IERC20(_asset).safeTransfer(_recipient, _shares);
-        return (_shares, _shares);
+        return (_shares, _shares, 0, 0);
     }
 
     function claimRewards(

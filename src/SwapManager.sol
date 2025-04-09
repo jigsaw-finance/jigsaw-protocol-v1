@@ -1,17 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
-pragma abicoder v2;
 
 import { ISwapRouter } from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
-import { TransferHelper } from "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { Ownable2Step } from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import { Ownable, Ownable2Step } from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import { IERC20, SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { IHolding } from "./interfaces/core/IHolding.sol";
 import { IManager } from "./interfaces/core/IManager.sol";
-import { IManagerContainer } from "./interfaces/core/IManagerContainer.sol";
 import { IStablesManager } from "./interfaces/core/IStablesManager.sol";
 import { ISwapManager } from "./interfaces/core/ISwapManager.sol";
 
@@ -21,7 +17,7 @@ import { ISwapManager } from "./interfaces/core/ISwapManager.sol";
  * @notice This contract implements Uniswap's exact output multihop swap, for more information please refer to
  * https://docs.uniswap.org/contracts/v3/guides/swaps/multihop-swaps.
  *
- * @dev This contract inherits functionalities from `Ownable`.
+ * @dev This contract inherits functionalities from `Ownable2Step`.
  *
  * @author Hovooo (@hovooo).
  *
@@ -41,9 +37,9 @@ contract SwapManager is ISwapManager, Ownable2Step {
     address public immutable override uniswapFactory;
 
     /**
-     * @notice Returns the contract that contains the address of the Manager contract.
+     * @notice Contract that contains all the necessary configs of the protocol.
      */
-    IManagerContainer public immutable override managerContainer;
+    IManager public immutable override manager;
 
     /**
      * @notice Returns UniswapV3 pool initialization code hash used to deterministically compute the pool address.
@@ -56,21 +52,21 @@ contract SwapManager is ISwapManager, Ownable2Step {
      * @param _initialOwner The initial owner of the contract.
      * @param _uniswapFactory the address of the UniswapV3 Factory.
      * @param _swapRouter the address of the UniswapV3 Swap Router.
-     * @param _managerContainer contract that contains the address of the Manager contract.
+     * @param _manager contract that contains all the necessary configs of the protocol.
      */
     constructor(
         address _initialOwner,
         address _uniswapFactory,
         address _swapRouter,
-        address _managerContainer
+        address _manager
     ) Ownable(_initialOwner) {
         require(_uniswapFactory != address(0), "3000");
         require(_swapRouter != address(0), "3000");
-        require(_managerContainer != address(0), "3000");
+        require(_manager != address(0), "3000");
 
         uniswapFactory = _uniswapFactory;
         swapRouter = _swapRouter;
-        managerContainer = IManagerContainer(_managerContainer);
+        manager = IManager(_manager);
     }
 
     // -- User specific methods --
@@ -106,7 +102,7 @@ contract SwapManager is ISwapManager, Ownable2Step {
         uint256 _amountInMaximum
     ) external override validPool(_swapPath, _amountOut) returns (uint256 amountIn) {
         // Ensure the caller is Liquidation Manager Contract.
-        require(msg.sender == IManager(managerContainer.manager()).liquidationManager(), "1000");
+        require(msg.sender == manager.liquidationManager(), "1000");
 
         // Initialize tempData struct.
         SwapTempData memory tempData = SwapTempData({
@@ -119,23 +115,11 @@ contract SwapManager is ISwapManager, Ownable2Step {
             router: swapRouter
         });
 
-        // Holding must approve Swap Manager to transfer tokenIn from it.
-        IHolding(tempData.userHolding).approve({
-            _tokenAddress: tempData.tokenIn,
-            _destination: address(this),
-            _amount: tempData.amountInMaximum
-        });
-
         // Transfer the specified `amountInMaximum` to this contract.
-        TransferHelper.safeTransferFrom({
-            token: tempData.tokenIn,
-            from: tempData.userHolding,
-            to: address(this),
-            value: tempData.amountInMaximum
-        });
+        IHolding(tempData.userHolding).transfer(tempData.tokenIn, address(this), tempData.amountInMaximum);
 
         // Approve the Router to spend `amountInMaximum` from address(this).
-        TransferHelper.safeApprove({ token: tempData.tokenIn, to: tempData.router, value: tempData.amountInMaximum });
+        IERC20(tempData.tokenIn).forceApprove({ spender: tempData.router, value: tempData.amountInMaximum });
 
         // The parameter path is encoded as (tokenOut, fee, tokenIn/tokenOut, fee, tokenIn).
         ISwapRouter.ExactOutputParams memory params = ISwapRouter.ExactOutputParams({
@@ -163,10 +147,8 @@ contract SwapManager is ISwapManager, Ownable2Step {
 
         // If the swap did not require the full amountInMaximum to achieve the exact amountOut make a refund.
         if (amountIn < tempData.amountInMaximum) {
-            // Decrease allowance of the Swap Manager.
-            IHolding(tempData.userHolding).approve(tempData.tokenIn, address(this), 0);
             // Decrease allowance of the router.
-            TransferHelper.safeApprove(tempData.tokenIn, address(tempData.router), 0);
+            IERC20(tempData.tokenIn).forceApprove({ spender: address(tempData.router), value: 0 });
             // Make the refund.
             IERC20(tempData.tokenIn).safeTransfer(tempData.userHolding, tempData.amountInMaximum - amountIn);
         }
@@ -204,14 +186,6 @@ contract SwapManager is ISwapManager, Ownable2Step {
     }
 
     // -- Private methods --
-
-    /**
-     * @notice Returns the stables manager contract.
-     * @return The IStablesManager instance.
-     */
-    function _getStablesManager() private view returns (IStablesManager) {
-        return IStablesManager(IManager(managerContainer.manager()).stablesManager());
-    }
 
     /**
      * @notice Computes the pool address given the tokens of the pool and its fee.
@@ -259,17 +233,20 @@ contract SwapManager is ISwapManager, Ownable2Step {
     modifier validPool(bytes calldata _path, uint256 _amount) {
         // The shortest possible path is of 43 bytes, as an address takes 20 bytes and uint24 takes 3 bytes.
         require(_path.length >= 43, "3077");
+
         // Initialize tempData struct.
         ValidPoolTempData memory tempData = ValidPoolTempData({
-            jUsd: _getStablesManager().jUSD(),
+            jUsd: IStablesManager(manager.stablesManager()).jUSD(),
             tokenA: address(bytes20(_path[0:20])),
             fee: uint24(bytes3(_path[20:23])),
             tokenB: address(bytes20(_path[23:43]))
         });
+
         // The first address in the path must be jUsd
         require(tempData.tokenA == address(tempData.jUsd), "3077");
         // There should be enough jUsd in the pool to perform self-liquidation.
         require(tempData.jUsd.balanceOf(_getPool(tempData.tokenA, tempData.tokenB, tempData.fee)) >= _amount, "3083");
+
         _;
     }
 }

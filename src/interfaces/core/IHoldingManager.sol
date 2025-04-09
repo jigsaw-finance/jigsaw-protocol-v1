@@ -1,13 +1,32 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { IManagerContainer } from "./IManagerContainer.sol";
+import { IManager } from "./IManager.sol";
 
 /**
  * @title IHoldingManager
  * @notice Interface for the Holding Manager.
  */
 interface IHoldingManager {
+    // -- Custom types --
+
+    /**
+     * @notice Data used for multiple borrow.
+     */
+    struct BorrowData {
+        address token;
+        uint256 amount;
+        uint256 minJUsdAmountOut;
+    }
+
+    /**
+     * @notice Data used for multiple repay.
+     */
+    struct RepayData {
+        address token;
+        uint256 amount;
+    }
+
     // -- Events --
 
     /**
@@ -29,10 +48,10 @@ interface IHoldingManager {
      * @notice Emitted when a borrow action is performed.
      * @param holding The address of the holding.
      * @param token The address of the token.
-     * @param amount The amount borrowed.
+     * @param jUsdMinted The amount of jUSD minted.
      * @param mintToUser Indicates if the amount is minted directly to the user.
      */
-    event Borrowed(address indexed holding, address indexed token, uint256 amount, bool mintToUser);
+    event Borrowed(address indexed holding, address indexed token, uint256 jUsdMinted, bool mintToUser);
 
     /**
      * @notice Emitted when a borrow event happens using multiple collateral types.
@@ -83,6 +102,15 @@ interface IHoldingManager {
     event Withdrawal(address indexed holding, address indexed token, uint256 totalAmount, uint256 feeAmount);
 
     /**
+     * @notice Emitted when the contract receives ETH.
+     * @param from The address of the sender.
+     * @param amount The amount received.
+     */
+    event Received(address indexed from, uint256 amount);
+
+    // -- State variables --
+
+    /**
      * @notice Returns the holding for a user.
      * @param _user The address of the user.
      * @return The address of the holding.
@@ -116,10 +144,16 @@ interface IHoldingManager {
     function holdingImplementationReference() external view returns (address);
 
     /**
-     * @notice Returns the address of the manager container contract.
-     * @return The address of the manager container contract.
+     * @notice Contract that contains all the necessary configs of the protocol.
+     * @return The manager contract.
      */
-    function managerContainer() external view returns (IManagerContainer);
+    function manager() external view returns (IManager);
+
+    /**
+     * @notice Returns the address of the WETH contract to save on `manager.WETH()` calls.
+     * @return The address of the WETH contract.
+     */
+    function WETH() external view returns (address);
 
     // -- User specific methods --
 
@@ -208,10 +242,11 @@ interface IHoldingManager {
     /**
      * @notice Borrows jUSD stablecoin to the user or to the holding contract.
      *
-     * @dev This function will fail if the supplied `_amount` does not adhere to the collateralization ratio set in
-     * the registry for the specific collateral. For instance, if the collateralization ratio is 200%, the maximum
-     * `_amount` that can be used to borrow is half of the user's free collateral, otherwise the user's holding will
-     * become insolvent after borrowing.
+     * @dev The _amount does not account for the collateralization ratio and is meant to represent collateral's amount
+     * equivalent to jUSD's value the user wants to receive.
+     * @dev Ensure that the user will not become insolvent after borrowing before calling this function, as this
+     * function will revert ("3009") if the supplied `_amount` does not adhere to the collateralization ratio set in
+     * the registry for the specific collateral.
      *
      * @notice Requirements:
      * - `msg.sender` must have a valid holding.
@@ -224,10 +259,18 @@ interface IHoldingManager {
      * - `Borrowed` event indicating successful borrow operation.
      *
      * @param _token Collateral token.
-     * @param _amount The collateral amount used for borrowing.
+     * @param _amount The collateral amount equivalent for borrowed jUSD.
      * @param _mintDirectlyToUser If true, mints to user instead of holding.
+     * @param _minJUsdAmountOut The minimum amount of jUSD that is expected to be received.
+     *
+     * @return jUsdMinted The amount of jUSD minted.
      */
-    function borrow(address _token, uint256 _amount, bool _mintDirectlyToUser) external;
+    function borrow(
+        address _token,
+        uint256 _amount,
+        uint256 _minJUsdAmountOut,
+        bool _mintDirectlyToUser
+    ) external returns (uint256 jUsdMinted);
 
     /**
      * @notice Borrows jUSD stablecoin to the user or to the holding contract using multiple collaterals.
@@ -250,8 +293,13 @@ interface IHoldingManager {
      *
      * @param _data Struct containing data for each collateral type.
      * @param _mintDirectlyToUser If true, mints to user instead of holding.
+     *
+     * @return  The amount of jUSD minted for each collateral type.
      */
-    function borrowMultiple(BorrowOrRepayData[] calldata _data, bool _mintDirectlyToUser) external;
+    function borrowMultiple(
+        BorrowData[] calldata _data,
+        bool _mintDirectlyToUser
+    ) external returns (uint256[] memory);
 
     /**
      * @notice Repays jUSD stablecoin debt from the user's or to the holding's address and frees up the locked
@@ -290,7 +338,7 @@ interface IHoldingManager {
      * @param _data Struct containing data for each collateral type.
      * @param _repayFromUser If true, it will burn from user's wallet, otherwise from user's holding.
      */
-    function repayMultiple(BorrowOrRepayData[] calldata _data, bool _repayFromUser) external;
+    function repayMultiple(RepayData[] calldata _data, bool _repayFromUser) external;
 
     // -- Administration --
 
@@ -303,14 +351,4 @@ interface IHoldingManager {
      * @notice Returns to normal state.
      */
     function unpause() external;
-
-    // -- Structs --
-
-    /**
-     * @notice Data used for multiple borrow.
-     */
-    struct BorrowOrRepayData {
-        address token;
-        uint256 amount;
-    }
 }

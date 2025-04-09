@@ -25,16 +25,22 @@ contract DeployUniswapV3Oracle is Script, Base {
     // Get values from config
     address internal INITIAL_OWNER = commonConfig.readAddress(".INITIAL_OWNER");
     address internal JUSD = deployments.readAddress(".jUSD");
-    address internal USDC = managerConfig.readAddress(".USDC");
+
     address internal JUSD_USDC_UNISWAP_POOL = uniswapConfig.readAddress(".JUSD_USDC_UNISWAP_POOL");
+    address internal USDC = uniswapConfig.readAddress(".USDC");
+    address internal USDC_ORACLE = uniswapConfig.readAddress(".USDC_ORACLE");
 
     function run() external broadcast returns (UniswapV3Oracle uniswapV3Oracle) {
+        address[] memory initialPools = new address[](1);
+        initialPools[0] = JUSD_USDC_UNISWAP_POOL;
+
         // Deploy UniswapV3Oracle Contract
         uniswapV3Oracle = new UniswapV3Oracle({
             _initialOwner: INITIAL_OWNER,
             _jUSD: JUSD,
             _quoteToken: USDC,
-            _uniswapV3Pool: JUSD_USDC_UNISWAP_POOL
+            _quoteTokenOracle: USDC_ORACLE,
+            _uniswapV3Pools: initialPools
         });
 
         // Save the address of the uniswapV3Oracle to the deployments.json
