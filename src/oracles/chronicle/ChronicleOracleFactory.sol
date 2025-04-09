@@ -67,6 +67,7 @@ contract ChronicleOracleFactory is IChronicleOracleFactory, Ownable2Step {
         address _chronicle,
         uint256 _ageValidityPeriod
     ) external override returns (address newChronicleOracleAddress) {
+        require(_chronicle.code.length > 0, "3096");
         require(_ageValidityPeriod > 0, "Zero age");
 
         // Clone the Chronicle oracle implementation.

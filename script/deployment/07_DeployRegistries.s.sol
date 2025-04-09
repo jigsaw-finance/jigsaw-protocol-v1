@@ -31,6 +31,9 @@ contract DeployRegistries is Script, Base {
         LRT
     }
 
+    /**
+     * @dev struct of registry configurations
+     */
     struct RegistryConfig {
         string symbol;
         address token;
@@ -42,15 +45,6 @@ contract DeployRegistries is Script, Base {
         uint256 age;
     }
 
-    // Mapping of collateral type to collateralization rate
-    mapping(CollateralType collateralType => uint256 collateralizationRate) internal collateralizationRates;
-
-    // Array to store registry configurations
-    RegistryConfig[] internal registryConfigs;
-
-    // Array to store deployed registries' addresses
-    address[] internal registries;
-
     // Read config files
     string internal commonConfig = vm.readFile("./deployment-config/00_CommonConfig.json");
     string internal deployments = vm.readFile("./deployments.json");
@@ -60,6 +54,15 @@ contract DeployRegistries is Script, Base {
     address internal MANAGER = deployments.readAddress(".MANAGER");
     address internal STABLES_MANAGER = deployments.readAddress(".STABLES_MANAGER");
     address internal CHRONICLE_ORACLE_FACTORY = deployments.readAddress(".CHRONICLE_ORACLE_FACTORY");
+
+    // Array to store deployed registries' addresses
+    address[] internal registries;
+
+    // Array to store registry configurations
+    RegistryConfig[] internal registryConfigs;
+
+    // Mapping of collateral type to collateralization rate
+    mapping(CollateralType collateralType => uint256 collateralizationRate) internal collateralizationRates;
 
     // Common liquidation config
     uint256 internal defaultLiquidationBuffer = 5e3;
@@ -73,6 +76,10 @@ contract DeployRegistries is Script, Base {
     // Common configs for oracle
     bytes internal COMMON_ORACLE_DATA = bytes("");
     uint256 internal COMMON_ORACLE_AGE = 1 hours;
+
+    // Default chronicle oracle address used for testing only
+    // @todo DELETE ME
+    address internal DEFAULT_CHRONICLE_ORACLE_ADDRESS = 0x46ef0071b1E2fF6B42d36e5A177EA43Ae5917f4E;
 
     function run() external broadcast returns (address[] memory deployedRegistries) {
         // Validate interfaces
@@ -131,7 +138,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: collateralizationRates[CollateralType.Stable],
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: address(0),
+                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -144,7 +151,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: collateralizationRates[CollateralType.Stable],
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: address(0),
+                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -157,7 +164,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: collateralizationRates[CollateralType.Stable],
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: address(0),
+                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -170,7 +177,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: collateralizationRates[CollateralType.Stable],
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: address(0),
+                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -183,7 +190,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: collateralizationRates[CollateralType.Major],
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: address(0),
+                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -196,7 +203,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: collateralizationRates[CollateralType.Major],
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: address(0),
+                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -209,7 +216,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: collateralizationRates[CollateralType.Major],
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: address(0),
+                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -222,7 +229,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: collateralizationRates[CollateralType.LRT],
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: address(0),
+                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -235,7 +242,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: collateralizationRates[CollateralType.LRT],
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: address(0),
+                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })

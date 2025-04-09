@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "../fixtures/ScriptTestsFixture.t.sol";
+import { IChronicleOracle } from "src/oracles/chronicle/interfaces/IChronicleOracle.sol";
 
 contract DeployAll is Test, ScriptTestsFixture {
     function setUp() public {
@@ -90,6 +91,17 @@ contract DeployAll is Test, ScriptTestsFixture {
             (bool active, address _registry) = stablesManager.shareRegistryInfo(registry.token());
             assertEq(active, true, "Active flag in StablesManager is wrong");
             assertEq(_registry, address(registry), "Registry address in StablesManager is wrong");
+
+            // Whitelist oracle to call Chronicle
+            address authedKisser = 0x40C33e796be78148CeC983C2202335A0962d172A;
+            vm.startPrank(authedKisser, authedKisser);
+            IToll(address(IChronicleOracle(address(registry.oracle())).chronicle())).kiss({
+                who: address(registry.oracle())
+            });
+            vm.stopPrank();
+
+            // Perform checks on the ShareRegistry Contracts
+            assertNotEq(registry.getExchangeRate(), 0, "Price in ShareRegistry is wrong");
         }
     }
 
@@ -110,4 +122,13 @@ contract DeployAll is Test, ScriptTestsFixture {
         assertEq(pools.length, 1, "pools length in jUsdUniswapV3Oracle is wrong");
         assertEq(pools[0], USDT_USDC_POOL, "pools in jUsdUniswapV3Oracle is wrong");
     }
+}
+
+interface IToll {
+    /// @notice Grants address `who` toll.
+    /// @dev Only callable by auth'ed address.
+    /// @param who The address to grant toll.
+    function kiss(
+        address who
+    ) external;
 }

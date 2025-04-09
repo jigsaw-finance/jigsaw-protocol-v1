@@ -19,7 +19,7 @@ contract DeployUniswapV3Oracle is Script, Base {
     // Read config file
     string internal commonConfig = vm.readFile("./deployment-config/00_CommonConfig.json");
     string internal managerConfig = vm.readFile("./deployment-config/01_ManagerConfig.json");
-    string internal uniswapConfig = vm.readFile("./deployment-config/05_UniswapV3OracleConfig.json");
+    string internal uniswapConfig = vm.readFile("./deployment-config/04_UniswapV3OracleConfig.json");
     string internal deployments = vm.readFile("./deployments.json");
 
     // Get values from config

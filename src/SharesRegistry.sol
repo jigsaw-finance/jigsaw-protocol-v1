@@ -36,7 +36,6 @@ contract SharesRegistry is ISharesRegistry, Ownable2Step {
     mapping(address holding => uint256 amount) public override collateral;
 
     /**
-     * /**
      * @notice Contract that contains the address of the Manager Contract.
      */
     IManager public override manager;
