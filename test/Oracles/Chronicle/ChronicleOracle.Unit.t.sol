@@ -57,6 +57,7 @@ contract ChronicleOracleUnitTest is Test {
         vm.assertEq(chronicleOracle.owner(), OWNER, "Owner in oracle set wrong");
         vm.assertEq(chronicleOracle.name(), IERC20Metadata(UNDERLYING).name(), "Name in oracle set wrong");
         vm.assertEq(chronicleOracle.symbol(), IERC20Metadata(UNDERLYING).symbol(), "Symbol in oracle set wrong");
+        vm.assertEq(chronicleOracle.ageValidityBuffer(), 15 minutes, "Age validity buffer in oracle set wrong");
     }
 
     // Tests whether the oracle returns valid rate
@@ -69,14 +70,31 @@ contract ChronicleOracleUnitTest is Test {
 
     // Tests whether the oracle reverts correctly when the price is too old
     function test_chronicle_peek_when_outdatedPrice() public {
-        skip(100 days);
+        uint256 ageOutsideBuffer = chronicleOracle.ageValidityBuffer() + 1;
+
+        vm.prank(address(chronicleOracle), address(chronicleOracle));
+
+        (, uint256 actualAge) = IChronicleMinimal(CHRONICLE).readWithAge();
+        vm.warp(actualAge + chronicleOracle.ageValidityPeriod() + ageOutsideBuffer);
+
+        uint256 minAllowedAge =
+            block.timestamp - (chronicleOracle.ageValidityPeriod() + chronicleOracle.ageValidityBuffer());
+        vm.expectRevert(abi.encodeWithSelector(IChronicleOracle.OutdatedPrice.selector, minAllowedAge, actualAge));
+        chronicleOracle.peek("");
+    }
+
+    // Tests whether the oracle works correctly when the price is older than ageValidityPeriod, but within the buffer
+    function test_chronicle_peek_when_within_buffer() public {
+        uint256 ageWithinBuffer = chronicleOracle.ageValidityBuffer() - 1;
 
         vm.prank(address(chronicleOracle), address(chronicleOracle));
         (, uint256 actualAge) = IChronicleMinimal(CHRONICLE).readWithAge();
-        uint256 minAllowedAge = block.timestamp - chronicleOracle.ageValidityPeriod();
 
-        vm.expectRevert(abi.encodeWithSelector(IChronicleOracle.OutdatedPrice.selector, minAllowedAge, actualAge));
-        chronicleOracle.peek("");
+        vm.warp(actualAge + chronicleOracle.ageValidityPeriod() + ageWithinBuffer);
+        (bool success, uint256 rate) = chronicleOracle.peek("");
+
+        vm.assertEq(success, true, "Peek failed");
+        vm.assertEq(rate, 999_840_517_033_636_936, "Rate is wrong");
     }
 
     // Tests whether the oracle returns success false when chronicle reverts

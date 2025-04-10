@@ -39,6 +39,13 @@ contract ChronicleOracle is IChronicleOracle, Initializable, Ownable2StepUpgrade
      */
     uint256 public override ageValidityPeriod;
 
+    /**
+     * @notice Buffer to account for the age of the price.
+     * @dev This is used to ensure that the price is not considered outdated if it is within the buffer allowed for the
+     * Chronicle protocol to update the price on-chain.
+     */
+    uint256 public override ageValidityBuffer;
+
     // -- Constructor --
 
     constructor() {
@@ -75,6 +82,7 @@ contract ChronicleOracle is IChronicleOracle, Initializable, Ownable2StepUpgrade
         underlying = _underlying;
         chronicle = _chronicle;
         ageValidityPeriod = _ageValidityPeriod;
+        ageValidityBuffer = 15 minutes;
     }
 
     // -- Administration --
@@ -115,7 +123,7 @@ contract ChronicleOracle is IChronicleOracle, Initializable, Ownable2StepUpgrade
             if (value == 0) revert ZeroPrice();
 
             // Ensure the price is not outdated
-            uint256 minAllowedAge = block.timestamp - ageValidityPeriod;
+            uint256 minAllowedAge = block.timestamp - (ageValidityPeriod + ageValidityBuffer);
             if (age < minAllowedAge) revert OutdatedPrice({ minAllowedAge: minAllowedAge, actualAge: age });
 
             // Set success flag and return the price
