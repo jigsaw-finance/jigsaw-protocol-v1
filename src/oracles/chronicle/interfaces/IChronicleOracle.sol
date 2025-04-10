@@ -63,6 +63,12 @@ interface IChronicleOracle is IOracle {
      */
     function ageValidityPeriod() external view returns (uint256);
 
+    /**
+     * @notice Returns the buffer to account for the age of the price.
+     * @return The buffer in seconds as a uint256 value.
+     */
+    function ageValidityBuffer() external view returns (uint256);
+
     // -- Initialization --
 
     /**
