@@ -23,9 +23,6 @@ contract DeployChronicleOracleFactory is Script, Base {
     // Get values from config
     address internal INITIAL_OWNER = commonConfig.readAddress(".INITIAL_OWNER");
 
-    // Salt for deterministic deployment using Create2
-    bytes32 internal salt = "0x";
-
     function run()
         external
         broadcast
@@ -35,7 +32,7 @@ contract DeployChronicleOracleFactory is Script, Base {
         chronicleOracle = new ChronicleOracle();
 
         // Deploy ReceiptTokenFactory Contract
-        chronicleOracleFactory = new ChronicleOracleFactory{ salt: salt }({
+        chronicleOracleFactory = new ChronicleOracleFactory({
             _initialOwner: INITIAL_OWNER,
             _referenceImplementation: address(chronicleOracle)
         });

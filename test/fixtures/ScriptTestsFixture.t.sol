@@ -70,6 +70,15 @@ contract ScriptTestsFixture is Test {
     ChronicleOracleFactory internal chronicleOracleFactory;
     UniswapV3Oracle internal jUsdUniswapV3Oracle;
 
+    // Deployers
+    DeployManager internal deployManagerScript;
+    DeployJUSD internal deployJUSDScript;
+    DeployManagers internal deployManagersScript;
+    DeployChronicleOracleFactory internal deployChronicleOracleFactory;
+    DeployReceiptToken internal deployReceiptTokenScript;
+    DeployRegistries internal deployRegistriesScript;
+    DeployUniswapV3Oracle internal deployUniswapV3OracleScript;
+
     address[] internal registries;
 
     function init() internal {
@@ -94,31 +103,31 @@ contract ScriptTestsFixture is Test {
         Strings.toHexString(uint160(JUSD_Oracle), 20).write(uniswapV3OracleConfigPath, ".USDC_ORACLE");
 
         //Run Manager deployment script
-        DeployManager deployManagerScript = new DeployManager();
+        deployManagerScript = new DeployManager();
         manager = deployManagerScript.run();
 
         //Run JUSD deployment script
-        DeployJUSD deployJUSDScript = new DeployJUSD();
+        deployJUSDScript = new DeployJUSD();
         jUSD = deployJUSDScript.run();
 
         //Run Managers deployment script
-        DeployManagers deployManagersScript = new DeployManagers();
+        deployManagersScript = new DeployManagers();
         (holdingManager, liquidationManager, stablesManager, strategyManager, swapManager) = deployManagersScript.run();
 
         //Run ChronicleOracleFactory deployment script
-        DeployChronicleOracleFactory deployChronicleOracleFactory = new DeployChronicleOracleFactory();
+        deployChronicleOracleFactory = new DeployChronicleOracleFactory();
         (chronicleOracleFactory, chronicleOracle) = deployChronicleOracleFactory.run();
 
         //Run ReceiptToken deployment script
-        DeployReceiptToken deployReceiptTokenScript = new DeployReceiptToken();
+        deployReceiptTokenScript = new DeployReceiptToken();
         (receiptTokenFactory, receiptToken) = deployReceiptTokenScript.run();
 
         //Run Registries deployment script
-        DeployRegistries deployRegistriesScript = new DeployRegistries();
+        deployRegistriesScript = new DeployRegistries();
         registries = deployRegistriesScript.run();
 
         //Run UniswapV3 deployment script
-        DeployUniswapV3Oracle deployUniswapV3OracleScript = new DeployUniswapV3Oracle();
+        deployUniswapV3OracleScript = new DeployUniswapV3Oracle();
         jUsdUniswapV3Oracle = deployUniswapV3OracleScript.run();
     }
 }

@@ -25,7 +25,7 @@ contract DeployJUSD is Script, Base {
     address internal MANAGER = deployments.readAddress(".MANAGER");
 
     // Salt for deterministic deployment using Create2
-    bytes32 internal salt = "0x";
+    bytes32 internal salt = bytes32(0x0);
 
     function run() external broadcast returns (JigsawUSD jUSD) {
         // Validate interface
@@ -36,5 +36,9 @@ contract DeployJUSD is Script, Base {
 
         // Save addresses of all the deployed contracts to the deployments.json
         Strings.toHexString(uint160(address(jUSD)), 20).write("./deployments.json", ".jUSD");
+    }
+
+    function getInitCodeHash() public view returns (bytes32) {
+        return keccak256(abi.encodePacked(type(JigsawUSD).creationCode, abi.encode(INITIAL_OWNER, MANAGER)));
     }
 }
