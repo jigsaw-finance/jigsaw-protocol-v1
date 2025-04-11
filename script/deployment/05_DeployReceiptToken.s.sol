@@ -27,9 +27,6 @@ contract DeployReceiptToken is Script, Base {
     address internal INITIAL_OWNER = commonConfig.readAddress(".INITIAL_OWNER");
     address internal MANAGER = deployments.readAddress(".MANAGER");
 
-    // Salt for deterministic deployment using Create2
-    bytes32 internal salt = "0x";
-
     function run() external broadcast returns (ReceiptTokenFactory receiptTokenFactory, ReceiptToken receiptToken) {
         // Validate interface
         _validateInterface(IManager(MANAGER));
@@ -38,10 +35,8 @@ contract DeployReceiptToken is Script, Base {
         receiptToken = new ReceiptToken();
 
         // Deploy ReceiptTokenFactory Contract
-        receiptTokenFactory = new ReceiptTokenFactory{ salt: salt }({
-            _initialOwner: INITIAL_OWNER,
-            _referenceImplementation: address(receiptToken)
-        });
+        receiptTokenFactory =
+            new ReceiptTokenFactory({ _initialOwner: INITIAL_OWNER, _referenceImplementation: address(receiptToken) });
 
         // @note call setReceiptTokenFactory on Manager Contract using multisig
 

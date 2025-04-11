@@ -39,11 +39,11 @@ contract DeployManagers is Script, Base {
     address internal UNISWAP_SWAP_ROUTER = managersConfig.readAddress(".UNISWAP_SWAP_ROUTER");
 
     // Salts for deterministic deployments using Create2
-    bytes32 internal holdingManager_salt = "0x";
-    bytes32 internal liquidationManager_salt = "0x";
-    bytes32 internal stablesManager_salt = "0x";
-    bytes32 internal strategyManager_salt = "0x";
-    bytes32 internal swapManager_salt = "0x";
+    bytes32 internal holdingManager_salt = bytes32(0x0);
+    bytes32 internal liquidationManager_salt = bytes32(0x0);
+    bytes32 internal stablesManager_salt = bytes32(0x0);
+    bytes32 internal strategyManager_salt = bytes32(0x0);
+    bytes32 internal swapManager_salt = bytes32(0x0);
 
     function run()
         external
@@ -99,5 +99,29 @@ contract DeployManagers is Script, Base {
         Strings.toHexString(uint160(address(stablesManager)), 20).write("./deployments.json", ".STABLES_MANAGER");
         Strings.toHexString(uint160(address(strategyManager)), 20).write("./deployments.json", ".STRATEGY_MANAGER");
         Strings.toHexString(uint160(address(swapManager)), 20).write("./deployments.json", ".SWAP_MANAGER");
+    }
+
+    function getHoldingManagerInitCodeHash() public view returns (bytes32) {
+        return keccak256(abi.encodePacked(type(HoldingManager).creationCode, abi.encode(INITIAL_OWNER, MANAGER)));
+    }
+
+    function getLiquidationManagerInitCodeHash() public view returns (bytes32) {
+        return keccak256(abi.encodePacked(type(LiquidationManager).creationCode, abi.encode(INITIAL_OWNER, MANAGER)));
+    }
+
+    function getStablesManagerInitCodeHash() public view returns (bytes32) {
+        return keccak256(abi.encodePacked(type(StablesManager).creationCode, abi.encode(INITIAL_OWNER, MANAGER, JUSD)));
+    }
+
+    function getStrategyManagerInitCodeHash() public view returns (bytes32) {
+        return keccak256(abi.encodePacked(type(StrategyManager).creationCode, abi.encode(INITIAL_OWNER, MANAGER)));
+    }
+
+    function getSwapManagerInitCodeHash() public view returns (bytes32) {
+        return keccak256(
+            abi.encodePacked(
+                type(SwapManager).creationCode, abi.encode(INITIAL_OWNER, UNISWAP_FACTORY, UNISWAP_SWAP_ROUTER, MANAGER)
+            )
+        );
     }
 }

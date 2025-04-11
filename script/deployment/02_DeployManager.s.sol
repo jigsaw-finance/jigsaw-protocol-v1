@@ -31,7 +31,7 @@ contract DeployManager is Script, Base {
     bytes internal JUSD_OracleData = managerConfig.readBytes(".JUSD_OracleData");
 
     // Salt for deterministic deployment using Create2
-    bytes32 internal salt = "0x";
+    bytes32 internal salt = bytes32(0x0);
 
     function run() external broadcast returns (Manager manager) {
         // Validate interfaces
@@ -50,5 +50,11 @@ contract DeployManager is Script, Base {
 
         // Save addresses of all the deployed contracts to the deployments.json
         Strings.toHexString(uint160(address(manager)), 20).write("./deployments.json", ".MANAGER");
+    }
+
+    function getInitCodeHash() public view returns (bytes32) {
+        return keccak256(
+            abi.encodePacked(type(Manager).creationCode, abi.encode(INITIAL_OWNER, WETH, JUSD_Oracle, JUSD_OracleData))
+        );
     }
 }
