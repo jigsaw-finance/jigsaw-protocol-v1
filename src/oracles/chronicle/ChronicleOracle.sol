@@ -124,9 +124,9 @@ contract ChronicleOracle is IChronicleOracle, Initializable, Ownable2StepUpgrade
     /**
      * @notice Fetches the latest exchange rate without causing any state changes.
      *
-     * @dev The function attempts to retrieve the price from the Chronicle oracle. It ensures that the price
-     * does not violate constraints such as being negative or having an invalid exponent. Any failure in fetching the
-     * price results in the function returning a failure status and a zero rate.
+     * @dev The function attempts to retrieve the price from the Chronicle oracle.
+     * @dev Ensures that the price does not violate constraints such as being zero or being too old.
+     * @dev Any failure in fetching the price results in the function returning a failure status and a zero rate.
      *
      * @return success Indicates whether a valid (recent) rate was retrieved. Returns false if no valid rate available.
      * @return rate The normalized exchange rate of the requested asset pair, expressed with `ALLOWED_DECIMALS`.
