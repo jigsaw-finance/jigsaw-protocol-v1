@@ -77,10 +77,6 @@ contract DeployRegistries is Script, Base {
     bytes internal COMMON_ORACLE_DATA = bytes("");
     uint256 internal COMMON_ORACLE_AGE = 1 hours;
 
-    // Default chronicle oracle address used for testing only
-    // @todo DELETE ME
-    address internal DEFAULT_CHRONICLE_ORACLE_ADDRESS = 0x46ef0071b1E2fF6B42d36e5A177EA43Ae5917f4E;
-
     function run() external broadcast returns (address[] memory deployedRegistries) {
         // Validate interfaces
         _validateInterface(IManager(MANAGER));
@@ -138,7 +134,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: collateralizationRates[CollateralType.Stable],
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
+                chronicleOracleAddress: 0xCe701340261a3dc3541C5f8A6d2bE689381C8fCC,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -151,7 +147,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: collateralizationRates[CollateralType.Stable],
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
+                chronicleOracleAddress: 0x7084a627a22b2de99E18733DC5aAF40993FA405C,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -164,7 +160,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: collateralizationRates[CollateralType.Stable],
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
+                chronicleOracleAddress: 0xE7A6E74d1654B98E9d3DDb003B645E0d7c82C935,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -174,10 +170,10 @@ contract DeployRegistries is Script, Base {
             RegistryConfig({
                 symbol: "USD0++",
                 token: 0x35D8949372D46B7a3D5A56006AE77B215fc69bC0,
-                collateralizationRate: collateralizationRates[CollateralType.Stable],
+                collateralizationRate: collateralizationRates[CollateralType.Major],
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
+                chronicleOracleAddress: 0x247b64e37cb3014566422D778b3aC7747e9C8194,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -190,7 +186,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: collateralizationRates[CollateralType.Major],
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
+                chronicleOracleAddress: 0x286204401e0C1E63043E95a8DE93236B735d4BF2,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -203,7 +199,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: collateralizationRates[CollateralType.Major],
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
+                chronicleOracleAddress: 0xb074EEE1F1e66650DA49A4d96e255c8337A272a9,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -216,7 +212,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: collateralizationRates[CollateralType.Major],
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
+                chronicleOracleAddress: 0xA770582353b573CbfdCC948751750EeB3Ccf23CF,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -229,7 +225,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: collateralizationRates[CollateralType.LRT],
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
+                chronicleOracleAddress: 0x6a906372cA06523bA7FeaeDab18Ab8B665CaeD71,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -242,7 +238,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: collateralizationRates[CollateralType.LRT],
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
+                chronicleOracleAddress: 0x74a31431054cFa5EE82576df8D374916C169190B,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
