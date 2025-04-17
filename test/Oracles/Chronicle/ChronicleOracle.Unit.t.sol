@@ -133,6 +133,30 @@ contract ChronicleOracleUnitTest is Test {
         vm.stopPrank();
     }
 
+    function test_chronicle_updateAgeValidityBuffer(
+        uint256 _newAge
+    ) public {
+        vm.expectRevert(abi.encodeWithSelector(OwnableUnauthorizedAccount.selector, address(this)));
+        chronicleOracle.updateAgeValidityBuffer(0);
+
+        vm.startPrank(OWNER, OWNER);
+        vm.expectRevert(IChronicleOracle.InvalidAgeValidityBuffer.selector);
+        chronicleOracle.updateAgeValidityBuffer(0);
+
+        uint256 oldAge = chronicleOracle.ageValidityBuffer();
+        vm.expectRevert(IChronicleOracle.InvalidAgeValidityBuffer.selector);
+        chronicleOracle.updateAgeValidityBuffer(oldAge);
+
+        vm.assume(_newAge != oldAge && _newAge != 0);
+
+        vm.expectEmit();
+        emit IChronicleOracle.AgeValidityBufferUpdated({ oldValue: oldAge, newValue: _newAge });
+        chronicleOracle.updateAgeValidityBuffer(_newAge);
+
+        vm.assertEq(chronicleOracle.ageValidityBuffer(), _newAge, "Age wrong after update");
+        vm.stopPrank();
+    }
+
     function test_chronicle_renounceOwnership() public {
         vm.expectRevert(bytes("1000"));
         chronicleOracle.renounceOwnership();

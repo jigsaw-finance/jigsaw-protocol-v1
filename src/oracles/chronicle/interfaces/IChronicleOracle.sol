@@ -27,6 +27,16 @@ interface IChronicleOracle is IOracle {
      */
     event AgeValidityPeriodUpdated(uint256 oldValue, uint256 newValue);
 
+    /**
+     * @notice Emitted when the age for the price is updated.
+     *
+     * @dev Provides details about the previous and updated age values.
+     *
+     * @param oldValue The previous age value of the oracle.
+     * @param newValue The updated age value of the oracle.
+     */
+    event AgeValidityBufferUpdated(uint256 oldValue, uint256 newValue);
+
     // -- Errors --
 
     /**
@@ -40,6 +50,12 @@ interface IChronicleOracle is IOracle {
      * @dev This error is used to signal that the age value does not meet the required constraints.
      */
     error InvalidAgeValidityPeriod();
+
+    /**
+     * @notice Thrown when an invalid age value is provided.
+     * @dev This error is used to signal that the age value does not meet the required constraints.
+     */
+    error InvalidAgeValidityBuffer();
 
     /**
      * @notice Thrown when the price is outdated.
@@ -95,5 +111,14 @@ interface IChronicleOracle is IOracle {
      */
     function updateAgeValidityPeriod(
         uint256 _newAgeValidityPeriod
+    ) external;
+
+    /**
+     * @notice Updates the age validity buffer to a new value.
+     * @dev Only the contract owner can call this function.
+     * @param _newAgeValidityBuffer The new age validity buffer to be set.
+     */
+    function updateAgeValidityBuffer(
+        uint256 _newAgeValidityBuffer
     ) external;
 }
