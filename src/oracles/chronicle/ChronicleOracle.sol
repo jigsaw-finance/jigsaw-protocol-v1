@@ -103,6 +103,22 @@ contract ChronicleOracle is IChronicleOracle, Initializable, Ownable2StepUpgrade
         ageValidityPeriod = _newAgeValidityPeriod;
     }
 
+    /**
+     * @notice Updates the age validity buffer to a new value.
+     * @dev Only the contract owner can call this function.
+     * @param _newAgeValidityBuffer The new age validity buffer to be set.
+     */
+    function updateAgeValidityBuffer(
+        uint256 _newAgeValidityBuffer
+    ) external override onlyOwner {
+        if (_newAgeValidityBuffer == 0) revert InvalidAgeValidityBuffer();
+        if (_newAgeValidityBuffer == ageValidityBuffer) revert InvalidAgeValidityBuffer();
+
+        // Emit the event before modifying the state to provide a reliable record of the oracle's age update operation.
+        emit AgeValidityBufferUpdated({ oldValue: ageValidityBuffer, newValue: _newAgeValidityBuffer });
+        ageValidityBuffer = _newAgeValidityBuffer;
+    }
+
     // -- Getters --
 
     /**
