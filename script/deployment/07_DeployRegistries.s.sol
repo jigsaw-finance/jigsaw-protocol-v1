@@ -75,7 +75,7 @@ contract DeployRegistries is Script, Base {
 
     // Common configs for oracle
     bytes internal COMMON_ORACLE_DATA = bytes("");
-    uint256 internal COMMON_ORACLE_AGE = 1 hours;
+    uint256 internal COMMON_ORACLE_AGE = 12 hours;
 
     function run() external broadcast returns (address[] memory deployedRegistries) {
         // Validate interfaces
