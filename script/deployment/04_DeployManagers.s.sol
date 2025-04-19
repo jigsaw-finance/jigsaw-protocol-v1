@@ -39,11 +39,12 @@ contract DeployManagers is Script, Base {
     address internal UNISWAP_SWAP_ROUTER = managersConfig.readAddress(".UNISWAP_SWAP_ROUTER");
 
     // Salts for deterministic deployments using Create2
-    bytes32 internal holdingManager_salt = bytes32(0x0);
-    bytes32 internal liquidationManager_salt = bytes32(0x0);
-    bytes32 internal stablesManager_salt = bytes32(0x0);
-    bytes32 internal strategyManager_salt = bytes32(0x0);
-    bytes32 internal swapManager_salt = bytes32(0x0);
+    bytes32 internal holdingManager_salt = bytes32(0x00000000000000000000000000000000000000003634e4c80ced940387dd7b85);
+    bytes32 internal liquidationManager_salt =
+        bytes32(0x0000000000000000000000000000000000000000972f3f9aaf3aa3026f6fb10a);
+    bytes32 internal stablesManager_salt = bytes32(0x00000000000000000000000000000000000000004cd7a57dd5b44a020a2996e3);
+    bytes32 internal strategyManager_salt = bytes32(0x00000000000000000000000000000000000000007c337f9607e9c80101113ee8);
+    bytes32 internal swapManager_salt = bytes32(0x00000000000000000000000000000000000000008bbb9d20b10c78021b9f7603);
 
     function run()
         external

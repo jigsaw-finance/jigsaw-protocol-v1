@@ -83,11 +83,6 @@ deploy-manager:  && _timer
 	echo "Deploying Manager to $CHAIN..."
 	eval "forge script DeployManager --rpc-url \"\${${CHAIN}_RPC_URL}\" --slow -vvvv --etherscan-api-key \"\${${CHAIN}_ETHERSCAN_API_KEY}\" --verify --broadcast"
 
-# Deploy ManagerContainer Contract	
-deploy-managerContainer: && _timer
-	#!/usr/bin/env bash
-	echo "Deploying ManagerContainer to $CHAIN..."
-	eval "forge script DeployManagerContainer --rpc-url \"\${${CHAIN}_RPC_URL}\" --slow -vvvv --etherscan-api-key \"\${${CHAIN}_ETHERSCAN_API_KEY}\" --verify --broadcast"
 
 # Deploy jUSD Contract
 deploy-jUSD:  && _timer
