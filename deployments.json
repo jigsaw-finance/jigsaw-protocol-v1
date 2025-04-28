@@ -36,5 +36,7 @@
       "liquidationBuffer": 5000,
       "liquidatorBonus": 8000
     }
-  ]
+  ],
+  "JUSD_UNISWAPv3_0.3_POOL": "0xAd0883325adE2994fF7aFd1eeB1Ec8cf9a3f40e6",
+  "JUSD_UNISWAPv3_TWAP_ORACLE": "0x3aFC9691842B2648E344025e5192853d2EB7DA92"
 }
