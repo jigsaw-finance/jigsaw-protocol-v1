@@ -125,3 +125,9 @@ deploy-uniswapV3Oracle: && _timer
 	#!/usr/bin/env bash
 	echo "Deploying UniswapV3Oracle to $CHAIN..."
 	eval "forge script DeployUniswapV3Oracle --rpc-url \"\${${CHAIN}_RPC_URL}\" --slow -vvvv --etherscan-api-key \"\${${CHAIN}_ETHERSCAN_API_KEY}\" --verify --broadcast"
+
+# Deploy MorphoOracle
+deploy-morphoOracle: && _timer
+	#!/usr/bin/env bash
+	echo "Deploying MorphoOracle to $CHAIN..."
+	eval "forge script DeployMorphoOracle --rpc-url \"\${${CHAIN}_RPC_URL}\" --slow -vvvv --etherscan-api-key \"\${${CHAIN}_ETHERSCAN_API_KEY}\" --verify --broadcast"
