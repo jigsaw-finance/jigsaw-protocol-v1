@@ -31,7 +31,7 @@ contract DeployRegistries is Script, Base {
         uint256 collateralizationRate;
         uint256 liquidationBuffer;
         uint256 liquidatorBonus;
-        address chronicleOracleAddress;
+        address oracleAddress;
         bytes oracleData;
         uint256 age;
     }
@@ -44,7 +44,6 @@ contract DeployRegistries is Script, Base {
     address internal INITIAL_OWNER = commonConfig.readAddress(".INITIAL_OWNER");
     address internal MANAGER = deployments.readAddress(".MANAGER");
     address internal STABLES_MANAGER = deployments.readAddress(".STABLES_MANAGER");
-    address internal CHRONICLE_ORACLE_FACTORY = deployments.readAddress(".CHRONICLE_ORACLE_FACTORY");
 
     // Array to store deployed registries' addresses
     address[] internal registries;
@@ -68,7 +67,7 @@ contract DeployRegistries is Script, Base {
 
     // Default chronicle oracle address used for testing only
     // @todo DELETE ME
-    address internal DEFAULT_CHRONICLE_ORACLE_ADDRESS = 0x46ef0071b1E2fF6B42d36e5A177EA43Ae5917f4E;
+    address internal DEFAULT_ORACLE_ADDRESS = address(0);
 
     function run() external broadcast returns (address[] memory deployedRegistries) {
         // Validate interfaces
@@ -81,19 +80,12 @@ contract DeployRegistries is Script, Base {
             // Validate interfaces
             _validateInterface(IERC20(registryConfigs[i].token));
 
-            address oracle = ChronicleOracleFactory(CHRONICLE_ORACLE_FACTORY).createChronicleOracle({
-                _initialOwner: INITIAL_OWNER,
-                _underlying: registryConfigs[i].token,
-                _chronicle: registryConfigs[i].chronicleOracleAddress,
-                _ageValidityPeriod: registryConfigs[i].age
-            });
-
             // Deploy SharesRegistry contract
             SharesRegistry registry = new SharesRegistry({
                 _initialOwner: INITIAL_OWNER,
                 _manager: MANAGER,
                 _token: registryConfigs[i].token,
-                _oracle: oracle,
+                _oracle: registryConfigs[i].oracleAddress,
                 _oracleData: registryConfigs[i].oracleData,
                 _config: ISharesRegistry.RegistryConfig({
                     collateralizationRate: registryConfigs[i].collateralizationRate,
@@ -126,7 +118,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR80,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
+                oracleAddress: DEFAULT_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -139,7 +131,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR85,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
+                oracleAddress: DEFAULT_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -152,7 +144,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR80,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
+                oracleAddress: DEFAULT_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -165,7 +157,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR80,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
+                oracleAddress: DEFAULT_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -178,7 +170,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR65,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
+                oracleAddress: DEFAULT_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -191,7 +183,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR65,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
+                oracleAddress: DEFAULT_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -204,7 +196,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR65,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
+                oracleAddress: DEFAULT_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -217,10 +209,16 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR75,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chronicleOracleAddress: DEFAULT_CHRONICLE_ORACLE_ADDRESS,
+                oracleAddress: DEFAULT_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
         );
+    }
+
+    function setDefaultOracleInTests(
+        address _oracle
+    ) external {
+        DEFAULT_ORACLE_ADDRESS = _oracle;
     }
 }
