@@ -25,3 +25,12 @@ wrap_comments = true
 sort_imports = true
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
+cbor_metadata = true
+
+# Custom chain configuration
+[etherscan]
+146 = { key = "${TENDERLY_ACCESS_TOKEN}", url = "${TENDERLY_VIRTUAL_TESTNET_RPC_URL}/verify/etherscan" }
+
+[rpc_endpoints]
+146 = "${TENDERLY_VIRTUAL_TESTNET_RPC_URL}"

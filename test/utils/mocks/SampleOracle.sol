@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import { IOracle } from "../../../src/interfaces/oracle/IOracle.sol";
 
-contract SampleOracle is IOracle {
+contract GenesisOracle is IOracle {
     uint256 public someNo;
     uint256 public price;
     bool public updated = true;

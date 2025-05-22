@@ -63,11 +63,11 @@ contract DeployRegistries is Script, Base {
 
     // Common configs for oracle
     bytes internal COMMON_ORACLE_DATA = bytes("");
-    uint256 internal COMMON_ORACLE_AGE = 1 hours;
+    uint256 internal COMMON_ORACLE_AGE = UINT256_MAX;
 
     // Default chronicle oracle address used for testing only
     // @todo DELETE ME
-    address internal DEFAULT_ORACLE_ADDRESS = address(0);
+    address internal DEFAULT_ORACLE_ADDRESS = 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9;
 
     function run() external broadcast returns (address[] memory deployedRegistries) {
         // Validate interfaces
@@ -124,9 +124,10 @@ contract DeployRegistries is Script, Base {
             })
         );
 
+        // Symbol is not correct here, thus deployment config for this asset is not being recorded correctly
         registryConfigs.push(
             RegistryConfig({
-                symbol: "USDC",
+                symbol: "USDC.E",
                 token: 0x29219dd400f2Bf60E5a23d13Be72B486D4038894,
                 collateralizationRate: CR85,
                 liquidationBuffer: defaultLiquidationBuffer,
@@ -189,9 +190,10 @@ contract DeployRegistries is Script, Base {
             })
         );
 
+        // Updated symbol to match sonicscan
         registryConfigs.push(
             RegistryConfig({
-                symbol: "woS",
+                symbol: "wOS",
                 token: 0x9F0dF7799f6FDAd409300080cfF680f5A23df4b1,
                 collateralizationRate: CR65,
                 liquidationBuffer: defaultLiquidationBuffer,

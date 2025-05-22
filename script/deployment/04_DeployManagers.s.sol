@@ -41,6 +41,12 @@ contract DeployManagers is Script, Base {
     bytes32 internal stablesManager_salt = bytes32(0x0);
     bytes32 internal strategyManager_salt = bytes32(0x0);
 
+    bytes32 internal holdingManager_salt = 0xf39fd6e51aad88f6f4ce6ab8827279cfffb922663719a0922ab058d6ad020030;
+    bytes32 internal liquidationManager_salt = 0xf39fd6e51aad88f6f4ce6ab8827279cfffb922669947ca0a37a44e3ae5000038;
+    bytes32 internal stablesManager_salt = 0xf39fd6e51aad88f6f4ce6ab8827279cfffb922663911cf467ce735271e060010;
+    bytes32 internal strategyManager_salt = 0xf39fd6e51aad88f6f4ce6ab8827279cfffb922669892ed325d639417ef0600c0;
+    bytes32 internal swapManager_salt = 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266f6fd4637b515af28060500cc;
+
     function run()
         external
         broadcast

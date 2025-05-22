@@ -31,7 +31,7 @@ contract DeployManager is Script, Base {
     bytes internal JUSD_OracleData = managerConfig.readBytes(".JUSD_OracleData");
 
     // Salt for deterministic deployment using Create2
-    bytes32 internal salt = bytes32(0x0);
+    bytes32 internal salt = 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266c34ad049809e1cf77e0c0060;
 
     function run() external broadcast returns (Manager manager) {
         // Validate interfaces
