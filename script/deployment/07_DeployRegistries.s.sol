@@ -63,11 +63,7 @@ contract DeployRegistries is Script, Base {
 
     // Common configs for oracle
     bytes internal COMMON_ORACLE_DATA = bytes("");
-    uint256 internal COMMON_ORACLE_AGE = 4 hours;
-
-    // Default chainlink oracle address used for testing only
-    // @todo DELETE ME
-    address internal DEFAULT_CHAINLINK_ORACLE_ADDRESS = 0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6;
+    uint256 internal COMMON_ORACLE_AGE = 24 hours;
 
     function run() external broadcast returns (address[] memory deployedRegistries) {
         // Validate interfaces
@@ -123,7 +119,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR80,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: DEFAULT_CHAINLINK_ORACLE_ADDRESS,
+                chainlinkOracleAddress: 0xACE5e348a341a740004304c2c228Af1A4581920F,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -136,7 +132,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR85,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: DEFAULT_CHAINLINK_ORACLE_ADDRESS,
+                chainlinkOracleAddress: 0x55bCa887199d5520B3Ce285D41e6dC10C08716C9,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -149,7 +145,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR80,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: DEFAULT_CHAINLINK_ORACLE_ADDRESS,
+                chainlinkOracleAddress: 0xACE5e348a341a740004304c2c228Af1A4581920F,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -162,7 +158,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR80,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: DEFAULT_CHAINLINK_ORACLE_ADDRESS,
+                chainlinkOracleAddress: 0x824364077993847f71293B24ccA8567c00c2de11,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -175,7 +171,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR65,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: DEFAULT_CHAINLINK_ORACLE_ADDRESS,
+                chainlinkOracleAddress: 0xc76dFb89fF298145b417d221B2c747d84952e01d,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -188,20 +184,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR65,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: DEFAULT_CHAINLINK_ORACLE_ADDRESS,
-                oracleData: COMMON_ORACLE_DATA,
-                age: COMMON_ORACLE_AGE
-            })
-        );
-
-        registryConfigs.push(
-            RegistryConfig({
-                symbol: "woS",
-                token: 0x9F0dF7799f6FDAd409300080cfF680f5A23df4b1,
-                collateralizationRate: CR65,
-                liquidationBuffer: defaultLiquidationBuffer,
-                liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: DEFAULT_CHAINLINK_ORACLE_ADDRESS,
+                chainlinkOracleAddress: 0xdB17996a889706Bd67771dEa59E0Bf9453aF0CE4,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -214,16 +197,10 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR75,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: DEFAULT_CHAINLINK_ORACLE_ADDRESS,
+                chainlinkOracleAddress: 0x19A95E6203A0611b6be322c25b63Ec989fFE15c1,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
         );
-    }
-
-    function setDefaultOracleInTests(
-        address _oracle
-    ) external {
-        DEFAULT_CHAINLINK_ORACLE_ADDRESS = _oracle;
     }
 }
