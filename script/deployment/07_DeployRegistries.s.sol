@@ -12,7 +12,7 @@ import { IManager } from "../../src/interfaces/core/IManager.sol";
 import { ISharesRegistry } from "../../src/interfaces/core/ISharesRegistry.sol";
 import { IStablesManager } from "../../src/interfaces/core/IStablesManager.sol";
 import { IOracle } from "../../src/interfaces/oracle/IOracle.sol";
-import { ChronicleOracleFactory } from "../../src/oracles/chronicle/ChronicleOracleFactory.sol";
+import { ChainlinkOracleFactory } from "../../src/oracles/chainlink/ChainlinkOracleFactory.sol";
 
 import { SharesRegistry } from "../../src/SharesRegistry.sol";
 
@@ -23,6 +23,15 @@ contract DeployRegistries is Script, Base {
     using StdJson for string;
 
     /**
+     * @dev enum of collateral types
+     */
+    enum CollateralType {
+        Stable,
+        Major,
+        LRT
+    }
+
+    /**
      * @dev struct of registry configurations
      */
     struct RegistryConfig {
@@ -31,7 +40,7 @@ contract DeployRegistries is Script, Base {
         uint256 collateralizationRate;
         uint256 liquidationBuffer;
         uint256 liquidatorBonus;
-        address oracleAddress;
+        address chainlinkOracleAddress;
         bytes oracleData;
         uint256 age;
     }
@@ -44,6 +53,7 @@ contract DeployRegistries is Script, Base {
     address internal INITIAL_OWNER = commonConfig.readAddress(".INITIAL_OWNER");
     address internal MANAGER = deployments.readAddress(".MANAGER");
     address internal STABLES_MANAGER = deployments.readAddress(".STABLES_MANAGER");
+    address internal CHAINLINK_ORACLE_FACTORY = deployments.readAddress(".CHAINLINK_ORACLE_FACTORY");
 
     // Array to store deployed registries' addresses
     address[] internal registries;
@@ -51,23 +61,25 @@ contract DeployRegistries is Script, Base {
     // Array to store registry configurations
     RegistryConfig[] internal registryConfigs;
 
+    // Mapping of collateral type to collateralization rate
+    mapping(CollateralType collateralType => uint256 collateralizationRate) internal collateralizationRates;
+
     // Common liquidation config
     uint256 internal defaultLiquidationBuffer = 5e3;
     uint256 internal defaultLiquidationBonus = 8e3;
 
     // Common collateralization rates
-    uint256 internal CR85 = 85e3;
-    uint256 internal CR80 = 80e3;
-    uint256 internal CR75 = 75e3;
-    uint256 internal CR65 = 65e3;
+    uint256 internal STABLECOIN_CR = 85e3;
+    uint256 internal MAJOR_CR = 75e3;
+    uint256 internal LRT_CR = 70e3;
 
     // Common configs for oracle
     bytes internal COMMON_ORACLE_DATA = bytes("");
-    uint256 internal COMMON_ORACLE_AGE = 1 hours;
+    uint256 internal COMMON_ORACLE_AGE = 4 hours;
 
-    // Default chronicle oracle address used for testing only
+    // Default chainlink oracle address used for testing only
     // @todo DELETE ME
-    address internal DEFAULT_ORACLE_ADDRESS = address(0);
+    address internal DEFAULT_CHAINLINK_ORACLE_ADDRESS = 0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6;
 
     function run() external broadcast returns (address[] memory deployedRegistries) {
         // Validate interfaces
@@ -85,7 +97,12 @@ contract DeployRegistries is Script, Base {
                 _initialOwner: INITIAL_OWNER,
                 _manager: MANAGER,
                 _token: registryConfigs[i].token,
-                _oracle: registryConfigs[i].oracleAddress,
+                _oracle: ChainlinkOracleFactory(CHAINLINK_ORACLE_FACTORY).createChainlinkOracle({
+                    _initialOwner: INITIAL_OWNER,
+                    _underlying: registryConfigs[i].token,
+                    _chainlinkOracle: registryConfigs[i].chainlinkOracleAddress,
+                    _ageValidityPeriod: registryConfigs[i].age
+                }),
                 _oracleData: registryConfigs[i].oracleData,
                 _config: ISharesRegistry.RegistryConfig({
                     collateralizationRate: registryConfigs[i].collateralizationRate,
@@ -119,7 +136,7 @@ contract DeployRegistries is Script, Base {
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
                 oracleAddress: DEFAULT_ORACLE_ADDRESS,
-                oracleData: COMMON_ORACLE_DATA,
+                chainlinkOracleAddress: DEFAULT_CHAINLINK_ORACLE_ADDRESS,
                 age: COMMON_ORACLE_AGE
             })
         );
@@ -131,7 +148,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR85,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                oracleAddress: DEFAULT_ORACLE_ADDRESS,
+                chainlinkOracleAddress: DEFAULT_CHAINLINK_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -144,7 +161,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR80,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                oracleAddress: DEFAULT_ORACLE_ADDRESS,
+                chainlinkOracleAddress: DEFAULT_CHAINLINK_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -157,7 +174,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR80,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                oracleAddress: DEFAULT_ORACLE_ADDRESS,
+                chainlinkOracleAddress: DEFAULT_CHAINLINK_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -170,7 +187,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR65,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                oracleAddress: DEFAULT_ORACLE_ADDRESS,
+                chainlinkOracleAddress: DEFAULT_CHAINLINK_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -183,7 +200,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR65,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                oracleAddress: DEFAULT_ORACLE_ADDRESS,
+                chainlinkOracleAddress: DEFAULT_CHAINLINK_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -196,7 +213,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR65,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                oracleAddress: DEFAULT_ORACLE_ADDRESS,
+                chainlinkOracleAddress: DEFAULT_CHAINLINK_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -209,7 +226,7 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR75,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                oracleAddress: DEFAULT_ORACLE_ADDRESS,
+                chainlinkOracleAddress: DEFAULT_CHAINLINK_ORACLE_ADDRESS,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -219,6 +236,6 @@ contract DeployRegistries is Script, Base {
     function setDefaultOracleInTests(
         address _oracle
     ) external {
-        DEFAULT_ORACLE_ADDRESS = _oracle;
+        DEFAULT_CHAINLINK_ORACLE_ADDRESS = _oracle;
     }
 }
