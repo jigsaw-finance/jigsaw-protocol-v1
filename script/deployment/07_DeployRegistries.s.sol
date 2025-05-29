@@ -23,15 +23,6 @@ contract DeployRegistries is Script, Base {
     using StdJson for string;
 
     /**
-     * @dev enum of collateral types
-     */
-    enum CollateralType {
-        Stable,
-        Major,
-        LRT
-    }
-
-    /**
      * @dev struct of registry configurations
      */
     struct RegistryConfig {
@@ -61,17 +52,14 @@ contract DeployRegistries is Script, Base {
     // Array to store registry configurations
     RegistryConfig[] internal registryConfigs;
 
-    // Mapping of collateral type to collateralization rate
-    mapping(CollateralType collateralType => uint256 collateralizationRate) internal collateralizationRates;
-
     // Common liquidation config
     uint256 internal defaultLiquidationBuffer = 5e3;
     uint256 internal defaultLiquidationBonus = 8e3;
 
-    // Common collateralization rates
-    uint256 internal STABLECOIN_CR = 85e3;
-    uint256 internal MAJOR_CR = 75e3;
-    uint256 internal LRT_CR = 70e3;
+    uint256 internal CR85 = 85e3;
+    uint256 internal CR80 = 80e3;
+    uint256 internal CR75 = 75e3;
+    uint256 internal CR65 = 65e3;
 
     // Common configs for oracle
     bytes internal COMMON_ORACLE_DATA = bytes("");
@@ -135,8 +123,8 @@ contract DeployRegistries is Script, Base {
                 collateralizationRate: CR80,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                oracleAddress: DEFAULT_ORACLE_ADDRESS,
                 chainlinkOracleAddress: DEFAULT_CHAINLINK_ORACLE_ADDRESS,
+                oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
         );

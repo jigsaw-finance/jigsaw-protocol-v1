@@ -12,9 +12,9 @@ import { DeployManager } from "../../script/deployment/02_DeployManager.s.sol";
 import { DeployJUSD } from "../../script/deployment/03_DeployJUSD.s.sol";
 import { DeployManagers } from "../../script/deployment/04_DeployManagers.s.sol";
 import { DeployReceiptToken } from "../../script/deployment/05_DeployReceiptToken.s.sol";
-import { DeployChronicleOracleFactory } from "../../script/deployment/06_DeployChronicleOracleFactory.s.sol";
 import { DeployRegistries } from "../../script/deployment/07_DeployRegistries.s.sol";
 import { DeployUniswapV3Oracle } from "../../script/deployment/08_DeployUniswapV3Oracle.s.sol";
+import { DeployChainlinkOracleFactory } from "../../script/deployment/09_DeployChainlinkOracleFactory.s.sol";
 import { DeployMocks } from "../../script/mocks/00_DeployMocks.s.sol";
 
 import { HoldingManager } from "../../src/HoldingManager.sol";
@@ -29,8 +29,8 @@ import { StablesManager } from "../../src/StablesManager.sol";
 import { StrategyManager } from "../../src/StrategyManager.sol";
 import { SwapManager } from "../../src/SwapManager.sol";
 
-import { ChronicleOracle } from "../../src/oracles/chronicle/ChronicleOracle.sol";
-import { ChronicleOracleFactory } from "../../src/oracles/chronicle/ChronicleOracleFactory.sol";
+import { ChainlinkOracle } from "../../src/oracles/chainlink/ChainlinkOracle.sol";
+import { ChainlinkOracleFactory } from "../../src/oracles/chainlink/ChainlinkOracleFactory.sol";
 
 import { UniswapV3Oracle } from "src/oracles/uniswap/UniswapV3Oracle.sol";
 
@@ -61,15 +61,15 @@ contract ScriptTestsFixture is Test {
     SwapManager internal swapManager;
     ReceiptToken internal receiptToken;
     ReceiptTokenFactory internal receiptTokenFactory;
-    ChronicleOracle internal chronicleOracle;
-    ChronicleOracleFactory internal chronicleOracleFactory;
+    ChainlinkOracle internal chainlinkOracle;
+    ChainlinkOracleFactory internal chainlinkOracleFactory;
     UniswapV3Oracle internal jUsdUniswapV3Oracle;
 
     // Deployers
     DeployManager internal deployManagerScript;
     DeployJUSD internal deployJUSDScript;
     DeployManagers internal deployManagersScript;
-    DeployChronicleOracleFactory internal deployChronicleOracleFactory;
+    DeployChainlinkOracleFactory internal deployChainlinkOracleFactory;
     DeployReceiptToken internal deployReceiptTokenScript;
     DeployRegistries internal deployRegistriesScript;
 
@@ -100,9 +100,9 @@ contract ScriptTestsFixture is Test {
         deployManagersScript = new DeployManagers();
         (holdingManager, liquidationManager, stablesManager, strategyManager, swapManager) = deployManagersScript.run();
 
-        //Run ChronicleOracleFactory deployment script
-        deployChronicleOracleFactory = new DeployChronicleOracleFactory();
-        (chronicleOracleFactory, chronicleOracle) = deployChronicleOracleFactory.run();
+        //Run ChainlinkOracleFactory deployment script
+        deployChainlinkOracleFactory = new DeployChainlinkOracleFactory();
+        (chainlinkOracleFactory, chainlinkOracle) = deployChainlinkOracleFactory.run();
 
         //Run ReceiptToken deployment script
         deployReceiptTokenScript = new DeployReceiptToken();

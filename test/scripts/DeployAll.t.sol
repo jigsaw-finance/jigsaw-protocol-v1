@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import "../fixtures/ScriptTestsFixture.t.sol";
-import { IChronicleOracle } from "src/oracles/chronicle/interfaces/IChronicleOracle.sol";
 
 contract DeployAll is Test, ScriptTestsFixture {
     function setUp() public {
@@ -100,13 +99,4 @@ contract DeployAll is Test, ScriptTestsFixture {
             "ReferenceImplementation in ReceiptTokenFactory is wrong"
         );
     }
-}
-
-interface IToll {
-    /// @notice Grants address `who` toll.
-    /// @dev Only callable by auth'ed address.
-    /// @param who The address to grant toll.
-    function kiss(
-        address who
-    ) external;
 }
