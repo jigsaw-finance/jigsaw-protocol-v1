@@ -148,7 +148,7 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
      * @param _amount Amount of collateral.
      */
     function forceRemoveCollateral(address _holding, address _token, uint256 _amount) external override whenNotPaused {
-        require(msg.sender == manager.liquidationManager(), "1000");
+        require(msg.sender == manager.liquidationManager() || msg.sender == manager.strategyManager(), "1000");
         require(shareRegistryInfo[_token].active, "1201");
 
         emit RemovedCollateral({ holding: _holding, token: _token, amount: _amount });
