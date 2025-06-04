@@ -140,19 +140,6 @@ contract DeployRegistries is Script, Base {
 
         registryConfigs.push(
             RegistryConfig({
-                symbol: "wstkscUSD",
-                token: 0x9fb76f7ce5FCeAA2C42887ff441D46095E494206,
-                collateralizationRate: CR80,
-                liquidationBuffer: defaultLiquidationBuffer,
-                liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: 0xACE5e348a341a740004304c2c228Af1A4581920F,
-                oracleData: COMMON_ORACLE_DATA,
-                age: COMMON_ORACLE_AGE
-            })
-        );
-
-        registryConfigs.push(
-            RegistryConfig({
                 symbol: "WETH",
                 token: 0x50c42dEAcD8Fc9773493ED674b675bE577f2634b,
                 collateralizationRate: CR80,
@@ -185,19 +172,6 @@ contract DeployRegistries is Script, Base {
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
                 chainlinkOracleAddress: 0xdB17996a889706Bd67771dEa59E0Bf9453aF0CE4,
-                oracleData: COMMON_ORACLE_DATA,
-                age: COMMON_ORACLE_AGE
-            })
-        );
-
-        registryConfigs.push(
-            RegistryConfig({
-                symbol: "wstkscETH",
-                token: 0xE8a41c62BB4d5863C6eadC96792cFE90A1f37C47,
-                collateralizationRate: CR75,
-                liquidationBuffer: defaultLiquidationBuffer,
-                liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: 0x19A95E6203A0611b6be322c25b63Ec989fFE15c1,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
