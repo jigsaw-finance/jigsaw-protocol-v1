@@ -110,8 +110,6 @@ contract ScriptTestsFixture is Test {
 
         //Run Registries deployment script
         deployRegistriesScript = new DeployRegistries();
-
-        deployRegistriesScript.setDefaultOracleInTests(JUSD_Oracle);
         registries = deployRegistriesScript.run();
     }
 }

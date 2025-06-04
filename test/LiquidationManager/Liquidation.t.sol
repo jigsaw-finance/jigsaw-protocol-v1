@@ -22,6 +22,8 @@ import { ILiquidationManager } from "../../src/interfaces/core/ILiquidationManag
 import { IReceiptToken } from "../../src/interfaces/core/IReceiptToken.sol";
 import { ISharesRegistry } from "../../src/interfaces/core/ISharesRegistry.sol";
 import { IStrategy } from "../../src/interfaces/core/IStrategy.sol";
+
+import { StrategyWithRewardsYieldsMock } from "../utils/mocks/StrategyWithRewardsYieldsMock.sol";
 import { StrategyWithoutRewardsMock } from "../utils/mocks/StrategyWithoutRewardsMock.sol";
 
 import { SampleOracle } from "../utils/mocks/SampleOracle.sol";
@@ -750,6 +752,123 @@ contract LiquidationTest is Test {
         }
 
         return collateralInStrategies;
+    }
+
+    function test_liquidate_when_negativeYield() public {
+        TestTempData memory testData;
+
+        // initialize user
+        testData.user = user;
+        testData.userHolding = initiateWithUsdc(testData.user, 1000);
+        testData.userJUsd = jUsd.balanceOf(testData.user);
+        testData.userCollateralAmount = usdc.balanceOf(testData.userHolding);
+
+        // initialize liquidator
+        testData.liquidator = liquidator;
+        testData.liquidatorCollateralAmount = 1000;
+        initiateWithUsdc(testData.liquidator, testData.liquidatorCollateralAmount);
+        testData.liquidatorJUsd = jUsd.balanceOf(testData.liquidator);
+        testData.liquidatorCollateralAmountAfterInitiation = usdc.balanceOf(address(testData.liquidator));
+
+        // make investment
+        StrategyWithRewardsYieldsMock strategyWithYieldMock = new StrategyWithRewardsYieldsMock(
+            address(manager), address(usdc), address(usdc), address(0), "RUsdc-Mock", "RUSDCM"
+        );
+        strategyManager.addStrategy(address(strategyWithYieldMock));
+
+        vm.prank(testData.user, testData.user);
+        strategyManager.invest(address(usdc), address(strategyWithYieldMock), testData.userCollateralAmount, 0, "");
+        strategyWithYieldMock.setYield(-int256(testData.userCollateralAmount) * 1 / 100); // Yield: -1%
+
+        ILiquidationManager.LiquidateCalldata memory liquidateCalldata;
+        liquidateCalldata.strategies = new address[](1);
+        liquidateCalldata.strategiesData = new bytes[](1);
+        liquidateCalldata.strategies[0] = address(strategyWithYieldMock);
+        liquidateCalldata.strategiesData[0] = "";
+
+        console.log(
+            "isLiquidatable:", stablesManager.isLiquidatable({ _token: address(usdc), _holding: testData.userHolding })
+        );
+        // change the price of the usdc
+        usdcOracle.setPriceForLiquidation();
+        console.log(
+            "isLiquidatable:", stablesManager.isLiquidatable({ _token: address(usdc), _holding: testData.userHolding })
+        );
+
+        // execute liquidation from liquidator's address
+        vm.prank(testData.liquidator, testData.liquidator);
+        liquidationManager.liquidate(address(testData.user), address(usdc), testData.userJUsd, 0, liquidateCalldata);
+    }
+
+    function test_liquidateBadDebt_when_negativeYield() public {
+        TestTempData memory testData;
+
+        // initialize user
+        testData.user = user;
+        testData.userHolding = initiateWithUsdc(testData.user, 1000);
+        testData.userJUsd = jUsd.balanceOf(testData.user);
+        testData.userCollateralAmount = usdc.balanceOf(testData.userHolding);
+
+        // initialize liquidator
+        testData.liquidator = liquidator;
+        testData.liquidatorCollateralAmount = 1000;
+        initiateWithUsdc(testData.liquidator, testData.liquidatorCollateralAmount);
+        testData.liquidatorJUsd = jUsd.balanceOf(testData.liquidator);
+        testData.liquidatorCollateralAmountAfterInitiation = usdc.balanceOf(address(testData.liquidator));
+
+        // make investment
+        StrategyWithRewardsYieldsMock strategyWithYieldMock = new StrategyWithRewardsYieldsMock(
+            address(manager), address(usdc), address(usdc), address(0), "RUsdc-Mock", "RUSDCM"
+        );
+        strategyManager.addStrategy(address(strategyWithYieldMock));
+
+        uint256 userJusdBefore = ISharesRegistry(registries[address(usdc)]).borrowed(testData.userHolding);
+        uint256 userCollateralBefore = ISharesRegistry(registries[address(usdc)]).collateral(testData.userHolding);
+        uint256 totalSupplyBefore = jUsd.totalSupply();
+
+        vm.prank(testData.user, testData.user);
+        strategyManager.invest(address(usdc), address(strategyWithYieldMock), testData.userCollateralAmount, 0, "");
+        strategyWithYieldMock.setYield(-int256(testData.userCollateralAmount) * 1 / 100); // Yield: -1%
+
+        ILiquidationManager.LiquidateCalldata memory liquidateCalldata;
+        liquidateCalldata.strategies = new address[](1);
+        liquidateCalldata.strategiesData = new bytes[](1);
+        liquidateCalldata.strategies[0] = address(strategyWithYieldMock);
+        liquidateCalldata.strategiesData[0] = "";
+
+        console.log(
+            "isLiquidatable:", stablesManager.isLiquidatable({ _token: address(usdc), _holding: testData.userHolding })
+        );
+        // change the price of the usdc
+        usdcOracle.setPriceForLiquidation();
+        console.log(
+            "isLiquidatable:", stablesManager.isLiquidatable({ _token: address(usdc), _holding: testData.userHolding })
+        );
+
+        // Examining the bad debt path
+        usdcOracle.setAVeryLowPrice();
+        deal(address(jUsd), address(this), testData.userJUsd);
+        liquidationManager.liquidateBadDebt(address(testData.user), address(usdc), liquidateCalldata);
+
+        (uint256 investedAmount, uint256 totalShares) =
+            IStrategy(strategyWithYieldMock).recipients(testData.userHolding);
+
+        // 1. user's borrowed = 0
+        // 2. jUsd supply -= user's borrowed
+        // 3. user's collateral = 0
+        // 4. owner's jUsd -= user's borrowed
+        // 5. owner's collateral = user's collateral
+        // 6. invested amount in strategy = 0
+        // 7. total shares in strategy = 0
+        assertEq(
+            ISharesRegistry(registries[address(usdc)]).borrowed(testData.userHolding), 0, "Borrowed amount is not 0"
+        );
+        assertEq(jUsd.totalSupply(), totalSupplyBefore - userJusdBefore, "jUsd supply is not correct");
+        assertEq(ISharesRegistry(registries[address(usdc)]).collateral(user), 0, "User's collateral is not 0");
+        assertEq(jUsd.balanceOf(address(this)), 0, "Owner's jUsd is not 0");
+        assertEq(usdc.balanceOf(address(this)), 990e18, "Owner's collateral is not correct");
+        assertEq(investedAmount, 0, "Strategy's total investments is not 0");
+        assertEq(totalShares, 0, "Strategy's total shares is not 0");
     }
 
     struct TestTempData {
