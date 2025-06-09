@@ -412,7 +412,7 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
                 _amount: totalCollateral,
                 _strategies: _data.strategies,
                 _strategiesData: _data.strategiesData,
-                useHoldingBalance: true
+                useHoldingBalance: false
             });
         }
         // Update total collateral after retrieving from strategies
