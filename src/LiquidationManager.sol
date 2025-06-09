@@ -316,7 +316,6 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         require(isRegistryActive, "1200");
         require(holdingManager.isHolding(holding), "3002");
         require(_jUsdAmount <= ISharesRegistry(registryAddress).borrowed(holding), "2003");
-        require(stablesManager.isLiquidatable({ _token: _collateral, _holding: holding }), "3073");
 
         // Calculate collateral required for the specified `_jUsdAmount`.
         collateralUsed = _getCollateralForJUsd({
@@ -343,6 +342,8 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
                 useHoldingBalance: true
             });
         }
+
+        require(stablesManager.isLiquidatable({ _token: _collateral, _holding: holding }), "3073");
 
         // Check whether the holding actually has enough collateral to pay liquidator bonus.
         collateralUsed = Math.min(IERC20(_collateral).balanceOf(holding), collateralUsed);
