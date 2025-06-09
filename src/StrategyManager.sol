@@ -489,19 +489,11 @@ contract StrategyManager is IStrategyManager, Ownable2Step, ReentrancyGuard, Pau
             _getStablesManager().addCollateral({ _holding: _holding, _token: _token, _amount: uint256(tempData.yield) });
         }
         if (tempData.yield < 0) {
-            if (msg.sender == manager.liquidationManager()) {
-                _getStablesManager().forceRemoveCollateral({
-                    _holding: _holding,
-                    _token: _token,
-                    _amount: tempData.yield.abs()
-                });
-            } else {
-                _getStablesManager().removeCollateral({
-                    _holding: _holding,
-                    _token: _token,
-                    _amount: tempData.yield.abs()
-                });
-            }
+            _getStablesManager().forceRemoveCollateral({
+                _holding: _holding,
+                _token: _token,
+                _amount: tempData.yield.abs()
+            });
         }
 
         // Ensure user doesn't harm themselves by becoming liquidatable after claiming investment.
