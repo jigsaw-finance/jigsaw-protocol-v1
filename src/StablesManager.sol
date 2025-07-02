@@ -122,8 +122,6 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
         address _token,
         uint256 _amount
     ) external override onlyAllowed whenNotPaused {
-        require(shareRegistryInfo[_token].active, "1201");
-
         emit RemovedCollateral({ holding: _holding, token: _token, amount: _amount });
         _getRegistry(_token).unregisterCollateral({ _holding: _holding, _share: _amount });
         require(isSolvent({ _token: _token, _holding: _holding }), "3009");
@@ -149,7 +147,6 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
      */
     function forceRemoveCollateral(address _holding, address _token, uint256 _amount) external override whenNotPaused {
         require(msg.sender == manager.liquidationManager() || msg.sender == manager.strategyManager(), "1000");
-        require(shareRegistryInfo[_token].active, "1201");
 
         emit RemovedCollateral({ holding: _holding, token: _token, amount: _amount });
         _getRegistry(_token).unregisterCollateral({ _holding: _holding, _share: _amount });
@@ -262,7 +259,6 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
         uint256 _amount,
         address _burnFrom
     ) external override onlyAllowed whenNotPaused {
-        require(shareRegistryInfo[_token].active, "1201");
         ISharesRegistry registry = ISharesRegistry(shareRegistryInfo[_token].deployedAt);
         require(registry.borrowed(_holding) > 0, "3011");
         require(registry.borrowed(_holding) >= _amount, "2003");
