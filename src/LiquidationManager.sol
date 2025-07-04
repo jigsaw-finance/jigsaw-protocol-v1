@@ -405,21 +405,21 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         require(holdingManager.isHolding(holding), "3002");
 
         uint256 totalBorrowed = ISharesRegistry(registryAddress).borrowed(holding);
-        uint256 totalCollateral = ISharesRegistry(registryAddress).collateral(holding);
 
         // If strategies are provided, retrieve collateral from strategies if needed.
         if (_data.strategies.length > 0) {
             _retrieveCollateral({
                 _token: _collateral,
                 _holding: holding,
-                _amount: totalCollateral,
+                _amount: type(uint256).max,
                 _strategies: _data.strategies,
                 _strategiesData: _data.strategiesData,
                 useHoldingBalance: false
             });
         }
-        // Update total collateral after retrieving from strategies
-        totalCollateral = ISharesRegistry(registryAddress).collateral(holding);
+
+        // Get total collateral after retrieving from strategies
+        uint256 totalCollateral = ISharesRegistry(registryAddress).collateral(holding);
 
         // Verify holding has bad debt
         if (
