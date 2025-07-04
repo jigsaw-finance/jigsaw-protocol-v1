@@ -320,18 +320,31 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         _jUsdAmount = _jUsdAmount > totalBorrowed ? totalBorrowed : _jUsdAmount;
 
         // Calculate collateral required for the specified `_jUsdAmount`.
-        collateralUsed = _getCollateralForJUsd({
+        uint256 collateralRequired = _getCollateralForJUsd({
             _collateral: _collateral,
             _jUsdAmount: _jUsdAmount,
             _exchangeRate: ISharesRegistry(registryAddress).getExchangeRate()
         });
 
-        // Update the required collateral amount if there's liquidator bonus.
-        collateralUsed += _user == msg.sender
+        uint256 bonus = _user == msg.sender
             ? 0
             : collateralUsed.mulDiv(
                 ISharesRegistry(registryAddress).getConfig().liquidatorBonus, LIQUIDATION_PRECISION, Math.Rounding.Ceil
             );
+
+        // If applying the liquidator bonus would leave the user with bad debt, skip the bonus.
+        uint256 projectedRemainingCollateral =
+            ISharesRegistry(registryAddress).collateral(holding) - (collateralRequired + bonus);
+
+        // Only apply the bonus if the liquidation won't cause bad debt.
+        collateralUsed = projectedRemainingCollateral
+            < _getCollateralForJUsd({
+                _collateral: _collateral,
+                _jUsdAmount: totalBorrowed,
+                _exchangeRate: ISharesRegistry(registryAddress).getExchangeRate()
+            })
+            ? collateralRequired // Exclude bonus to avoid bad debt
+            : collateralRequired + bonus; // Safe to include bonus
 
         // If strategies are provided, retrieve collateral from strategies if needed.
         if (_data.strategies.length > 0) {
@@ -360,6 +373,7 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         stablesManager.repay({ _holding: holding, _token: _collateral, _amount: _jUsdAmount, _burnFrom: msg.sender });
         // Remove collateral from holding.
         stablesManager.forceRemoveCollateral({ _holding: holding, _token: _collateral, _amount: collateralUsed });
+
         // Send the liquidator the freed up collateral and bonus.
         IHolding(holding).transfer({ _token: _collateral, _to: msg.sender, _amount: collateralUsed });
     }
@@ -443,7 +457,7 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         stablesManager.repay({ _holding: holding, _token: _collateral, _amount: totalBorrowed, _burnFrom: msg.sender });
         // Remove collateral from holding.
         stablesManager.forceRemoveCollateral({ _holding: holding, _token: _collateral, _amount: totalCollateral });
-        // Send the liquidator the freed up collateral and bonus.
+        // Send the liquidator the freed up collateral.
         IHolding(holding).transfer({ _token: _collateral, _to: msg.sender, _amount: totalCollateral });
     }
 
