@@ -258,7 +258,7 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
         address _token,
         uint256 _amount,
         address _burnFrom
-    ) external override onlyAllowed whenNotPaused {
+    ) external override onlyAllowed {
         ISharesRegistry registry = ISharesRegistry(shareRegistryInfo[_token].deployedAt);
         require(registry.borrowed(_holding) > 0, "3011");
         require(registry.borrowed(_holding) >= _amount, "2003");
