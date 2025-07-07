@@ -359,7 +359,7 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
         address _token,
         uint256 _amount,
         bool _repayFromUser
-    ) external override nonReentrant whenNotPaused validHolding(userHolding[msg.sender]) {
+    ) external override nonReentrant validHolding(userHolding[msg.sender]) {
         address holding = userHolding[msg.sender];
 
         emit Repaid({ holding: holding, token: _token, amount: _amount, repayFromUser: _repayFromUser });
