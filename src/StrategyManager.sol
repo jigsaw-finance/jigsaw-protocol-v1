@@ -329,11 +329,7 @@ contract StrategyManager is IStrategyManager, Ownable2Step, ReentrancyGuard, Pau
      * @param _strategy strategy's address.
      * @param _info info.
      */
-    function updateStrategy(
-        address _strategy,
-        StrategyInfo calldata _info
-    ) external override onlyOwner validStrategy(_strategy) {
-        require(_info.whitelisted, "3104");
+    function updateStrategy(address _strategy, StrategyInfo calldata _info) external override onlyOwner {
         require(_info.performanceFee <= OperationsLib.FEE_FACTOR, "3105");
         strategyInfo[_strategy] = _info;
         emit StrategyUpdated(_strategy, _info.active, _info.performanceFee);
