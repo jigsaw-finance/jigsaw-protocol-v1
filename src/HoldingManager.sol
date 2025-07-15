@@ -552,17 +552,19 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
     function _withdraw(address _token, uint256 _amount) private returns (uint256, uint256) {
         require(manager.isTokenWithdrawable(_token), "3071");
         address holding = userHolding[msg.sender];
-
-        // Perform the check to see if this is an airdropped token or user actually has collateral for it
         (, address _tokenRegistry) = _getStablesManager().shareRegistryInfo(_token);
+
+        // Only take fees when withdrawing collateral tokens
+        if (_tokenRegistry == address(0)) return (_amount, 0);
         if (_tokenRegistry != address(0) && ISharesRegistry(_tokenRegistry).collateral(holding) > 0) {
             _getStablesManager().removeCollateral({ _holding: holding, _token: _token, _amount: _amount });
         }
+
         uint256 withdrawalFee = manager.withdrawalFee();
         uint256 withdrawalFeeAmount = 0;
         if (withdrawalFee > 0) withdrawalFeeAmount = OperationsLib.getFeeAbsolute(_amount, withdrawalFee);
-        emit Withdrawal({ holding: holding, token: _token, totalAmount: _amount, feeAmount: withdrawalFeeAmount });
 
+        emit Withdrawal({ holding: holding, token: _token, totalAmount: _amount, feeAmount: withdrawalFeeAmount });
         return (_amount - withdrawalFeeAmount, withdrawalFeeAmount);
     }
 
