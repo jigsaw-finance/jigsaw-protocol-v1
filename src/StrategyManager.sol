@@ -435,11 +435,32 @@ contract StrategyManager is IStrategyManager, Ownable2Step, ReentrancyGuard, Pau
         (tokenOutAmount, tokenInAmount) = IStrategy(_strategy).deposit(_token, _amount, _holding, _data);
         require(tokenOutAmount != 0 && tokenOutAmount >= _minSharesAmountOut, "3030");
 
+        // Ensure the invested amount does not exceed the user's deposited collateral
+        _validateDepositAmount({ _holding: _holding, _token: _token, _strategy: _strategy });
+
         // Ensure holding is not liquidatable after investment
         require(!_getStablesManager().isLiquidatable(_token, _holding), "3103");
 
         // Add strategy to the set, which stores holding's all invested strategies
         holdingToStrategy[_holding].add(_strategy);
+    }
+
+    /**
+     * @notice Validates that the invested amount in a strategy does not exceed the user's deposited collateral.
+     *
+     * @dev Prevents over-investment by ensuring the user's total investment in the strategy is less than or equal to
+     * their collateral.
+     *
+     * @param _strategy The address of the strategy contract.
+     * @param _holding The address of the holding/user.
+     * @param _token The address of the collateral token.
+     */
+    function _validateDepositAmount(address _strategy, address _holding, address _token) private view {
+        (uint256 investedAmount,) = IStrategy(_strategy).recipients(_holding);
+        (, address shareRegistry) = _getStablesManager().shareRegistryInfo(_token);
+
+        // Ensure the user cannot invest more than their deposited collateral
+        require(investedAmount <= ISharesRegistry(shareRegistry).collateral(_holding), "3105");
     }
 
     /**
