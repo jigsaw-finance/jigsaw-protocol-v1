@@ -271,7 +271,6 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         uint256 totalBorrowed;
         uint256 collateralRequired;
         uint256 bonus;
-        uint256 collateralUsed;
     }
 
     /**
@@ -323,12 +322,11 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
             registryAddress: address(0),
             totalBorrowed: 0,
             collateralRequired: 0,
-            bonus: 0,
-            collateralUsed: 0
+            bonus: 0
         });
 
         // Get user's holding.
-        tempData.holding = tempData.holdingManager.userHolding(msg.sender);
+        tempData.holding = tempData.holdingManager.userHolding(_user);
 
         // Get configs for collateral used for liquidation.
         (tempData.isRegistryActive, tempData.registryAddress) = tempData.stablesManager.shareRegistryInfo(_collateral);
@@ -336,6 +334,7 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         // Perform sanity checks.
         require(tempData.isRegistryActive, "1200");
         require(tempData.holdingManager.isHolding(tempData.holding), "3002");
+        require(_jUsdAmount <= ISharesRegistry(tempData.registryAddress).borrowed(tempData.holding), "2003");
 
         tempData.totalBorrowed = ISharesRegistry(tempData.registryAddress).borrowed(tempData.holding);
         _jUsdAmount = _jUsdAmount > tempData.totalBorrowed ? tempData.totalBorrowed : _jUsdAmount;
@@ -350,7 +349,7 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         // Calculate bonus
         tempData.bonus = _user == msg.sender
             ? 0
-            : tempData.collateralUsed.mulDiv(
+            : collateralUsed.mulDiv(
                 ISharesRegistry(tempData.registryAddress).getConfig().liquidatorBonus,
                 LIQUIDATION_PRECISION,
                 Math.Rounding.Ceil
@@ -375,7 +374,7 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
             _retrieveCollateral({
                 _token: _collateral,
                 _holding: tempData.holding,
-                _amount: tempData.collateralUsed,
+                _amount: collateralUsed,
                 _strategies: _data.strategies,
                 _strategiesData: _data.strategiesData,
                 useHoldingBalance: true
@@ -385,17 +384,17 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         require(tempData.stablesManager.isLiquidatable({ _token: _collateral, _holding: tempData.holding }), "3073");
 
         // Check whether the holding actually has enough collateral to pay liquidator bonus.
-        tempData.collateralUsed = Math.min(IERC20(_collateral).balanceOf(tempData.holding), tempData.collateralUsed);
+        collateralUsed = Math.min(IERC20(_collateral).balanceOf(tempData.holding), collateralUsed);
 
         // Ensure the liquidator will receive at least as much collateral as expected when sending the tx.
-        require(tempData.collateralUsed >= _minCollateralReceive, "3097");
+        require(collateralUsed >= _minCollateralReceive, "3097");
 
         // Emit event indicating successful liquidation.
         emit Liquidated({
             holding: tempData.holding,
             token: _collateral,
             amount: _jUsdAmount,
-            collateralUsed: tempData.collateralUsed
+            collateralUsed: collateralUsed
         });
 
         // Repay user's debt with jUSD owned by the liquidator.
@@ -409,13 +408,11 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         tempData.stablesManager.forceRemoveCollateral({
             _holding: tempData.holding,
             _token: _collateral,
-            _amount: tempData.collateralUsed
+            _amount: collateralUsed
         });
 
         // Send the liquidator the freed up collateral and bonus.
-        IHolding(tempData.holding).transfer({ _token: _collateral, _to: msg.sender, _amount: tempData.collateralUsed });
-
-        return tempData.collateralUsed;
+        IHolding(tempData.holding).transfer({ _token: _collateral, _to: msg.sender, _amount: collateralUsed });
     }
 
     /**
