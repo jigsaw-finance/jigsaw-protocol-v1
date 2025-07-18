@@ -2,9 +2,9 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "forge-std/console.sol";
 
 import { IERC20, IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import { HoldingManager } from "../../src/HoldingManager.sol";
@@ -149,14 +149,81 @@ contract LiquidationTest is Test {
     // Tests liquidation when the user is solvent
     // Expects a revert with error "3073" during liquidation attempt
     function test_liquidate_when_solvent() public {
-        // Initialize user
-        initiateWithUsdc(user, 100e6);
+        uint256 _collateralAmount = 10_000e22;
+
+        TestTempData memory testData;
+
+        // initialize user
+        testData.user = user;
+        testData.userCollateralAmount = _collateralAmount;
+        SampleTokenBigDecimals collateralContract = new SampleTokenBigDecimals("BigDec", "BD", 1e18 * 1e22);
+        manager.whitelistToken(address(collateralContract));
+        SampleOracle collateralOracle = new SampleOracle();
+        SharesRegistry collateralRegistry = new SharesRegistry(
+            msg.sender,
+            address(manager),
+            address(collateralContract),
+            address(collateralOracle),
+            bytes(""),
+            ISharesRegistry.RegistryConfig({
+                collateralizationRate: 50_000,
+                liquidationBuffer: 5e3,
+                liquidatorBonus: 8e3
+            })
+        );
+        registries[address(collateralContract)] = address(collateralRegistry);
+        stablesManager.registerOrUpdateShareRegistry(address(collateralRegistry), address(collateralContract), true);
+
+        // calculate mintAmount
+        uint256 mintAmount = testData.userCollateralAmount / 2;
+
+        //get tokens for user
+        deal(address(collateralContract), testData.user, testData.userCollateralAmount);
+
+        vm.startPrank(testData.user, testData.user);
+        // create holding for user
+        testData.userHolding = holdingManager.createHolding();
+        // make deposit to the holding
+        collateralContract.approve(address(holdingManager), testData.userCollateralAmount);
+        holdingManager.deposit(address(collateralContract), testData.userCollateralAmount);
+        //borrow
+        holdingManager.borrow(address(collateralContract), mintAmount, 0, true);
+        vm.stopPrank();
+
+        testData.userJUsd = jUsd.balanceOf(testData.user);
+
+        //initialize liquidator
+        testData.liquidator = liquidator;
+        testData.liquidatorCollateralAmount = _collateralAmount;
+
+        //get tokens for user
+        deal(address(collateralContract), testData.liquidator, testData.liquidatorCollateralAmount);
+
+        vm.startPrank(testData.liquidator, testData.liquidator);
+        // create holding for user
+        holdingManager.createHolding();
+        // make deposit to the holding
+        collateralContract.approve(address(holdingManager), testData.userCollateralAmount);
+        holdingManager.deposit(address(collateralContract), testData.userCollateralAmount);
+        //borrow
+        holdingManager.borrow(address(collateralContract), mintAmount, 0, true);
+        vm.stopPrank();
+
+        testData.liquidatorJUsd = jUsd.balanceOf(testData.liquidator);
+        testData.liquidatorCollateralAmountAfterInitiation = collateralContract.balanceOf(address(testData.liquidator));
+
+        //initiate liquidation from liquidator's address
+        vm.startPrank(testData.liquidator, testData.liquidator);
 
         ILiquidationManager.LiquidateCalldata memory liquidateCalldata;
 
         //make liquidation call
         vm.expectRevert(bytes("3073"));
-        liquidationManager.liquidate(user, address(usdc), 5, 0, liquidateCalldata);
+        testData.expectedLiquidatorCollateral = liquidationManager.liquidate(
+            address(testData.user), address(collateralContract), testData.userJUsd, 0, liquidateCalldata
+        );
+
+        vm.stopPrank();
     }
 
     // Tests liquidation when the liquidation amount is greater than the borrowed amount
