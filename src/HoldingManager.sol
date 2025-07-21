@@ -195,6 +195,9 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
         IHolding holding = IHolding(userHolding[msg.sender]);
         (uint256 userAmount, uint256 feeAmount) = _withdraw({ _token: _token, _amount: _amount });
 
+        // Emit the Withdrawal event to log the withdrawal operation
+        emit Withdrawal({ holding: address(holding), token: _token, totalAmount: _amount, feeAmount: feeAmount });
+
         // Transfer the fee amount to the fee address.
         if (feeAmount > 0) {
             holding.transfer({ _token: _token, _to: manager.feeAddress(), _amount: feeAmount });
@@ -568,7 +571,6 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
         uint256 withdrawalFeeAmount = 0;
         if (withdrawalFee > 0) withdrawalFeeAmount = OperationsLib.getFeeAbsolute(_amount, withdrawalFee);
 
-        emit Withdrawal({ holding: holding, token: _token, totalAmount: _amount, feeAmount: withdrawalFeeAmount });
         return (_amount - withdrawalFeeAmount, withdrawalFeeAmount);
     }
 
