@@ -398,7 +398,6 @@ contract StrategyManager is IStrategyManager, Ownable2Step, ReentrancyGuard, Pau
     function _accrueRewards(address _token, uint256 _amount, address _holding) private {
         if (_amount > 0) {
             (bool active, address shareRegistry) = _getStablesManager().shareRegistryInfo(_token);
-
             if (shareRegistry != address(0) && active) {
                 //add collateral
                 emit CollateralAdjusted(_holding, _token, _amount, true);

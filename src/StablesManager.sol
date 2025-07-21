@@ -92,8 +92,6 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
         address _token,
         uint256 _amount
     ) external override whenNotPaused onlyAllowed {
-        require(shareRegistryInfo[_token].active, "1201");
-
         emit AddedCollateral({ holding: _holding, token: _token, amount: _amount });
         _getRegistry(_token).registerCollateral({ _holding: _holding, _share: _amount });
     }
@@ -443,7 +441,9 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
     function _getRegistry(
         address _token
     ) private view returns (ISharesRegistry) {
-        return ISharesRegistry(shareRegistryInfo[_token].deployedAt);
+        address registry = shareRegistryInfo[_token].deployedAt;
+        require(registry != address(0), "3001");
+        return ISharesRegistry(registry);
     }
 
     /**

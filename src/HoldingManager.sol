@@ -527,6 +527,10 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
             IERC20(_token).safeTransferFrom({ from: _from, to: holding, value: _amount });
         }
 
+        // Ensure ShareRegistry for the specified collateral is active to allow new deposits
+        (bool isRegistryActive,) = _getStablesManager().shareRegistryInfo(_token);
+        require(isRegistryActive, "1200");
+
         _getStablesManager().addCollateral({ _holding: holding, _token: _token, _amount: _amount });
     }
 
