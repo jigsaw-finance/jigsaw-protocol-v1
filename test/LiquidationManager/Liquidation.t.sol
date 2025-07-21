@@ -226,32 +226,6 @@ contract LiquidationTest is Test {
         vm.stopPrank();
     }
 
-    // Tests liquidation when the liquidation amount is greater than the borrowed amount
-    // Expects a revert with error "2003" during liquidation attempt
-    function test_liquidate_when_liquidationAmountGtBorrowedAmount(
-        uint256 _userCollateral,
-        uint256 _liquidatorCollateral
-    ) public {
-        vm.assume(_liquidatorCollateral / 2 > _userCollateral / 2);
-
-        // initiate user
-        initiateWithUsdc(user, _userCollateral);
-
-        // initiate liquidator
-        initiateWithUsdc(liquidator, _liquidatorCollateral);
-
-        // startPrank so every next call is made from liquidator
-        vm.startPrank(liquidator, liquidator);
-
-        ILiquidationManager.LiquidateCalldata memory liquidateCalldata;
-
-        // make liquidation call
-        vm.expectRevert(bytes("2003"));
-        liquidationManager.liquidate(user, address(usdc), type(uint256).max, 0, liquidateCalldata);
-
-        vm.stopPrank();
-    }
-
     // Tests liquidation when collateral is denominated in a token with big decimals
     // Checks various states and amounts after liquidation
     function test_liquidate_when_bigDecimals() public {

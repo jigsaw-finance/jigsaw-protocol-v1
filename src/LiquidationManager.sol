@@ -321,7 +321,6 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         // Perform sanity checks.
         require(tempData.registryAddress != address(0), "3001");
         require(tempData.holdingManager.isHolding(tempData.holding), "3002");
-        require(_jUsdAmount <= ISharesRegistry(tempData.registryAddress).borrowed(tempData.holding), "2003");
 
         tempData.totalBorrowed = ISharesRegistry(tempData.registryAddress).borrowed(tempData.holding);
         _jUsdAmount = _jUsdAmount > tempData.totalBorrowed ? tempData.totalBorrowed : _jUsdAmount;
