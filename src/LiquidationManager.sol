@@ -128,7 +128,6 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
             stablesManager: _getStablesManager(),
             swapManager: _getSwapManager(),
             holding: address(0),
-            isRegistryActive: false,
             registryAddress: address(0),
             totalBorrowed: 0,
             totalAvailableCollateral: 0,
@@ -157,8 +156,8 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         require(tempData.holdingManager.isHolding(tempData.holding), "3002");
 
         // Ensure collateral registry is active.
-        (tempData.isRegistryActive, tempData.registryAddress) = tempData.stablesManager.shareRegistryInfo(_collateral);
-        require(tempData.isRegistryActive, "1200");
+        (, tempData.registryAddress) = tempData.stablesManager.shareRegistryInfo(_collateral);
+        require(tempData.registryAddress != address(0), "3001");
 
         // Ensure user is solvent.
         tempData.totalBorrowed = ISharesRegistry(tempData.registryAddress).borrowed(tempData.holding);
@@ -262,17 +261,6 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         });
     }
 
-    struct LiquidationData {
-        IHoldingManager holdingManager;
-        IStablesManager stablesManager;
-        address holding;
-        bool isRegistryActive;
-        address registryAddress;
-        uint256 totalBorrowed;
-        uint256 collateralRequired;
-        uint256 bonus;
-    }
-
     /**
      * @notice Method used to liquidate stablecoin debt if a user is no longer solvent.
      *
@@ -318,7 +306,6 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
             holdingManager: _getHoldingManager(),
             stablesManager: _getStablesManager(),
             holding: address(0),
-            isRegistryActive: false,
             registryAddress: address(0),
             totalBorrowed: 0,
             collateralRequired: 0,
@@ -329,10 +316,10 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         tempData.holding = tempData.holdingManager.userHolding(_user);
 
         // Get configs for collateral used for liquidation.
-        (tempData.isRegistryActive, tempData.registryAddress) = tempData.stablesManager.shareRegistryInfo(_collateral);
+        (, tempData.registryAddress) = tempData.stablesManager.shareRegistryInfo(_collateral);
 
         // Perform sanity checks.
-        require(tempData.isRegistryActive, "1200");
+        require(tempData.registryAddress != address(0), "3001");
         require(tempData.holdingManager.isHolding(tempData.holding), "3002");
         require(_jUsdAmount <= ISharesRegistry(tempData.registryAddress).borrowed(tempData.holding), "2003");
 
@@ -449,10 +436,10 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         // Get address of the user's Holding involved in liquidation.
         address holding = holdingManager.userHolding(_user);
         // Get configs for collateral used for liquidation.
-        (bool isRegistryActive, address registryAddress) = stablesManager.shareRegistryInfo(_collateral);
+        (, address registryAddress) = stablesManager.shareRegistryInfo(_collateral);
 
         // Perform sanity checks.
-        require(isRegistryActive, "1200");
+        require(registryAddress != address(0), "3001");
         require(holdingManager.isHolding(holding), "3002");
 
         uint256 totalBorrowed = ISharesRegistry(registryAddress).borrowed(holding);
