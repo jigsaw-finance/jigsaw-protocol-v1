@@ -395,7 +395,7 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
     function repayMultiple(
         RepayData[] calldata _data,
         bool _repayFromUser
-    ) external override validHolding(userHolding[msg.sender]) nonReentrant whenNotPaused {
+    ) external override validHolding(userHolding[msg.sender]) nonReentrant {
         require(_data.length > 0, "3006");
 
         address holding = userHolding[msg.sender];
