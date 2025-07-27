@@ -302,64 +302,41 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         validAmount(_jUsdAmount)
         returns (uint256 collateralUsed)
     {
-        LiquidationData memory tempData = LiquidationData({
-            holdingManager: _getHoldingManager(),
-            stablesManager: _getStablesManager(),
-            holding: address(0),
-            registryAddress: address(0),
-            totalBorrowed: 0,
-            collateralRequired: 0,
-            bonus: 0
-        });
+        // Get protocol's required contracts to interact with.
+        IHoldingManager holdingManager = _getHoldingManager();
+        IStablesManager stablesManager = _getStablesManager();
 
-        // Get user's holding.
-        tempData.holding = tempData.holdingManager.userHolding(_user);
-
+        // Get address of the user's Holding involved in liquidation.
+        address holding = holdingManager.userHolding(_user);
         // Get configs for collateral used for liquidation.
-        (, tempData.registryAddress) = tempData.stablesManager.shareRegistryInfo(_collateral);
+        (, address registryAddress) = stablesManager.shareRegistryInfo(_collateral);
 
         // Perform sanity checks.
-        require(tempData.registryAddress != address(0), "3001");
-        require(tempData.holdingManager.isHolding(tempData.holding), "3002");
+        require(registryAddress != address(0), "3001");
+        require(holdingManager.isHolding(holding), "3002");
 
-        tempData.totalBorrowed = ISharesRegistry(tempData.registryAddress).borrowed(tempData.holding);
-        _jUsdAmount = _jUsdAmount > tempData.totalBorrowed ? tempData.totalBorrowed : _jUsdAmount;
+        uint256 totalBorrowed = ISharesRegistry(registryAddress).borrowed(holding);
+        _jUsdAmount = _jUsdAmount > totalBorrowed ? totalBorrowed : _jUsdAmount;
 
         // Calculate collateral required for the specified `_jUsdAmount`.
-        tempData.collateralRequired = _getCollateralForJUsd({
+        collateralUsed = _getCollateralForJUsd({
             _collateral: _collateral,
             _jUsdAmount: _jUsdAmount,
-            _exchangeRate: ISharesRegistry(tempData.registryAddress).getExchangeRate()
+            _exchangeRate: ISharesRegistry(registryAddress).getExchangeRate()
         });
 
-        // Calculate bonus
-        tempData.bonus = _user == msg.sender
+        // Update the required collateral amount if there's liquidator bonus.
+        collateralUsed += _user == msg.sender
             ? 0
             : collateralUsed.mulDiv(
-                ISharesRegistry(tempData.registryAddress).getConfig().liquidatorBonus,
-                LIQUIDATION_PRECISION,
-                Math.Rounding.Ceil
+                ISharesRegistry(registryAddress).getConfig().liquidatorBonus, LIQUIDATION_PRECISION, Math.Rounding.Ceil
             );
-
-        // If applying the liquidator bonus would leave the user with bad debt, skip the bonus.
-        uint256 projectedRemainingCollateral = ISharesRegistry(tempData.registryAddress).collateral(tempData.holding)
-            - (tempData.collateralRequired + tempData.bonus);
-
-        // Only apply the bonus if the liquidation won't cause bad debt.
-        collateralUsed = projectedRemainingCollateral
-            < _getCollateralForJUsd({
-                _collateral: _collateral,
-                _jUsdAmount: tempData.totalBorrowed,
-                _exchangeRate: ISharesRegistry(tempData.registryAddress).getExchangeRate()
-            })
-            ? tempData.collateralRequired // Exclude bonus to avoid bad debt
-            : tempData.collateralRequired + tempData.bonus; // Safe to include bonus
 
         // If strategies are provided, retrieve collateral from strategies if needed.
         if (_data.strategies.length > 0) {
             _retrieveCollateral({
                 _token: _collateral,
-                _holding: tempData.holding,
+                _holding: holding,
                 _amount: collateralUsed,
                 _strategies: _data.strategies,
                 _strategiesData: _data.strategiesData,
@@ -367,38 +344,25 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
             });
         }
 
-        require(tempData.stablesManager.isLiquidatable({ _token: _collateral, _holding: tempData.holding }), "3073");
+        require(stablesManager.isLiquidatable({ _token: _collateral, _holding: holding }), "3073");
 
         // Check whether the holding actually has enough collateral to pay liquidator bonus.
-        collateralUsed = Math.min(IERC20(_collateral).balanceOf(tempData.holding), collateralUsed);
+        collateralUsed = Math.min(IERC20(_collateral).balanceOf(holding), collateralUsed);
 
         // Ensure the liquidator will receive at least as much collateral as expected when sending the tx.
         require(collateralUsed >= _minCollateralReceive, "3097");
 
         // Emit event indicating successful liquidation.
-        emit Liquidated({
-            holding: tempData.holding,
-            token: _collateral,
-            amount: _jUsdAmount,
-            collateralUsed: collateralUsed
-        });
+        emit Liquidated({ holding: holding, token: _collateral, amount: _jUsdAmount, collateralUsed: collateralUsed });
 
         // Repay user's debt with jUSD owned by the liquidator.
-        tempData.stablesManager.repay({
-            _holding: tempData.holding,
-            _token: _collateral,
-            _amount: _jUsdAmount,
-            _burnFrom: msg.sender
-        });
+        stablesManager.repay({ _holding: holding, _token: _collateral, _amount: _jUsdAmount, _burnFrom: msg.sender });
         // Remove collateral from holding.
-        tempData.stablesManager.forceRemoveCollateral({
-            _holding: tempData.holding,
-            _token: _collateral,
-            _amount: collateralUsed
-        });
-
+        stablesManager.forceRemoveCollateral({ _holding: holding, _token: _collateral, _amount: collateralUsed });
         // Send the liquidator the freed up collateral and bonus.
-        IHolding(tempData.holding).transfer({ _token: _collateral, _to: msg.sender, _amount: collateralUsed });
+        IHolding(holding).transfer({ _token: _collateral, _to: msg.sender, _amount: collateralUsed });
+
+        require(!stablesManager.isLiquidatable({ _token: _collateral, _holding: holding }), "3106");
     }
 
     /**
