@@ -13,26 +13,10 @@
   "CHRONICLE_ORACLE_REFERENCE": "0x7cbaefa03db00b4aa4d88f566d704c2cdf238d56",
   "Registries": [
     {
-      "Token": "0x7C1156E515aA1A2E851674120074968C905aAF37",
-      "Registry": "0xE4751F5FdF5c229b0E165eaD49d47A09Ae0c2f32",
+      "Token": "0x9FD7466f987Fd4C45a5BBDe22ED8aba5BC8D72d1",
+      "Registry": "0xE169Cf07C884fE22340Df5d124C806D057a881d9",
       "Oracle": "0x4DFdF3F4dFaa93747a08D344c2f12cDcDa25c2e0",
-      "collateralizationRate": 85000,
-      "liquidationBuffer": 5000,
-      "liquidatorBonus": 8000
-    },
-    {
-      "Token": "0x8238884Ec9668Ef77B90C6dfF4D1a9F4F4823BFe",
-      "Registry": "0x2Dd0306EE3657aCdCfBcD490137a27C5D304297a",
-      "Oracle": "0x4DFdF3F4dFaa93747a08D344c2f12cDcDa25c2e0",
-      "collateralizationRate": 85000,
-      "liquidationBuffer": 5000,
-      "liquidatorBonus": 8000
-    },
-    {
-      "Token": "0xaD55aebc9b8c03FC43cd9f62260391c13c23e7c0",
-      "Registry": "0x80dE34B817902fc05E44030fdd5CD8043fCD439e",
-      "Oracle": "0x4DFdF3F4dFaa93747a08D344c2f12cDcDa25c2e0",
-      "collateralizationRate": 85000,
+      "collateralizationRate": 80000,
       "liquidationBuffer": 5000,
       "liquidatorBonus": 8000
     }

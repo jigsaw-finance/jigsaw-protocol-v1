@@ -124,35 +124,9 @@ contract DeployRegistries is Script, Base {
         // Add configs for desired collaterals' registries
         registryConfigs.push(
             RegistryConfig({
-                symbol: "lvlUSD",
-                token: 0x7C1156E515aA1A2E851674120074968C905aAF37,
-                collateralizationRate: collateralizationRates[CollateralType.Stable],
-                liquidationBuffer: defaultLiquidationBuffer,
-                liquidatorBonus: defaultLiquidationBonus,
-                oracleAddress: GENESIS_ORACLE,
-                oracleData: COMMON_ORACLE_DATA,
-                age: COMMON_ORACLE_AGE
-            })
-        );
-
-        registryConfigs.push(
-            RegistryConfig({
-                symbol: "USDO",
-                token: 0x8238884Ec9668Ef77B90C6dfF4D1a9F4F4823BFe,
-                collateralizationRate: collateralizationRates[CollateralType.Stable],
-                liquidationBuffer: defaultLiquidationBuffer,
-                liquidatorBonus: defaultLiquidationBonus,
-                oracleAddress: GENESIS_ORACLE,
-                oracleData: COMMON_ORACLE_DATA,
-                age: COMMON_ORACLE_AGE
-            })
-        );
-
-        registryConfigs.push(
-            RegistryConfig({
-                symbol: "cUSDO",
-                token: 0xaD55aebc9b8c03FC43cd9f62260391c13c23e7c0,
-                collateralizationRate: collateralizationRates[CollateralType.Stable],
+                symbol: "hwHLP",
+                token: 0x9FD7466f987Fd4C45a5BBDe22ED8aba5BC8D72d1,
+                collateralizationRate: 80e3,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
                 oracleAddress: GENESIS_ORACLE,
