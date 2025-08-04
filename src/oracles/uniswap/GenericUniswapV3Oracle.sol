@@ -194,7 +194,21 @@ contract GenericUniswapV3Oracle is IUniswapV3Oracle, Ownable2Step {
         int24 _weightedTick =
             _tickData.length == 1 ? _tickData[0].tick : OracleLibrary.getWeightedArithmeticMeanTick(_tickData);
 
-        return OracleLibrary.getQuoteAtTick(_weightedTick, baseAmount, underlying, quoteToken);
+        // Adjust for decimals between underlying and quoteToken
+        uint8 underlyingDecimals = IERC20Metadata(underlying).decimals();
+
+        // getQuoteAtTick always returns an amount in quoteToken decimals, but baseAmount is in underlying decimals
+        // So, we need to scale baseAmount to 10**underlyingDecimals, and then scale the result to quoteToken decimals
+        uint256 quoteAmount = OracleLibrary.getQuoteAtTick(_weightedTick, baseAmount, underlying, quoteToken);
+
+        if (underlyingDecimals > quoteTokenDecimals) {
+            // Downscale result to quoteToken decimals
+            quoteAmount = quoteAmount / (10 ** (underlyingDecimals - quoteTokenDecimals));
+        } else if (quoteTokenDecimals > underlyingDecimals) {
+            // Upscale result to quoteToken decimals
+            quoteAmount = quoteAmount * (10 ** (quoteTokenDecimals - underlyingDecimals));
+        }
+        return quoteAmount;
     }
 
     /**
