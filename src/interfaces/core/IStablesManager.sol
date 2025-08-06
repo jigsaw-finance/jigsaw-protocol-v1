@@ -26,11 +26,13 @@ interface IStablesManager {
      * @param registry The shares registry contract for the collateral token
      * @param exchangeRatePrecision The precision used for exchange rate calculations
      * @param amount The normalized amount (18 decimals) of collateral being borrowed against
+     * @param amountValue The USD value of the collateral amount
      */
     struct BorrowTempData {
         ISharesRegistry registry;
         uint256 exchangeRatePrecision;
         uint256 amount;
+        uint256 amountValue;
     }
 
     // -- Events --

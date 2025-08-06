@@ -189,13 +189,19 @@ contract StablesManager is IStablesManager, Ownable2Step, Pausable {
         BorrowTempData memory tempData = BorrowTempData({
             registry: ISharesRegistry(shareRegistryInfo[_token].deployedAt),
             exchangeRatePrecision: manager.EXCHANGE_RATE_PRECISION(),
-            amount: _transformTo18Decimals({ _amount: _amount, _decimals: IERC20Metadata(_token).decimals() })
+            amount: 0,
+            amountValue: 0
         });
 
-        // Calculate the value of the collateral in terms of jUSD using the exchange rate and precision.
-        // This ensures the minted jUSD amount is proportional to the collateral's value.
-        // The result is the amount of jUSD to mint for the given collateral.
-        jUsdMintAmount = tempData.amount.mulDiv(tempData.registry.getExchangeRate(), tempData.exchangeRatePrecision);
+        // Ensure amount uses 18 decimals.
+        tempData.amount = _transformTo18Decimals({ _amount: _amount, _decimals: IERC20Metadata(_token).decimals() });
+
+        // Get the USD value for the provided collateral amount.
+        tempData.amountValue =
+            tempData.amount.mulDiv(tempData.registry.getExchangeRate(), tempData.exchangeRatePrecision);
+
+        // Get the jUSD amount based on the provided collateral's USD value.
+        jUsdMintAmount = tempData.amountValue.mulDiv(tempData.exchangeRatePrecision, manager.getJUsdExchangeRate());
 
         // Ensure the amount of jUSD minted is greater than the minimum amount specified by the user.
         require(jUsdMintAmount >= _minJUsdAmountOut, "2100");
