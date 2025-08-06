@@ -264,6 +264,17 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
     /**
      * @notice Method used to liquidate stablecoin debt if a user is no longer solvent.
      *
+     * @dev To mitigate frontrunning risks for liquidators, the actual `jUsdAmount` repaid may be adjusted by the
+     * contract logic.
+     * Liquidators must set `_minCollateralPerJusd` (denominated in the collateral token's decimals) to define the
+     * minimum acceptable amount of collateral received per jUSD repaid.
+     * This parameter ensures that the liquidation will only execute if the collateral returned meets or exceeds the
+     * liquidator's expectations.
+     * For example, suppose a liquidator expects to receive 110 USDC for every 100 jUSD repaid. Since USDC has 6
+     * decimals, 110 USDC is represented as 110e6. To convert this into a per-jUSD value (scaled to 1e18 for jUSD), set:
+     *     _minCollateralPerJusd = (110e6 * 1e18) / 100e18 = 1.1e6
+     * This ensures the liquidation only proceeds if the liquidator receives at least 1.1 USDC per jUSD repaid.
+     *
      * @notice Requirements:
      * - `_user` must have holding.
      * - `_user` must be insolvent.
@@ -282,7 +293,7 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
      * @param _user address whose holding is to be liquidated.
      * @param _collateral token used for borrowing.
      * @param _jUsdAmount to repay.
-     * @param _minCollateralReceive amount of collateral the liquidator wants to get.
+     * @param _minCollateralPerJusd amount of collateral per liquidated jUSD the liquidator agrees to get.
      * @param _data for strategies to retrieve collateral from in case the Holding balance is not enough.
      *
      * @return collateralUsed The amount of collateral used for liquidation.
@@ -291,7 +302,7 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         address _user,
         address _collateral,
         uint256 _jUsdAmount,
-        uint256 _minCollateralReceive,
+        uint256 _minCollateralPerJusd,
         LiquidateCalldata calldata _data
     )
         external
@@ -350,7 +361,7 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         collateralUsed = Math.min(IERC20(_collateral).balanceOf(holding), collateralUsed);
 
         // Ensure the liquidator will receive at least as much collateral as expected when sending the tx.
-        require(collateralUsed >= _minCollateralReceive, "3097");
+        require(collateralUsed >= _jUsdAmount.mulDiv(_minCollateralPerJusd, 1e18, Math.Rounding.Ceil), "3097");
 
         // Emit event indicating successful liquidation.
         emit Liquidated({ holding: holding, token: _collateral, amount: _jUsdAmount, collateralUsed: collateralUsed });
