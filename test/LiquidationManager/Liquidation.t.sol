@@ -398,11 +398,27 @@ contract LiquidationTest is Test {
 
         ILiquidationManager.LiquidateCalldata memory liquidateCalldata;
 
+        uint256 validMinCollateralPerJusd = 1.35e6;
+
         //make liquidation call
         vm.prank(testData.liquidator, testData.liquidator);
         vm.expectRevert(bytes("3097"));
         liquidationManager.liquidate(
-            address(testData.user), address(collateralContract), testData.userJUsd, type(uint256).max, liquidateCalldata
+            address(testData.user),
+            address(collateralContract),
+            testData.userJUsd,
+            validMinCollateralPerJusd + 1,
+            liquidateCalldata
+        );
+
+        // ensure it will still work with the correct value
+        vm.prank(testData.liquidator, testData.liquidator);
+        liquidationManager.liquidate(
+            address(testData.user),
+            address(collateralContract),
+            testData.userJUsd,
+            validMinCollateralPerJusd,
+            liquidateCalldata
         );
     }
 
