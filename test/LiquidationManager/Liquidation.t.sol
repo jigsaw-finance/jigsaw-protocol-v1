@@ -605,13 +605,14 @@ contract LiquidationTest is Test {
         vm.stopPrank();
     }
 
-    function test_liquidateBadDebt_when_inactiveRegistry() public {
-        address collateral = address(420);
+    function test_liquidateBadDebt_when_NoRegistry() public {
+        address collateral = address(456);
+        address _user = address(421);
         ILiquidationManager.LiquidateCalldata memory liquidateCalldata =
             ILiquidationManager.LiquidateCalldata({ strategies: new address[](0), strategiesData: new bytes[](0) });
 
-        vm.expectRevert(bytes("1200"));
-        liquidationManager.liquidateBadDebt({ _user: user, _collateral: collateral, _data: liquidateCalldata });
+        vm.expectRevert(bytes("3001"));
+        liquidationManager.liquidateBadDebt({ _user: _user, _collateral: collateral, _data: liquidateCalldata });
     }
 
     function test_liquidateBadDebt_when_NoHolding() public {
