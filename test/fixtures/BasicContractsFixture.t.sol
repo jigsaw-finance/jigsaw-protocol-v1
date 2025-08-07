@@ -53,13 +53,15 @@ abstract contract BasicContractsFixture is Test {
     mapping(address => address) internal registries;
 
     function init() public {
+        vm.createSelectFork(vm.envString("SONIC_RPC_URL"));
+
         vm.startPrank(OWNER);
         vm.warp(1_641_070_800);
 
         usdc = new SampleTokenERC20("USDC", "USDC", 0);
         usdcOracle = new SampleOracle();
 
-        weth = new wETHMock();
+        weth = wETHMock(payable(0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38));
         SampleOracle wethOracle = new SampleOracle();
 
         jUsdOracle = new SampleOracle();

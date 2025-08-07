@@ -12,9 +12,9 @@ import { DeployManager } from "../../script/deployment/02_DeployManager.s.sol";
 import { DeployJUSD } from "../../script/deployment/03_DeployJUSD.s.sol";
 import { DeployManagers } from "../../script/deployment/04_DeployManagers.s.sol";
 import { DeployReceiptToken } from "../../script/deployment/05_DeployReceiptToken.s.sol";
-import { DeployChronicleOracleFactory } from "../../script/deployment/06_DeployChronicleOracleFactory.s.sol";
 import { DeployRegistries } from "../../script/deployment/07_DeployRegistries.s.sol";
 import { DeployUniswapV3Oracle } from "../../script/deployment/08_DeployUniswapV3Oracle.s.sol";
+import { DeployChainlinkOracleFactory } from "../../script/deployment/09_DeployChainlinkOracleFactory.s.sol";
 import { DeployMocks } from "../../script/mocks/00_DeployMocks.s.sol";
 
 import { HoldingManager } from "../../src/HoldingManager.sol";
@@ -29,8 +29,8 @@ import { StablesManager } from "../../src/StablesManager.sol";
 import { StrategyManager } from "../../src/StrategyManager.sol";
 import { SwapManager } from "../../src/SwapManager.sol";
 
-import { ChronicleOracle } from "../../src/oracles/chronicle/ChronicleOracle.sol";
-import { ChronicleOracleFactory } from "../../src/oracles/chronicle/ChronicleOracleFactory.sol";
+import { ChainlinkOracle } from "../../src/oracles/chainlink/ChainlinkOracle.sol";
+import { ChainlinkOracleFactory } from "../../src/oracles/chainlink/ChainlinkOracleFactory.sol";
 
 import { UniswapV3Oracle } from "src/oracles/uniswap/UniswapV3Oracle.sol";
 
@@ -47,14 +47,9 @@ contract ScriptTestsFixture is Test {
     string internal uniswapV3OracleConfigPath = "./deployment-config/04_UniswapV3OracleConfig.json";
 
     address internal INITIAL_OWNER = vm.addr(vm.envUint("DEPLOYER_PRIVATE_KEY"));
-    address internal USDC;
-    address internal WETH;
+    address internal USDC = 0x29219dd400f2Bf60E5a23d13Be72B486D4038894;
+    address internal WETH = 0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38;
     address internal JUSD_Oracle;
-
-    address internal UNISWAP_FACTORY = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
-    address internal UNISWAP_SWAP_ROUTER = 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
-
-    address internal USDT_USDC_POOL = 0x3416cF6C708Da44DB2624D63ea0AAef7113527C6; // pretend that this is jUSD/USDC pool
 
     Manager internal manager;
     JigsawUSD internal jUSD;
@@ -66,28 +61,22 @@ contract ScriptTestsFixture is Test {
     SwapManager internal swapManager;
     ReceiptToken internal receiptToken;
     ReceiptTokenFactory internal receiptTokenFactory;
-    ChronicleOracle internal chronicleOracle;
-    ChronicleOracleFactory internal chronicleOracleFactory;
+    ChainlinkOracle internal chainlinkOracle;
+    ChainlinkOracleFactory internal chainlinkOracleFactory;
     UniswapV3Oracle internal jUsdUniswapV3Oracle;
 
     // Deployers
     DeployManager internal deployManagerScript;
     DeployJUSD internal deployJUSDScript;
     DeployManagers internal deployManagersScript;
-    DeployChronicleOracleFactory internal deployChronicleOracleFactory;
+    DeployChainlinkOracleFactory internal deployChainlinkOracleFactory;
     DeployReceiptToken internal deployReceiptTokenScript;
     DeployRegistries internal deployRegistriesScript;
-    DeployUniswapV3Oracle internal deployUniswapV3OracleScript;
 
     address[] internal registries;
 
     function init() internal {
-        vm.createSelectFork(vm.envString("MAINNET_RPC_URL"));
-        DeployMocks mockScript = new DeployMocks();
-        (SampleTokenERC20 USDC_MOCK, wETHMock WETH_MOCK,,,) = mockScript.run();
-
-        USDC = address(USDC_MOCK);
-        WETH = address(WETH_MOCK);
+        vm.createSelectFork(vm.envString("SONIC_RPC_URL"));
 
         DeployGenesisOracle deployGenesisOracle = new DeployGenesisOracle();
         JUSD_Oracle = address(deployGenesisOracle.run());
@@ -96,9 +85,6 @@ contract ScriptTestsFixture is Test {
         Strings.toHexString(uint160(INITIAL_OWNER), 20).write(commonConfigPath, ".INITIAL_OWNER");
         Strings.toHexString(uint160(WETH), 20).write(managerConfigPath, ".WETH");
         Strings.toHexString(uint256(bytes32("")), 32).write(managerConfigPath, ".JUSD_OracleData");
-        Strings.toHexString(uint160(UNISWAP_FACTORY), 20).write(managersConfigPath, ".UNISWAP_FACTORY");
-        Strings.toHexString(uint160(UNISWAP_SWAP_ROUTER), 20).write(managersConfigPath, ".UNISWAP_SWAP_ROUTER");
-        Strings.toHexString(uint160(USDT_USDC_POOL), 20).write(uniswapV3OracleConfigPath, ".JUSD_USDC_UNISWAP_POOL");
         Strings.toHexString(uint160(USDC), 20).write(uniswapV3OracleConfigPath, ".USDC");
         Strings.toHexString(uint160(JUSD_Oracle), 20).write(uniswapV3OracleConfigPath, ".USDC_ORACLE");
 
@@ -114,9 +100,9 @@ contract ScriptTestsFixture is Test {
         deployManagersScript = new DeployManagers();
         (holdingManager, liquidationManager, stablesManager, strategyManager, swapManager) = deployManagersScript.run();
 
-        //Run ChronicleOracleFactory deployment script
-        deployChronicleOracleFactory = new DeployChronicleOracleFactory();
-        (chronicleOracleFactory, chronicleOracle) = deployChronicleOracleFactory.run();
+        //Run ChainlinkOracleFactory deployment script
+        deployChainlinkOracleFactory = new DeployChainlinkOracleFactory();
+        (chainlinkOracleFactory, chainlinkOracle) = deployChainlinkOracleFactory.run();
 
         //Run ReceiptToken deployment script
         deployReceiptTokenScript = new DeployReceiptToken();
@@ -125,9 +111,5 @@ contract ScriptTestsFixture is Test {
         //Run Registries deployment script
         deployRegistriesScript = new DeployRegistries();
         registries = deployRegistriesScript.run();
-
-        //Run UniswapV3 deployment script
-        deployUniswapV3OracleScript = new DeployUniswapV3Oracle();
-        jUsdUniswapV3Oracle = deployUniswapV3OracleScript.run();
     }
 }

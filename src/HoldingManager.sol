@@ -195,6 +195,9 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
         IHolding holding = IHolding(userHolding[msg.sender]);
         (uint256 userAmount, uint256 feeAmount) = _withdraw({ _token: _token, _amount: _amount });
 
+        // Emit the Withdrawal event to log the withdrawal operation
+        emit Withdrawal({ holding: address(holding), token: _token, totalAmount: _amount, feeAmount: feeAmount });
+
         // Transfer the fee amount to the fee address.
         if (feeAmount > 0) {
             holding.transfer({ _token: _token, _to: manager.feeAddress(), _amount: feeAmount });
@@ -359,7 +362,7 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
         address _token,
         uint256 _amount,
         bool _repayFromUser
-    ) external override nonReentrant whenNotPaused validHolding(userHolding[msg.sender]) {
+    ) external override nonReentrant validHolding(userHolding[msg.sender]) {
         address holding = userHolding[msg.sender];
 
         emit Repaid({ holding: holding, token: _token, amount: _amount, repayFromUser: _repayFromUser });
@@ -392,7 +395,7 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
     function repayMultiple(
         RepayData[] calldata _data,
         bool _repayFromUser
-    ) external override validHolding(userHolding[msg.sender]) nonReentrant whenNotPaused {
+    ) external override validHolding(userHolding[msg.sender]) nonReentrant {
         require(_data.length > 0, "3006");
 
         address holding = userHolding[msg.sender];
@@ -527,6 +530,10 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
             IERC20(_token).safeTransferFrom({ from: _from, to: holding, value: _amount });
         }
 
+        // Ensure ShareRegistry for the specified collateral is active to allow new deposits
+        (bool isRegistryActive,) = _getStablesManager().shareRegistryInfo(_token);
+        require(isRegistryActive, "1200");
+
         _getStablesManager().addCollateral({ _holding: holding, _token: _token, _amount: _amount });
     }
 
@@ -552,16 +559,17 @@ contract HoldingManager is IHoldingManager, Ownable2Step, Pausable, ReentrancyGu
     function _withdraw(address _token, uint256 _amount) private returns (uint256, uint256) {
         require(manager.isTokenWithdrawable(_token), "3071");
         address holding = userHolding[msg.sender];
-
-        // Perform the check to see if this is an airdropped token or user actually has collateral for it
         (, address _tokenRegistry) = _getStablesManager().shareRegistryInfo(_token);
+
+        // Only take fees when withdrawing collateral tokens
+        if (_tokenRegistry == address(0)) return (_amount, 0);
         if (_tokenRegistry != address(0) && ISharesRegistry(_tokenRegistry).collateral(holding) > 0) {
             _getStablesManager().removeCollateral({ _holding: holding, _token: _token, _amount: _amount });
         }
+
         uint256 withdrawalFee = manager.withdrawalFee();
         uint256 withdrawalFeeAmount = 0;
         if (withdrawalFee > 0) withdrawalFeeAmount = OperationsLib.getFeeAbsolute(_amount, withdrawalFee);
-        emit Withdrawal({ holding: holding, token: _token, totalAmount: _amount, feeAmount: withdrawalFeeAmount });
 
         return (_amount - withdrawalFeeAmount, withdrawalFeeAmount);
     }
