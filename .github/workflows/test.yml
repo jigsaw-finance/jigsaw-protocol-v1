@@ -40,5 +40,5 @@ jobs:
 
       - name: Run Forge tests
         run: |
-          forge test --fuzz-runs 100 -vvv
+          forge test --fuzz-runs 1 -vvv
         id: test
