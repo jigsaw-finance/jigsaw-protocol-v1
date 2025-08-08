@@ -17,12 +17,10 @@ contract UniswapV3OracleIntegrationTest is Test, BasicContractsFixture {
     UniswapV3Oracle internal uniswapJUsdOracle;
 
     function setUp() public {
-        vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 21_722_108);
+        init(vm.envString("MAINNET_RPC_URL"), 21_722_108);
 
         address[] memory initialPools = new address[](1);
         initialPools[0] = USDC_POOL;
-
-        init();
 
         uniswapJUsdOracle = new UniswapV3Oracle({
             _initialOwner: OWNER,
