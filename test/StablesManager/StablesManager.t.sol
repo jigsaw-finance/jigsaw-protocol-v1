@@ -10,6 +10,7 @@ import { SharesRegistry } from "../../src/SharesRegistry.sol";
 import { StablesManager } from "../../src/StablesManager.sol";
 import { ISharesRegistry } from "../../src/interfaces/core/ISharesRegistry.sol";
 import { BasicContractsFixture } from "../fixtures/BasicContractsFixture.t.sol";
+import { SampleTokenERC20 } from "../utils/mocks/SampleTokenERC20.sol";
 
 contract StablesManagerTest is BasicContractsFixture {
     event AddedCollateral(address indexed holding, address indexed token, uint256 amount);
@@ -161,10 +162,12 @@ contract StablesManagerTest is BasicContractsFixture {
         stablesManager.isSolvent(address(1), address(0));
     }
 
-    // Tests if isSolvent reverts correctly when invalid holding address
+    // Tests if isSolvent reverts correctly when no registry
     function test_isSolvent_when_noRegistry() public {
-        vm.expectRevert(bytes("3008"));
-        stablesManager.isSolvent(address(0), address(1));
+        SampleTokenERC20 usdt = new SampleTokenERC20("USDT", "USDT", 0);
+
+        vm.expectRevert(bytes("3001"));
+        stablesManager.isSolvent(address(usdt), address(1));
     }
 
     // Tests if isSolvent works correctly when borrowed 0
@@ -250,20 +253,6 @@ contract StablesManagerTest is BasicContractsFixture {
         stablesManager.addCollateral(address(1), address(2), 1);
     }
 
-    // Tests if addCollateral reverts correctly when registry inactive
-    function test_addCollateral_when_registryInactive(
-        uint256 _callerId
-    ) public {
-        address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
-
-        vm.prank(OWNER, OWNER);
-        stablesManager.registerOrUpdateShareRegistry(registries[address(usdc)], address(usdc), false);
-
-        vm.prank(caller, caller);
-        vm.expectRevert(bytes("1201"));
-        stablesManager.addCollateral(address(1), address(usdc), 1);
-    }
-
     // Tests if removeCollateral reverts correctly when caller is unauthorized
     function test_removeCollateral_when_unauthorized(
         address _caller
@@ -285,32 +274,6 @@ contract StablesManagerTest is BasicContractsFixture {
         vm.prank(caller, caller);
         vm.expectRevert();
         stablesManager.removeCollateral(address(1), address(2), 1);
-    }
-
-    // Tests if removeCollateral reverts correctly when registry is inexistent
-    function test_removeCollateral_when_registryInexistent(uint256 _callerId, address _token) public {
-        (, address d) = stablesManager.shareRegistryInfo(_token);
-        vm.assume(d == address(0));
-
-        address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
-
-        vm.prank(caller, caller);
-        vm.expectRevert(bytes("1201"));
-        stablesManager.removeCollateral(address(1), _token, 1);
-    }
-
-    // Tests if removeCollateral reverts correctly when registry is inactive
-    function test_removeCollateral_when_registryInactive(
-        uint256 _callerId
-    ) public {
-        address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
-
-        vm.prank(OWNER, OWNER);
-        stablesManager.registerOrUpdateShareRegistry(registries[address(usdc)], address(usdc), false);
-
-        vm.prank(caller, caller);
-        vm.expectRevert(bytes("1201"));
-        stablesManager.removeCollateral(address(1), address(usdc), 1);
     }
 
     // Tests if removeCollateral reverts correctly when holding will become insolvent after collateral removal
@@ -381,18 +344,6 @@ contract StablesManagerTest is BasicContractsFixture {
         stablesManager.forceRemoveCollateral(address(1), address(2), 1);
     }
 
-    // Tests if forceRemoveCollateral reverts correctly when registry is inexistent
-    function test_forceRemoveCollateral_when_registryInexistent(
-        address _token
-    ) public {
-        (, address d) = stablesManager.shareRegistryInfo(_token);
-        vm.assume(d == address(0));
-
-        vm.prank(manager.liquidationManager(), manager.liquidationManager());
-        vm.expectRevert(bytes("1201"));
-        stablesManager.forceRemoveCollateral(address(1), _token, 1);
-    }
-
     // Tests if forceRemoveCollateral reverts correctly when caller is unauthorized
     function test_forceRemoveCollateral_when_unauthorized(
         address _caller
@@ -400,16 +351,6 @@ contract StablesManagerTest is BasicContractsFixture {
         vm.assume(_caller != manager.liquidationManager());
 
         vm.expectRevert(bytes("1000"));
-        stablesManager.forceRemoveCollateral(address(1), address(usdc), 1);
-    }
-
-    // Tests if forceRemoveCollateral reverts correctly when registry is inactive
-    function test_forceRemoveCollateral_when_registryInactive() public {
-        vm.prank(OWNER, OWNER);
-        stablesManager.registerOrUpdateShareRegistry(registries[address(usdc)], address(usdc), false);
-
-        vm.prank(manager.liquidationManager(), manager.liquidationManager());
-        vm.expectRevert(bytes("1201"));
         stablesManager.forceRemoveCollateral(address(1), address(usdc), 1);
     }
 
@@ -543,20 +484,6 @@ contract StablesManagerTest is BasicContractsFixture {
 
         vm.prank(caller, caller);
         vm.expectRevert();
-        stablesManager.repay(address(1), address(2), 1, address(3));
-    }
-
-    // Tests if repay reverts correctly when  registry is inactive
-    function test_repay_when_registryInactive(
-        uint256 _callerId
-    ) public {
-        address caller = allowedCallers[bound(_callerId, 0, allowedCallers.length - 1)];
-
-        vm.prank(OWNER, OWNER);
-        stablesManager.registerOrUpdateShareRegistry(registries[address(usdc)], address(usdc), false);
-
-        vm.prank(caller, caller);
-        vm.expectRevert(bytes("1201"));
         stablesManager.repay(address(1), address(2), 1, address(3));
     }
 

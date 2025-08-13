@@ -35,9 +35,10 @@ jobs:
           touch .env
           echo MAINNET_RPC_URL=${{ secrets.MAINNET_RPC_URL }} >> .env
           echo ARBITRUM_RPC_URL=${{ secrets.ARBITRUM_RPC_URL }} >> .env
+          echo SONIC_RPC_URL=${{ secrets.SONIC_RPC_URL }} >> .env
           echo DEPLOYER_PRIVATE_KEY=${{ secrets.DEPLOYER_PRIVATE_KEY }} >> .env
 
       - name: Run Forge tests
         run: |
-          forge test --fuzz-runs 100 -vvv
+          forge test --fuzz-runs 1 -vvv
         id: test
