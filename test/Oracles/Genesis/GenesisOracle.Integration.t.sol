@@ -12,8 +12,7 @@ contract GenesisOracleIntegrationTest is Test, BasicContractsFixture {
     GenesisOracle internal genesisJUsdOracle;
 
     function setUp() public {
-        vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 21_722_108);
-        init();
+        init(vm.envString("MAINNET_RPC_URL"), 21_722_108);
         genesisJUsdOracle = new GenesisOracle();
     }
 

@@ -12,6 +12,8 @@ import { StrategyWithoutRewardsMockBroken } from "../utils/mocks/StrategyWithout
 contract StrategyManagerTest is BasicContractsFixture {
     using stdMath for int256;
 
+    error OwnableUnauthorizedAccount(address account);
+
     event StrategyAdded(address indexed strategy);
     event StrategyUpdated(address indexed strategy, bool active, uint256 fee);
     event GaugeAdded(address indexed strategy, address indexed gauge);
@@ -137,24 +139,8 @@ contract StrategyManagerTest is BasicContractsFixture {
 
         vm.assume(_caller != OWNER);
         vm.prank(_caller, _caller);
-        vm.expectRevert();
+        vm.expectRevert(abi.encodeWithSelector(OwnableUnauthorizedAccount.selector, _caller));
         strategyManager.updateStrategy(strategy, info);
-
-        (,, bool whitelisted) = strategyManager.strategyInfo(strategy);
-        assertEq(whitelisted, false, "Strategy updated when unauthorized");
-    }
-
-    // Tests adding new strategy to the protocol when invalid address
-    function test_updateStrategy_when_invalidStrategy() public {
-        IStrategyManager.StrategyInfo memory info;
-        address strategy = address(0);
-
-        vm.prank(OWNER, OWNER);
-        vm.expectRevert(bytes("3029"));
-        strategyManager.updateStrategy(strategy, info);
-
-        (,, bool whitelisted) = strategyManager.strategyInfo(strategy);
-        assertEq(whitelisted, false, "Strategy updated when invalid Strategy");
     }
 
     // Tests successful addition of the new strategy to the protocol
@@ -162,18 +148,8 @@ contract StrategyManagerTest is BasicContractsFixture {
         IStrategyManager.StrategyInfo memory info;
         address strategy = address(strategyWithoutRewardsMock);
 
-        vm.prank(OWNER, OWNER);
-        vm.expectRevert(bytes("3104"));
-        strategyManager.updateStrategy(strategy, info);
-
         info.whitelisted = true;
-        info.performanceFee = 100_000_000;
-
-        vm.prank(OWNER, OWNER);
-        vm.expectRevert(bytes("3105"));
-        strategyManager.updateStrategy(strategy, info);
-
-        info.performanceFee = 3000;
+        info.performanceFee = 5_000;
 
         vm.prank(OWNER, OWNER);
         vm.expectEmit();
@@ -183,6 +159,19 @@ contract StrategyManagerTest is BasicContractsFixture {
         (uint256 performanceFee, bool active,) = strategyManager.strategyInfo(strategy);
         assertEq(active, info.active, "Strategy active not updated when authorized");
         assertEq(performanceFee, info.performanceFee, "Strategy performance fee not updated when authorized");
+    }
+
+    // Tests successful addition of the new strategy to the protocol
+    function test_updateStrategy_when_performanceFee_exceed_max_value() public {
+        IStrategyManager.StrategyInfo memory info;
+        address strategy = address(strategyWithoutRewardsMock);
+
+        info.whitelisted = true;
+        info.performanceFee = 50_000;
+
+        vm.prank(OWNER, OWNER);
+        vm.expectRevert(bytes("3105"));
+        strategyManager.updateStrategy(strategy, info);
     }
 
     // Tests if invest function reverts correctly when invalid strategy

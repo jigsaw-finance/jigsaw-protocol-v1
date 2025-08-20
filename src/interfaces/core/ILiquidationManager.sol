@@ -204,29 +204,51 @@ interface ILiquidationManager {
 
     /**
      * @notice Temporary data structure used in the self-liquidation process.
+     *
+     * @dev Holds all relevant information required to perform a self-liquidation.
+     *
+     * @param holdingManager The Holding Manager contract.
+     * @param stablesManager The Stables Manager contract.
+     * @param swapManager The Swap Manager contract.
+     * @param holding The address of the user's Holding involved in self-liquidation.
+     * @param registryAddress The address of the Registry contract.
+     * @param totalBorrowed The total amount borrowed by the user from the system.
+     * @param totalAvailableCollateral The total available collateral in the Holding.
+     * @param totalRequiredCollateral The total required collateral for self-liquidation.
+     * @param totalSelfLiquidatableCollateral The total self-liquidatable collateral in the holding.
+     * @param totalFeeCollateral The total fee collateral to be deducted.
+     * @param jUsdAmountToBurn The amount of jUSD to burn during self-liquidation.
+     * @param exchangeRate The current exchange rate.
+     * @param collateralInStrategies The total collateral locked in strategies.
+     * @param swapPath The path for token swapping.
+     * @param deadline The latest time by which the swap operation must be completed.
+     * @param amountInMaximum The maximum amount to swap.
+     * @param slippagePercentage The slippage percentage for token swapping.
+     * @param useHoldingBalance Flag indicating whether to use Holding balance.
+     * @param strategies Array of strategy addresses.
+     * @param strategiesData Array of data associated with each strategy.
      */
     struct SelfLiquidateTempData {
-        IHoldingManager holdingManager; // Address of the Holding Manager contract
-        IStablesManager stablesManager; // Address of the Stables Manager contract
-        ISwapManager swapManager; // Address of the Swap Manager contract
-        address holding; // Address of the user's Holding involved in self-liquidation
-        bool isRegistryActive; // Flag indicating if the Registry is active
-        address registryAddress; // Address of the Registry contract
-        uint256 totalBorrowed; //  Total amount borrowed by user from the system
-        uint256 totalAvailableCollateral; // Total available collateral in the Holding
-        uint256 totalRequiredCollateral; // Total required collateral for self-liquidation
-        uint256 totalSelfLiquidatableCollateral; // Total self-liquidatable collateral in the holding
-        uint256 totalFeeCollateral; // Total fee collateral to be deducted
-        uint256 jUsdAmountToBurn; // Amount of jUSD to burn during self-liquidation
-        uint256 exchangeRate; // Current exchange rate.
-        uint256 collateralInStrategies; // Total collateral locked in strategies
-        bytes swapPath; // Path for token swapping
-        uint256 deadline; // The latest time by which the swap operation must be completed.
-        uint256 amountInMaximum; // Maximum amount to swap
-        uint256 slippagePercentage; // Slippage percentage for token swapping
-        bool useHoldingBalance; // Flag indicating whether to use Holding balance
-        address[] strategies; // Array of strategy addresses
-        bytes[] strategiesData; // Array of data associated with each strategy
+        IHoldingManager holdingManager;
+        IStablesManager stablesManager;
+        ISwapManager swapManager;
+        address holding;
+        address registryAddress;
+        uint256 totalBorrowed;
+        uint256 totalAvailableCollateral;
+        uint256 totalRequiredCollateral;
+        uint256 totalSelfLiquidatableCollateral;
+        uint256 totalFeeCollateral;
+        uint256 jUsdAmountToBurn;
+        uint256 exchangeRate;
+        uint256 collateralInStrategies;
+        bytes swapPath;
+        uint256 deadline;
+        uint256 amountInMaximum;
+        uint256 slippagePercentage;
+        bool useHoldingBalance;
+        address[] strategies;
+        bytes[] strategiesData;
     }
 
     /**
@@ -243,6 +265,29 @@ interface ILiquidationManager {
         uint256 deadline;
         uint256 amountInMaximum;
         uint256 slippagePercentage;
+    }
+
+    /**
+     * @notice Temporary data structure used during the liquidation process.
+     *
+     * @dev Holds all relevant information required to perform a liquidation.
+     *
+     * @param holdingManager The Holding Manager contract.
+     * @param stablesManager The Stables Manager contract.
+     * @param holding The address of the user's Holding being liquidated.
+     * @param registryAddress The address of the Registry contract for the collateral.
+     * @param totalBorrowed The total amount borrowed by the user.
+     * @param collateralRequired The amount of collateral required for liquidation.
+     * @param bonus The bonus amount awarded to the liquidator.
+     */
+    struct LiquidationData {
+        IHoldingManager holdingManager;
+        IStablesManager stablesManager;
+        address holding;
+        address registryAddress;
+        uint256 totalBorrowed;
+        uint256 collateralRequired;
+        uint256 bonus;
     }
 
     /**
