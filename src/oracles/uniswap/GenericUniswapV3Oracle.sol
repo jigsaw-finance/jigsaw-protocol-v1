@@ -8,21 +8,21 @@ import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/I
 import { IUniswapV3Pool } from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import { OracleLibrary } from "@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol";
 
-import { IOracle, IUniswapV3Oracle } from "./interfaces/IUniswapV3Oracle.sol";
+import { IGenericUniswapV3Oracle, IOracle } from "./interfaces/IGenericUniswapV3Oracle.sol";
 
 /**
  * @title UniswapV3Oracle
  *
  * @notice Fetches and processes Uniswap V3 TWAP (Time-Weighted Average Price) data for a given token.
  *
- * @dev Implements IUniswapV3Oracle interface and uses UniswapV3 pools as price feed source.
+ * @dev Implements IGenericUniswapV3Oracle interface and uses UniswapV3 pools as price feed source.
  * @dev This contract inherits functionalities from `Ownable2Step`.
  *
  * @author Hovooo (@hovooo)
  *
  * @custom:security-contact support@jigsaw.finance
  */
-contract GenericUniswapV3Oracle is IUniswapV3Oracle, Ownable2Step {
+contract GenericUniswapV3Oracle is IGenericUniswapV3Oracle, Ownable2Step {
     // -- State variables --
 
     /**
@@ -53,11 +53,6 @@ contract GenericUniswapV3Oracle is IUniswapV3Oracle, Ownable2Step {
     uint256 private constant ALLOWED_DECIMALS = 18;
 
     /**
-     * @notice Oracle used to convert price denominated in quote token to USD value
-     */
-    IOracle public override quoteTokenOracle;
-
-    /**
      * @notice List of UniswapV3 pool addresses used for price calculations.
      */
     address[] private pools;
@@ -75,7 +70,6 @@ contract GenericUniswapV3Oracle is IUniswapV3Oracle, Ownable2Step {
         address _initialOwner,
         address _underlying,
         address _quoteToken,
-        address _quoteTokenOracle,
         address[] memory _uniswapV3Pools
     ) Ownable(_initialOwner) {
         if (_underlying == address(0)) revert InvalidAddress();
@@ -87,7 +81,6 @@ contract GenericUniswapV3Oracle is IUniswapV3Oracle, Ownable2Step {
         quoteToken = _quoteToken;
         quoteTokenDecimals = IERC20Metadata(_quoteToken).decimals();
 
-        _updateQuoteTokenOracle(_quoteTokenOracle);
         _updatePools(_uniswapV3Pools);
     }
 
@@ -101,23 +94,17 @@ contract GenericUniswapV3Oracle is IUniswapV3Oracle, Ownable2Step {
     function peek(
         bytes calldata
     ) external view returns (bool success, uint256 rate) {
-        // Query three different TWAPs (Time-Weighted Average Prices) from different time periods and take the median of
-        // these prices to reduce the impact of sudden price fluctuations or manipulation.
-        uint256 median = _getMedian(
-            _quote({ _period: 1800, _offset: 3600 }), // Query the TWAP from the last 90-60 minutes (oldest time period)
-            _quote({ _period: 1800, _offset: 1800 }), // Query the TWAP from the last 60-30 minutes (middle time period)
-            _quote({ _period: 1800, _offset: 0 }) // Query the TWAP from the last 30-0 minutes (most recent time period)
-        );
+        // Query TWAP (Time-Weighted Average Price) from Uniswap `pools`
+        uint256 quote = _quote({ _period: 1800, _offset: 0 }); // Query the TWAP from the last 30-0 minutes
 
         // Normalize the price to ALLOWED_DECIMALS (e.g., 18 decimals)
-        uint256 medianWithDecimals = quoteTokenDecimals == ALLOWED_DECIMALS
-            ? median
+        // The rate doesn't account for USD value
+        rate = quoteTokenDecimals == ALLOWED_DECIMALS
+            ? quote
             : quoteTokenDecimals < ALLOWED_DECIMALS
-                ? median * 10 ** (ALLOWED_DECIMALS - quoteTokenDecimals)
-                : median / 10 ** (quoteTokenDecimals - ALLOWED_DECIMALS);
+                ? quote * 10 ** (ALLOWED_DECIMALS - quoteTokenDecimals)
+                : quote / 10 ** (quoteTokenDecimals - ALLOWED_DECIMALS);
 
-        // As the median price is denominated in quote token, convert that price to USD value
-        rate = _convertToUsd({ _price: medianWithDecimals });
         // If a valid price has been retrieved from the queries, return success as true
         success = true;
     }
@@ -155,12 +142,6 @@ contract GenericUniswapV3Oracle is IUniswapV3Oracle, Ownable2Step {
         address[] memory _newPools
     ) external onlyOwner {
         _updatePools(_newPools);
-    }
-
-    function updateQuoteTokenOracle(
-        address _newOracle
-    ) external onlyOwner {
-        _updateQuoteTokenOracle(_newOracle);
     }
 
     /**
@@ -233,72 +214,6 @@ contract GenericUniswapV3Oracle is IUniswapV3Oracle, Ownable2Step {
         // We are multiplying here instead of shifting to ensure that _harmonicMeanLiquidity doesn't overflow uint128
         uint192 _secondsAgoX160 = uint192(_twapLength) * type(uint160).max;
         _harmonicMeanLiquidity = uint128(_secondsAgoX160 / (uint192(_secondsPerLiquidityCumulativesDelta) << 32));
-    }
-
-    /**
-     * @notice Computes a median value from three numbers.
-     */
-    function _getMedian(uint256 _a, uint256 _b, uint256 _c) internal pure returns (uint256) {
-        if ((_a >= _b && _a <= _c) || (_a >= _c && _a <= _b)) return _a;
-        if ((_b >= _a && _b <= _c) || (_b >= _c && _b <= _a)) return _b;
-        return _c;
-    }
-
-    /**
-     * @notice Converts a price denominated in quote token to its USD value.
-     * @dev Uses the quote token's oracle to get the USD exchange rate.
-     *
-     * @notice Requirements:
-     * - Oracle must provide an updated rate.
-     * - Rate must be greater than zero.
-     *
-     * @param _price The price denominated in quote token to convert to USD.
-     * @return The USD value of the given price.
-     */
-    function _convertToUsd(
-        uint256 _price
-    ) internal view returns (uint256) {
-        // Query the quote token's oracle for its current USD exchange rate
-        (bool updated, uint256 rate) = quoteTokenOracle.peek("");
-
-        // Ensure the oracle provided an updated rate
-        require(updated, "3037"); // ERR: FAILED
-
-        // Ensure the rate is valid (greater than zero)
-        require(rate > 0, "2100"); // ERR: INVALID MIN_AMOUNT
-
-        // Convert the price denominated in quote token to USD value using quote token's USD oracle
-        // Note: It's safe to use ALLOWED_DECIMALS as it's guaranteed that oracles implementing IOracle interface always
-        // return prices with 18 decimals
-        return _price * rate / 10 ** ALLOWED_DECIMALS;
-    }
-
-    /**
-     * @notice Updates the oracle used for the quote token's USD price.
-     * @dev This function is used to change the oracle that provides the USD exchange rate for the quote token.
-     *
-     * @notice Requirements:
-     * - `_newOracle` must not be the zero address.
-     * - `_newOracle` must be different from the current oracle address.
-     *
-     * @notice Effects:
-     * - Updates the `quoteTokenOracle` state variable to the new oracle.
-     *
-     * @notice Emits:
-     * - `QuoteTokenOracleUpdated` event indicating the change from old to new oracle.
-     *
-     * @param _newOracle The address of the new oracle to be used for the quote token.
-     */
-    function _updateQuoteTokenOracle(
-        address _newOracle
-    ) private {
-        address oldOracle = address(quoteTokenOracle);
-
-        if (_newOracle == address(0)) revert InvalidAddress();
-        if (_newOracle == oldOracle) revert InvalidAddress();
-
-        emit QuoteTokenOracleUpdated(oldOracle, _newOracle);
-        quoteTokenOracle = IOracle(_newOracle);
     }
 
     /**

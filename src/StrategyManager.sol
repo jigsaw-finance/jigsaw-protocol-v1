@@ -48,6 +48,13 @@ contract StrategyManager is IStrategyManager, Ownable2Step, ReentrancyGuard, Pau
     mapping(address holding => EnumerableSet.AddressSet strategies) private holdingToStrategy;
 
     /**
+     * @notice Maps a holding and token to the total amount invested.
+     * @dev holdingToInvestment[holding][token] returns the total amount of `token` invested by `holding` across all
+     * strategies.
+     */
+    mapping(address holding => mapping(address token => uint256 investedAmount)) public holdingToInvestment;
+
+    /**
      * @notice Contract that contains all the necessary configs of the protocol.
      */
     IManager public immutable override manager;
@@ -329,11 +336,7 @@ contract StrategyManager is IStrategyManager, Ownable2Step, ReentrancyGuard, Pau
      * @param _strategy strategy's address.
      * @param _info info.
      */
-    function updateStrategy(
-        address _strategy,
-        StrategyInfo calldata _info
-    ) external override onlyOwner validStrategy(_strategy) {
-        require(_info.whitelisted, "3104");
+    function updateStrategy(address _strategy, StrategyInfo calldata _info) external override onlyOwner {
         require(_info.performanceFee <= OperationsLib.FEE_FACTOR, "3105");
         strategyInfo[_strategy] = _info;
         emit StrategyUpdated(_strategy, _info.active, _info.performanceFee);
@@ -402,7 +405,6 @@ contract StrategyManager is IStrategyManager, Ownable2Step, ReentrancyGuard, Pau
     function _accrueRewards(address _token, uint256 _amount, address _holding) private {
         if (_amount > 0) {
             (bool active, address shareRegistry) = _getStablesManager().shareRegistryInfo(_token);
-
             if (shareRegistry != address(0) && active) {
                 //add collateral
                 emit CollateralAdjusted(_holding, _token, _amount, true);
@@ -436,6 +438,13 @@ contract StrategyManager is IStrategyManager, Ownable2Step, ReentrancyGuard, Pau
         uint256 _minSharesAmountOut,
         bytes calldata _data
     ) private returns (uint256 tokenOutAmount, uint256 tokenInAmount) {
+        // Update the holding's total invested amount
+        holdingToInvestment[_holding][_token] += _amount;
+
+        // Ensure the user cannot invest more than their deposited collateral
+        (, address shareRegistry) = _getStablesManager().shareRegistryInfo(_token);
+        require(holdingToInvestment[_holding][_token] <= ISharesRegistry(shareRegistry).collateral(_holding), "3105");
+
         (tokenOutAmount, tokenInAmount) = IStrategy(_strategy).deposit(_token, _amount, _holding, _data);
         require(tokenOutAmount != 0 && tokenOutAmount >= _minSharesAmountOut, "3030");
 
@@ -484,6 +493,9 @@ contract StrategyManager is IStrategyManager, Ownable2Step, ReentrancyGuard, Pau
         (tempData.withdrawnAmount, tempData.initialInvestment, tempData.yield, tempData.fee) =
             tempData.strategyContract.withdraw({ _shares: _shares, _recipient: _holding, _asset: _token, _data: _data });
         require(tempData.withdrawnAmount > 0, "3016");
+
+        // Update the holding's total invested amount
+        holdingToInvestment[_holding][_token] -= tempData.initialInvestment;
 
         if (tempData.yield > 0) {
             _getStablesManager().addCollateral({ _holding: _holding, _token: _token, _amount: uint256(tempData.yield) });

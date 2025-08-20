@@ -128,7 +128,6 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
             stablesManager: _getStablesManager(),
             swapManager: _getSwapManager(),
             holding: address(0),
-            isRegistryActive: false,
             registryAddress: address(0),
             totalBorrowed: 0,
             totalAvailableCollateral: 0,
@@ -157,8 +156,8 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         require(tempData.holdingManager.isHolding(tempData.holding), "3002");
 
         // Ensure collateral registry is active.
-        (tempData.isRegistryActive, tempData.registryAddress) = tempData.stablesManager.shareRegistryInfo(_collateral);
-        require(tempData.isRegistryActive, "1200");
+        (, tempData.registryAddress) = tempData.stablesManager.shareRegistryInfo(_collateral);
+        require(tempData.registryAddress != address(0), "3001");
 
         // Ensure user is solvent.
         tempData.totalBorrowed = ISharesRegistry(tempData.registryAddress).borrowed(tempData.holding);
@@ -265,6 +264,17 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
     /**
      * @notice Method used to liquidate stablecoin debt if a user is no longer solvent.
      *
+     * @dev To mitigate frontrunning risks for liquidators, the actual `jUsdAmount` repaid may be adjusted by the
+     * contract logic.
+     * Liquidators must set `_minCollateralPerJusd` (denominated in the collateral token's decimals) to define the
+     * minimum acceptable amount of collateral received per jUSD repaid.
+     * This parameter ensures that the liquidation will only execute if the collateral returned meets or exceeds the
+     * liquidator's expectations.
+     * For example, suppose a liquidator expects to receive 110 USDC for every 100 jUSD repaid. Since USDC has 6
+     * decimals, 110 USDC is represented as 110e6. To convert this into a per-jUSD value (scaled to 1e18 for jUSD), set:
+     *     _minCollateralPerJusd = (110e6 * 1e18) / 100e18 = 1.1e6
+     * This ensures the liquidation only proceeds if the liquidator receives at least 1.1 USDC per jUSD repaid.
+     *
      * @notice Requirements:
      * - `_user` must have holding.
      * - `_user` must be insolvent.
@@ -283,7 +293,7 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
      * @param _user address whose holding is to be liquidated.
      * @param _collateral token used for borrowing.
      * @param _jUsdAmount to repay.
-     * @param _minCollateralReceive amount of collateral the liquidator wants to get.
+     * @param _minCollateralPerJusd amount of collateral per liquidated jUSD the liquidator agrees to get.
      * @param _data for strategies to retrieve collateral from in case the Holding balance is not enough.
      *
      * @return collateralUsed The amount of collateral used for liquidation.
@@ -292,7 +302,7 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         address _user,
         address _collateral,
         uint256 _jUsdAmount,
-        uint256 _minCollateralReceive,
+        uint256 _minCollateralPerJusd,
         LiquidateCalldata calldata _data
     )
         external
@@ -310,13 +320,14 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         // Get address of the user's Holding involved in liquidation.
         address holding = holdingManager.userHolding(_user);
         // Get configs for collateral used for liquidation.
-        (bool isRegistryActive, address registryAddress) = stablesManager.shareRegistryInfo(_collateral);
+        (, address registryAddress) = stablesManager.shareRegistryInfo(_collateral);
 
         // Perform sanity checks.
-        require(isRegistryActive, "1200");
+        require(registryAddress != address(0), "3001");
         require(holdingManager.isHolding(holding), "3002");
-        require(_jUsdAmount <= ISharesRegistry(registryAddress).borrowed(holding), "2003");
-        require(stablesManager.isLiquidatable({ _token: _collateral, _holding: holding }), "3073");
+
+        uint256 totalBorrowed = ISharesRegistry(registryAddress).borrowed(holding);
+        _jUsdAmount = _jUsdAmount > totalBorrowed ? totalBorrowed : _jUsdAmount;
 
         // Calculate collateral required for the specified `_jUsdAmount`.
         collateralUsed = _getCollateralForJUsd({
@@ -344,11 +355,13 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
             });
         }
 
+        require(stablesManager.isLiquidatable({ _token: _collateral, _holding: holding }), "3073");
+
         // Check whether the holding actually has enough collateral to pay liquidator bonus.
         collateralUsed = Math.min(IERC20(_collateral).balanceOf(holding), collateralUsed);
 
         // Ensure the liquidator will receive at least as much collateral as expected when sending the tx.
-        require(collateralUsed >= _minCollateralReceive, "3097");
+        require(collateralUsed >= _jUsdAmount.mulDiv(_minCollateralPerJusd, 1e18, Math.Rounding.Ceil), "3097");
 
         // Emit event indicating successful liquidation.
         emit Liquidated({ holding: holding, token: _collateral, amount: _jUsdAmount, collateralUsed: collateralUsed });
@@ -359,6 +372,8 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         stablesManager.forceRemoveCollateral({ _holding: holding, _token: _collateral, _amount: collateralUsed });
         // Send the liquidator the freed up collateral and bonus.
         IHolding(holding).transfer({ _token: _collateral, _to: msg.sender, _amount: collateralUsed });
+
+        require(!stablesManager.isLiquidatable({ _token: _collateral, _holding: holding }), "3106");
     }
 
     /**
@@ -395,28 +410,28 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         // Get address of the user's Holding involved in liquidation.
         address holding = holdingManager.userHolding(_user);
         // Get configs for collateral used for liquidation.
-        (bool isRegistryActive, address registryAddress) = stablesManager.shareRegistryInfo(_collateral);
+        (, address registryAddress) = stablesManager.shareRegistryInfo(_collateral);
 
         // Perform sanity checks.
-        require(isRegistryActive, "1200");
+        require(registryAddress != address(0), "3001");
         require(holdingManager.isHolding(holding), "3002");
 
         uint256 totalBorrowed = ISharesRegistry(registryAddress).borrowed(holding);
-        uint256 totalCollateral = ISharesRegistry(registryAddress).collateral(holding);
 
         // If strategies are provided, retrieve collateral from strategies if needed.
         if (_data.strategies.length > 0) {
             _retrieveCollateral({
                 _token: _collateral,
                 _holding: holding,
-                _amount: totalCollateral,
+                _amount: type(uint256).max,
                 _strategies: _data.strategies,
                 _strategiesData: _data.strategiesData,
-                useHoldingBalance: true
+                useHoldingBalance: false
             });
         }
-        // Update total collateral after retrieving from strategies
-        totalCollateral = ISharesRegistry(registryAddress).collateral(holding);
+
+        // Get total collateral after retrieving from strategies
+        uint256 totalCollateral = ISharesRegistry(registryAddress).collateral(holding);
 
         // Verify holding has bad debt
         if (
@@ -440,7 +455,7 @@ contract LiquidationManager is ILiquidationManager, Ownable2Step, Pausable, Reen
         stablesManager.repay({ _holding: holding, _token: _collateral, _amount: totalBorrowed, _burnFrom: msg.sender });
         // Remove collateral from holding.
         stablesManager.forceRemoveCollateral({ _holding: holding, _token: _collateral, _amount: totalCollateral });
-        // Send the liquidator the freed up collateral and bonus.
+        // Send the liquidator the freed up collateral.
         IHolding(holding).transfer({ _token: _collateral, _to: msg.sender, _amount: totalCollateral });
     }
 
