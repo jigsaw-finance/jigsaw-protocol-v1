@@ -111,25 +111,11 @@ contract DeployRegistries is Script, Base {
     }
 
     function _populateRegistriesArray() internal {
-        // Add configs for desired collaterals' registries
         registryConfigs.push(
             RegistryConfig({
-                symbol: "scUSD",
-                token: 0xd3DCe716f3eF535C5Ff8d041c1A41C3bd89b97aE,
+                symbol: "aSonUSDC",
+                token: 0x578Ee1ca3a8E1b54554Da1Bf7C583506C4CD11c6,
                 collateralizationRate: CR80,
-                liquidationBuffer: defaultLiquidationBuffer,
-                liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: 0xACE5e348a341a740004304c2c228Af1A4581920F,
-                oracleData: COMMON_ORACLE_DATA,
-                age: COMMON_ORACLE_AGE
-            })
-        );
-
-        registryConfigs.push(
-            RegistryConfig({
-                symbol: "USDC",
-                token: 0x29219dd400f2Bf60E5a23d13Be72B486D4038894,
-                collateralizationRate: CR85,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
                 chainlinkOracleAddress: 0x55bCa887199d5520B3Ce285D41e6dC10C08716C9,
@@ -159,19 +145,6 @@ contract DeployRegistries is Script, Base {
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
                 chainlinkOracleAddress: 0xc76dFb89fF298145b417d221B2c747d84952e01d,
-                oracleData: COMMON_ORACLE_DATA,
-                age: COMMON_ORACLE_AGE
-            })
-        );
-
-        registryConfigs.push(
-            RegistryConfig({
-                symbol: "stS",
-                token: 0xE5DA20F15420aD15DE0fa650600aFc998bbE3955,
-                collateralizationRate: CR65,
-                liquidationBuffer: defaultLiquidationBuffer,
-                liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: 0xdB17996a889706Bd67771dEa59E0Bf9453aF0CE4,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })

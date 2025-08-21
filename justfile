@@ -107,18 +107,17 @@ deploy-receipt:  && _timer
 	echo "Deploying Receipt Token to $CHAIN..."
 	eval "forge script DeployReceiptToken --rpc-url \"\${${CHAIN}_RPC_URL}\" --slow -vvvv --etherscan-api-key \"\${${CHAIN}_ETHERSCAN_API_KEY}\" --verify --broadcast"
 	
-# Deploy PythOracleFactory & PythOracleImpl
-deploy-chronicleOracle:  && _timer
+# Deploy chainlink oracle
+deploy-chainlinkOracle:  && _timer
 	#!/usr/bin/env bash
-	echo "Deploying ChronicleOracleFactory to $CHAIN..."
-	eval "forge script DeployChronicleOracleFactory --rpc-url \"\${${CHAIN}_RPC_URL}\" --slow -vvvv --etherscan-api-key \"\${${CHAIN}_ETHERSCAN_API_KEY}\" --verify --broadcast"
+	echo "Deploying ChainlinkOracleFactory to $CHAIN..."
+	eval "forge script DeployChainlinkOracleFactory --rpc-url \"\${${CHAIN}_RPC_URL}\" --slow -vvvv --etherscan-api-key \"\${${CHAIN}_ETHERSCAN_API_KEY}\" --verify --broadcast"
 
 # Deploy SharesRegistry Contracts for each configured token (a.k.a. collateral)
 deploy-registries:  && _timer
 	#!/usr/bin/env bash
 	echo "Deploying Registries to $CHAIN..."
 	eval "forge script DeployRegistries --rpc-url \"\${${CHAIN}_RPC_URL}\" --slow -vvvv --etherscan-api-key \"\${${CHAIN}_ETHERSCAN_API_KEY}\" --verify --broadcast"
-
 
 # Deploy UniswapV3Oracle
 deploy-uniswapV3Oracle: && _timer

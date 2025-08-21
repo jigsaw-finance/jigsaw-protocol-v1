@@ -21,7 +21,7 @@ abstract contract ValidateInterface {
         require(address(manager).code.length > 0, "Manager must have code");
         manager.feeAddress();
         manager.oracleData();
-        manager.allowedInvokers(address(this));
+        manager.allowedInvokers(address(0));
     }
 
     function _validateInterface(
@@ -37,9 +37,9 @@ abstract contract ValidateInterface {
         IERC20 token
     ) internal view {
         require(address(token).code.length > 0, "Token must have code");
-        token.balanceOf(address(this));
+        token.balanceOf(address(0));
         token.totalSupply();
-        token.allowance(address(this), address(this));
+        token.allowance(address(0), address(0));
     }
 
     function _validateInterface(

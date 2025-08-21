@@ -36,10 +36,11 @@ contract DeployManagers is Script, Base {
     address internal JUSD = deployments.readAddress(".jUSD");
 
     // Salts for deterministic deployments using Create2
-    bytes32 internal holdingManager_salt = bytes32(0x0);
-    bytes32 internal liquidationManager_salt = bytes32(0x0);
-    bytes32 internal stablesManager_salt = bytes32(0x0);
-    bytes32 internal strategyManager_salt = bytes32(0x0);
+    bytes32 internal holdingManager_salt = bytes32(0x00000000000000000000000000000000000000006c9b1724d6283a02a075f3c1);
+    bytes32 internal liquidationManager_salt =
+        bytes32(0x00000000000000000000000000000000000000003fc05eb994517a01d4a636d4);
+    bytes32 internal stablesManager_salt = bytes32(0x0000000000000000000000000000000000000000a3095dd0c1de6d01948acbda);
+    bytes32 internal strategyManager_salt = bytes32(0x0000000000000000000000000000000000000000fe27b1705da8a800cca3fa43);
 
     function run()
         external
