@@ -113,38 +113,12 @@ contract DeployRegistries is Script, Base {
     function _populateRegistriesArray() internal {
         registryConfigs.push(
             RegistryConfig({
-                symbol: "aSonUSDC",
-                token: 0x578Ee1ca3a8E1b54554Da1Bf7C583506C4CD11c6,
+                symbol: "USDC",
+                token: 0x29219dd400f2Bf60E5a23d13Be72B486D4038894,
                 collateralizationRate: CR80,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
                 chainlinkOracleAddress: 0x55bCa887199d5520B3Ce285D41e6dC10C08716C9,
-                oracleData: COMMON_ORACLE_DATA,
-                age: COMMON_ORACLE_AGE
-            })
-        );
-
-        registryConfigs.push(
-            RegistryConfig({
-                symbol: "WETH",
-                token: 0x50c42dEAcD8Fc9773493ED674b675bE577f2634b,
-                collateralizationRate: CR80,
-                liquidationBuffer: defaultLiquidationBuffer,
-                liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: 0x824364077993847f71293B24ccA8567c00c2de11,
-                oracleData: COMMON_ORACLE_DATA,
-                age: COMMON_ORACLE_AGE
-            })
-        );
-
-        registryConfigs.push(
-            RegistryConfig({
-                symbol: "wS",
-                token: 0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38,
-                collateralizationRate: CR65,
-                liquidationBuffer: defaultLiquidationBuffer,
-                liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: 0xc76dFb89fF298145b417d221B2c747d84952e01d,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
