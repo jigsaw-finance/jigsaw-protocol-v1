@@ -75,53 +75,53 @@ mp verbosity path: && _timer
 deploy-genesisOracle:  && _timer
 	#!/usr/bin/env bash
 	echo "Deploying jUSD Genesis Oracle to $CHAIN..."
-	eval "forge script DeployGenesisOracle --rpc-url \"\${${CHAIN}_RPC_URL}\" --slow -vvvv --etherscan-api-key \"\${${CHAIN}_ETHERSCAN_API_KEY}\" --verify --broadcast"
+	forge script DeployGenesisOracle --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --broadcast
 
 # Deploy Manager Contract
 deploy-manager:  && _timer
 	#!/usr/bin/env bash
 	echo "Deploying Manager to $CHAIN..."
-	eval "forge script DeployManager --rpc-url \"\${${CHAIN}_RPC_URL}\" --slow -vvvv --etherscan-api-key \"\${${CHAIN}_ETHERSCAN_API_KEY}\" --verify --broadcast"
+	forge script DeployManager --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --broadcast
 
 # Deploy ManagerContainer Contract	
 deploy-managerContainer: && _timer
 	#!/usr/bin/env bash
 	echo "Deploying ManagerContainer to $CHAIN..."
-	eval "forge script DeployManagerContainer --rpc-url \"\${${CHAIN}_RPC_URL}\" --slow -vvvv --etherscan-api-key \"\${${CHAIN}_ETHERSCAN_API_KEY}\" --verify --broadcast"
+	forge script DeployManagerContainer --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --broadcast
 
 # Deploy jUSD Contract
 deploy-jUSD:  && _timer
 	#!/usr/bin/env bash
 	echo "Deploying jUSD to $CHAIN..."
-	eval "forge script DeployJUSD --rpc-url \"\${${CHAIN}_RPC_URL}\" --slow -vvvv --etherscan-api-key \"\${${CHAIN}_ETHERSCAN_API_KEY}\" --verify --broadcast"
+	forge script DeployJUSD --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --broadcast
 
 # Deploy HoldingManager, LiquidationManager, StablesManager, StrategyManager & SwapManager Contracts
 deploy-managers:  && _timer
 	#!/usr/bin/env bash
 	echo "Deploying Managers to $CHAIN..."
-	eval "forge script DeployManagers --rpc-url \"\${${CHAIN}_RPC_URL}\" --slow -vvvv --etherscan-api-key \"\${${CHAIN}_ETHERSCAN_API_KEY}\" --verify --broadcast"
+	forge script DeployManagers --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --broadcast
 
 # Deploy ReceiptTokenFactory & ReceiptToken Contracts
 deploy-receipt:  && _timer
 	#!/usr/bin/env bash
 	echo "Deploying Receipt Token to $CHAIN..."
-	eval "forge script DeployReceiptToken --rpc-url \"\${${CHAIN}_RPC_URL}\" --slow -vvvv --etherscan-api-key \"\${${CHAIN}_ETHERSCAN_API_KEY}\" --verify --broadcast"
+	forge script DeployReceiptToken --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --broadcast
 	
 # Deploy PythOracleFactory & PythOracleImpl
 deploy-chronicleOracle:  && _timer
 	#!/usr/bin/env bash
 	echo "Deploying ChronicleOracleFactory to $CHAIN..."
-	eval "forge script DeployChronicleOracleFactory --rpc-url \"\${${CHAIN}_RPC_URL}\" --slow -vvvv --etherscan-api-key \"\${${CHAIN}_ETHERSCAN_API_KEY}\" --verify --broadcast"
+	forge script DeployChronicleOracleFactory --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --broadcast
 
 # Deploy SharesRegistry Contracts for each configured token (a.k.a. collateral)
 deploy-registries:  && _timer
 	#!/usr/bin/env bash
 	echo "Deploying Registries to $CHAIN..."
-	eval "forge script DeployRegistries --rpc-url \"\${${CHAIN}_RPC_URL}\" --slow -vvvv --etherscan-api-key \"\${${CHAIN}_ETHERSCAN_API_KEY}\" --verify --broadcast"
+	forge script DeployRegistries --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --broadcast
 
 
 # Deploy UniswapV3Oracle
 deploy-uniswapV3Oracle: && _timer
 	#!/usr/bin/env bash
 	echo "Deploying UniswapV3Oracle to $CHAIN..."
-	eval "forge script DeployUniswapV3Oracle --rpc-url \"\${${CHAIN}_RPC_URL}\" --slow -vvvv --etherscan-api-key \"\${${CHAIN}_ETHERSCAN_API_KEY}\" --verify --broadcast"
+	forge script DeployUniswapV3Oracle --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --broadcast
