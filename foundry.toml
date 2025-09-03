@@ -8,7 +8,6 @@ optimizer-runs = 100_000
 solc = "0.8.26"
 evm_version = "cancun"
 
-
 [fuzz]
 runs = 256
 max_test_rejects = 100000
@@ -23,5 +22,12 @@ quote_style = "double"
 tab_width = 4
 wrap_comments = true
 sort_imports = true
+
+[rpc_endpoints]
+SEPOLIA = "${SEPOLIA_RPC_URL}"
+ANVIL = "${ANVIL_RPC_URL}"
+MAINNET = "${MAINNET_RPC_URL}"
+SONIC = "${SONIC_RPC_URL}"
+SWELL = "${SWELL_RPC_URL}"
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

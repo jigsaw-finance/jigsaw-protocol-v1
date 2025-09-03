@@ -31,7 +31,7 @@ contract DeployRegistries is Script, Base {
         uint256 collateralizationRate;
         uint256 liquidationBuffer;
         uint256 liquidatorBonus;
-        address chainlinkOracleAddress;
+        address oracle;
         bytes oracleData;
         uint256 age;
     }
@@ -44,7 +44,6 @@ contract DeployRegistries is Script, Base {
     address internal INITIAL_OWNER = commonConfig.readAddress(".INITIAL_OWNER");
     address internal MANAGER = deployments.readAddress(".MANAGER");
     address internal STABLES_MANAGER = deployments.readAddress(".STABLES_MANAGER");
-    address internal CHAINLINK_ORACLE_FACTORY = deployments.readAddress(".CHAINLINK_ORACLE_FACTORY");
 
     // Array to store deployed registries' addresses
     address[] internal registries;
@@ -56,14 +55,13 @@ contract DeployRegistries is Script, Base {
     uint256 internal defaultLiquidationBuffer = 5e3;
     uint256 internal defaultLiquidationBonus = 8e3;
 
-    uint256 internal CR85 = 85e3;
-    uint256 internal CR80 = 80e3;
-    uint256 internal CR75 = 75e3;
-    uint256 internal CR65 = 65e3;
+    uint256 internal CR20 = 20e3;
 
     // Common configs for oracle
     bytes internal COMMON_ORACLE_DATA = bytes("");
     uint256 internal COMMON_ORACLE_AGE = 24 hours;
+
+    address internal EVER_REVERTING_ORACLE = 0x5B3af3630F37EfC7b8DF88EED6F3651c056dBA11;
 
     function run() external broadcast returns (address[] memory deployedRegistries) {
         // Validate interfaces
@@ -81,12 +79,7 @@ contract DeployRegistries is Script, Base {
                 _initialOwner: INITIAL_OWNER,
                 _manager: MANAGER,
                 _token: registryConfigs[i].token,
-                _oracle: ChainlinkOracleFactory(CHAINLINK_ORACLE_FACTORY).createChainlinkOracle({
-                    _initialOwner: INITIAL_OWNER,
-                    _underlying: registryConfigs[i].token,
-                    _chainlinkOracle: registryConfigs[i].chainlinkOracleAddress,
-                    _ageValidityPeriod: registryConfigs[i].age
-                }),
+                _oracle: registryConfigs[i].oracle,
                 _oracleData: registryConfigs[i].oracleData,
                 _config: ISharesRegistry.RegistryConfig({
                     collateralizationRate: registryConfigs[i].collateralizationRate,
@@ -114,12 +107,12 @@ contract DeployRegistries is Script, Base {
         // Add configs for desired collaterals' registries
         registryConfigs.push(
             RegistryConfig({
-                symbol: "scUSD",
-                token: 0xd3DCe716f3eF535C5Ff8d041c1A41C3bd89b97aE,
-                collateralizationRate: CR80,
+                symbol: "wETH",
+                token: 0x4200000000000000000000000000000000000006,
+                collateralizationRate: CR20,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: 0xACE5e348a341a740004304c2c228Af1A4581920F,
+                oracle: EVER_REVERTING_ORACLE,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -127,12 +120,12 @@ contract DeployRegistries is Script, Base {
 
         registryConfigs.push(
             RegistryConfig({
-                symbol: "USDC",
-                token: 0x29219dd400f2Bf60E5a23d13Be72B486D4038894,
-                collateralizationRate: CR85,
+                symbol: "wstETH",
+                token: 0x7c98E0779EB5924b3ba8cE3B17648539ed5b0Ecc,
+                collateralizationRate: CR20,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: 0x55bCa887199d5520B3Ce285D41e6dC10C08716C9,
+                oracle: EVER_REVERTING_ORACLE,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -140,12 +133,12 @@ contract DeployRegistries is Script, Base {
 
         registryConfigs.push(
             RegistryConfig({
-                symbol: "WETH",
-                token: 0x50c42dEAcD8Fc9773493ED674b675bE577f2634b,
-                collateralizationRate: CR80,
+                symbol: "rswETH",
+                token: 0x18d33689AE5d02649a859A1CF16c9f0563975258,
+                collateralizationRate: CR20,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: 0x824364077993847f71293B24ccA8567c00c2de11,
+                oracle: EVER_REVERTING_ORACLE,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -153,12 +146,12 @@ contract DeployRegistries is Script, Base {
 
         registryConfigs.push(
             RegistryConfig({
-                symbol: "wS",
-                token: 0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38,
-                collateralizationRate: CR65,
+                symbol: "weETH",
+                token: 0xA6cB988942610f6731e664379D15fFcfBf282b44,
+                collateralizationRate: CR20,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: 0xc76dFb89fF298145b417d221B2c747d84952e01d,
+                oracle: EVER_REVERTING_ORACLE,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })
@@ -166,12 +159,25 @@ contract DeployRegistries is Script, Base {
 
         registryConfigs.push(
             RegistryConfig({
-                symbol: "stS",
-                token: 0xE5DA20F15420aD15DE0fa650600aFc998bbE3955,
-                collateralizationRate: CR65,
+                symbol: "sUSDE",
+                token: 0x211Cc4DD073734dA055fbF44a2b4667d5E5fE5d2,
+                collateralizationRate: CR20,
                 liquidationBuffer: defaultLiquidationBuffer,
                 liquidatorBonus: defaultLiquidationBonus,
-                chainlinkOracleAddress: 0xdB17996a889706Bd67771dEa59E0Bf9453aF0CE4,
+                oracle: EVER_REVERTING_ORACLE,
+                oracleData: COMMON_ORACLE_DATA,
+                age: COMMON_ORACLE_AGE
+            })
+        );
+
+        registryConfigs.push(
+            RegistryConfig({
+                symbol: "ezETH",
+                token: 0x2416092f143378750bb29b79eD961ab195CcEea5,
+                collateralizationRate: CR20,
+                liquidationBuffer: defaultLiquidationBuffer,
+                liquidatorBonus: defaultLiquidationBonus,
+                oracle: EVER_REVERTING_ORACLE,
                 oracleData: COMMON_ORACLE_DATA,
                 age: COMMON_ORACLE_AGE
             })

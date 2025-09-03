@@ -71,57 +71,62 @@ mt test: && _timer
 mp verbosity path: && _timer
 	forge test -{{verbosity}} --match-path test/{{path}}
 
+verify-blockScout: && _timer
+	#!/usr/bin/env bash
+	echo "Verifying on Blockscout..."
+	forge verify-contract --rpc-url https://rpc.ankr.com/swell 0x4DFdF3F4dFaa93747a08D344c2f12cDcDa25c2e0 GenesisOracle --verifier blockscout --verifier-url https://explorer.swellnetwork.io/api/
+
+
+# Deploy jUSD EverRevertingOracle
+deploy-revertingOracle:  && _timer
+	#!/usr/bin/env bash
+	echo "Deploying jUSD Genesis Oracle to $CHAIN..."
+	forge script DeployEverRevertingOracle --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --broadcast --verify --verifier blockscout --verifier-url https://explorer.swellnetwork.io/api/
+
 # Deploy jUSD Genesis oracle
 deploy-genesisOracle:  && _timer
 	#!/usr/bin/env bash
 	echo "Deploying jUSD Genesis Oracle to $CHAIN..."
-	forge script DeployGenesisOracle --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --broadcast
+	forge script DeployGenesisOracle --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --broadcast --verify --verifier blockscout --verifier-url https://explorer.swellnetwork.io/api/
 
 # Deploy Manager Contract
 deploy-manager:  && _timer
 	#!/usr/bin/env bash
 	echo "Deploying Manager to $CHAIN..."
-	forge script DeployManager --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --broadcast
-
-# Deploy ManagerContainer Contract	
-deploy-managerContainer: && _timer
-	#!/usr/bin/env bash
-	echo "Deploying ManagerContainer to $CHAIN..."
-	forge script DeployManagerContainer --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --broadcast
+	forge script DeployManager --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --broadcast --verify --verifier blockscout --verifier-url https://explorer.swellnetwork.io/api/
 
 # Deploy jUSD Contract
 deploy-jUSD:  && _timer
 	#!/usr/bin/env bash
 	echo "Deploying jUSD to $CHAIN..."
-	forge script DeployJUSD --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --broadcast
+	forge script DeployJUSD --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --broadcast --verify --verifier blockscout --verifier-url https://explorer.swellnetwork.io/api/
 
 # Deploy HoldingManager, LiquidationManager, StablesManager, StrategyManager & SwapManager Contracts
 deploy-managers:  && _timer
 	#!/usr/bin/env bash
 	echo "Deploying Managers to $CHAIN..."
-	forge script DeployManagers --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --broadcast
+	forge script DeployManagers --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --broadcast --verify --verifier blockscout --verifier-url https://explorer.swellnetwork.io/api/
 
 # Deploy ReceiptTokenFactory & ReceiptToken Contracts
 deploy-receipt:  && _timer
 	#!/usr/bin/env bash
 	echo "Deploying Receipt Token to $CHAIN..."
-	forge script DeployReceiptToken --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --broadcast
+	forge script DeployReceiptToken --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --broadcast --verify --verifier blockscout --verifier-url https://explorer.swellnetwork.io/api/
 	
 # Deploy PythOracleFactory & PythOracleImpl
 deploy-chronicleOracle:  && _timer
 	#!/usr/bin/env bash
 	echo "Deploying ChronicleOracleFactory to $CHAIN..."
-	forge script DeployChronicleOracleFactory --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --broadcast
+	forge script DeployChronicleOracleFactory --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --broadcast --verify --verifier blockscout --verifier-url https://explorer.swellnetwork.io/api/
 
 # Deploy SharesRegistry Contracts for each configured token (a.k.a. collateral)
 deploy-registries:  && _timer
 	#!/usr/bin/env bash
 	echo "Deploying Registries to $CHAIN..."
-	forge script DeployRegistries --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --broadcast
-
+	forge script DeployRegistries --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --broadcast --verify --verifier blockscout --verifier-url https://explorer.swellnetwork.io/api/
 
 # Deploy UniswapV3Oracle
 deploy-uniswapV3Oracle: && _timer
 	#!/usr/bin/env bash
 	echo "Deploying UniswapV3Oracle to $CHAIN..."
-	forge script DeployUniswapV3Oracle --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --verify --broadcast
+	forge script DeployUniswapV3Oracle --rpc-url ${CHAIN} --slow -vvvv --etherscan-api-key ${ETHERSCAN_API_KEY} --broadcast --verify --verifier blockscout --verifier-url https://explorer.swellnetwork.io/api/
