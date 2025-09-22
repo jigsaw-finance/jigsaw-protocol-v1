@@ -41,7 +41,7 @@ contract DeployManagers is Script, Base {
     // Salts for deterministic deployments using Create2
     bytes32 internal holdingManager_salt = bytes32(0x00000000000000000000000000000000000000003634e4c80ced940387dd7b85);
     bytes32 internal liquidationManager_salt =
-        bytes32(0x0000000000000000000000000000000000000000972f3f9aaf3aa3026f6fb10a);
+        bytes32(0x0000000000000000000000000000000000000000e36c413bf2844200b8133b5b);
     bytes32 internal stablesManager_salt = bytes32(0x00000000000000000000000000000000000000004cd7a57dd5b44a020a2996e3);
     bytes32 internal strategyManager_salt = bytes32(0x00000000000000000000000000000000000000007c337f9607e9c80101113ee8);
     bytes32 internal swapManager_salt = bytes32(0x00000000000000000000000000000000000000008bbb9d20b10c78021b9f7603);
@@ -63,43 +63,43 @@ contract DeployManagers is Script, Base {
         _validateInterface(IUniswapV3Factory(UNISWAP_FACTORY));
         _validateInterface(ISwapRouter(UNISWAP_SWAP_ROUTER));
 
-        // Deploy HoldingManager Contract
-        holdingManager =
-            new HoldingManager{ salt: holdingManager_salt }({ _initialOwner: INITIAL_OWNER, _manager: MANAGER });
+        // // Deploy HoldingManager Contract
+        // holdingManager =
+        //     new HoldingManager{ salt: holdingManager_salt }({ _initialOwner: INITIAL_OWNER, _manager: MANAGER });
 
         // Deploy Liquidation Manager Contract
         liquidationManager =
             new LiquidationManager{ salt: liquidationManager_salt }({ _initialOwner: INITIAL_OWNER, _manager: MANAGER });
 
-        // Deploy StablesManager Contract
-        stablesManager = new StablesManager{ salt: stablesManager_salt }({
-            _initialOwner: INITIAL_OWNER,
-            _manager: MANAGER,
-            _jUSD: JUSD
-        });
+        // // Deploy StablesManager Contract
+        // stablesManager = new StablesManager{ salt: stablesManager_salt }({
+        //     _initialOwner: INITIAL_OWNER,
+        //     _manager: MANAGER,
+        //     _jUSD: JUSD
+        // });
 
-        // Deploy StrategyManager Contract
-        strategyManager =
-            new StrategyManager{ salt: strategyManager_salt }({ _initialOwner: INITIAL_OWNER, _manager: MANAGER });
+        // // Deploy StrategyManager Contract
+        // strategyManager =
+        //     new StrategyManager{ salt: strategyManager_salt }({ _initialOwner: INITIAL_OWNER, _manager: MANAGER });
 
-        // Deploy SwapManager Contract
-        swapManager = new SwapManager{ salt: swapManager_salt }({
-            _initialOwner: INITIAL_OWNER,
-            _uniswapFactory: UNISWAP_FACTORY,
-            _swapRouter: UNISWAP_SWAP_ROUTER,
-            _manager: MANAGER
-        });
+        // // Deploy SwapManager Contract
+        // swapManager = new SwapManager{ salt: swapManager_salt }({
+        //     _initialOwner: INITIAL_OWNER,
+        //     _uniswapFactory: UNISWAP_FACTORY,
+        //     _swapRouter: UNISWAP_SWAP_ROUTER,
+        //     _manager: MANAGER
+        // });
 
         // @note set deployed managers' addresses in Manager Contract using multisig
 
         // Save addresses of all the deployed contracts to the deployments.json
-        Strings.toHexString(uint160(address(holdingManager)), 20).write("./deployments.json", ".HOLDING_MANAGER");
+        // Strings.toHexString(uint160(address(holdingManager)), 20).write("./deployments.json", ".HOLDING_MANAGER");
         Strings.toHexString(uint160(address(liquidationManager)), 20).write(
             "./deployments.json", ".LIQUIDATION_MANAGER"
         );
-        Strings.toHexString(uint160(address(stablesManager)), 20).write("./deployments.json", ".STABLES_MANAGER");
-        Strings.toHexString(uint160(address(strategyManager)), 20).write("./deployments.json", ".STRATEGY_MANAGER");
-        Strings.toHexString(uint160(address(swapManager)), 20).write("./deployments.json", ".SWAP_MANAGER");
+        // Strings.toHexString(uint160(address(stablesManager)), 20).write("./deployments.json", ".STABLES_MANAGER");
+        // Strings.toHexString(uint160(address(strategyManager)), 20).write("./deployments.json", ".STRATEGY_MANAGER");
+        // Strings.toHexString(uint160(address(swapManager)), 20).write("./deployments.json", ".SWAP_MANAGER");
     }
 
     function getHoldingManagerInitCodeHash() public view returns (bytes32) {
