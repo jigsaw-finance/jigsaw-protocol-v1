@@ -6,11 +6,11 @@ import "forge-std/console.sol";
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
-import { ILiquidationManager } from "../../src/interfaces/core/ILiquidationManager.sol";
 import { LiquidationManager } from "../../src/LiquidationManager.sol";
+import { ILiquidationManager } from "../../src/interfaces/core/ILiquidationManager.sol";
 
-import { IManager } from "../../src/interfaces/core/IManager.sol";
 import { Manager } from "../../src/Manager.sol";
+import { IManager } from "../../src/interfaces/core/IManager.sol";
 
 import { SampleOracle } from "../utils/mocks/SampleOracle.sol";
 import { SampleTokenERC20 } from "../utils/mocks/SampleTokenERC20.sol";
@@ -117,7 +117,9 @@ contract LiquidationManagerTest is Test {
     }
 
     //Tests if renouncing ownership reverts with error code 1000
-    function test_validAddress(address _user) public {
+    function test_validAddress(
+        address _user
+    ) public {
         vm.startPrank(OWNER, OWNER);
 
         ILiquidationManager.LiquidateCalldata memory liquidateCalldata;
